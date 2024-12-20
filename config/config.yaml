@@ -1,0 +1,104 @@
+################################
+######### PROJECT INFO #########
+################################
+
+# Specify the sample name to be used. If you want to process all samples in the reads_path, use "all".
+# The reads filenames should include delimiters like _R1/_R2 or _pair1/_pair2 to distinguish paired-end reads.
+# Ensure that only the sequencing read files (in fastq.gz format) are present in reads_path.
+sample:
+
+# Provide the directory path where the sequencing read files (_R1/_R2 or _pair1/_pair2) are located.
+reads_path:
+
+# Specify the type of organelle genome you are assembling: "mito" for mitochondrial or "chloro" for chloroplast.
+organelle:
+
+# Define the genetic code to be used for mitochondrial genome annotation (e.g., 1 for Standard Code).
+genetic_code:
+
+# If a reference genome is available, specify its path as a fasta file. Leave blank if no reference is available.
+reference:
+
+################################
+########## INPUT INFO ##########
+################################
+
+# Indicate the type of sequencing data: "Short" for Illumina short reads or "Long" for PacBio/ONT reads.
+sequencing_type:
+
+# Specify the expected genome size range in kilobases (e.g., 15000-18000 for mitochondria).
+genome_range:
+
+################################
+####### QUALITY CONTROL ########
+################################
+
+# Choose whether to run the AdapterRemoval v2 software for adapter trimming and quality control on Illumina short reads.
+# Options: "Yes" to perform trimming, "No" to skip this step.
+adapterremoval:
+
+# Provide the path to a text file listing adapter sequences to be removed by AdapterRemoval v2.
+adapters:
+
+# Set the minimum read length to retain after trimming. Reads shorter than this length will be discarded.
+minlength:
+
+# Set the minimum base quality score threshold for trimming low-quality bases from reads.
+minquality:
+
+################################
+########## SEED INFO ###########
+################################
+
+# Specify the path to a seed file to initialize assembly. Supported formats: "fasta" or "genbank".
+# For long-read sequencing, leave seed_format and feature blank.
+seed_format:
+seed_file:
+
+# If a GenBank file is provided as the seed file, specify the feature type to use for assembly: "CDS", "rRNA", or "tRNA".
+feature:
+
+# If no seed file is provided, indicate whether to search NCBI for reference sequences.
+# Options: "Yes" to search NCBI, "No" to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
+search_ncbi:
+
+# List the specific genes (e.g., "COI", "16S", "ATP6") to search for on NCBI if NCBI search is enabled.
+search_genes:
+
+# Specify the taxon name to use as a query when searching NCBI (e.g., "Amphisbaena").
+search_term:
+
+# Set the maximum number of reference sequences to download per gene during the NCBI search.
+max_references:
+
+################################
+######## ILLUMINA STEP #########
+################################
+
+# Specify the list of k-mer sizes to be used in genome assembly (e.g., 19,23,28,33,39).
+kmers:
+
+# Set the maximum amount of memory (in GB) that can be used during assembly.
+max_memory:
+
+# Provide the read length (in base pairs) and average insert size (in base pairs) of the sequencing data.
+reads_length:
+insert_size:
+
+################################
+######## Pipeorg Steps #########
+################################
+
+# Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
+annotation:
+
+# Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: "Yes" or "No".
+run_nhmmer: "No"
+
+# Provide the path to the HMM database file to be used with nhmmer.
+# We are currently working on a better database for improved accuracy.
+# A parsing step will be implemented to enhance this process.
+nhmmer_db: "resources/rfam.hmm"
+
+# Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: "Yes" or "No".
+run_images: "Yes"

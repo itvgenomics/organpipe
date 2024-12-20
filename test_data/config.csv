@@ -1,0 +1,5 @@
+sample,reads_path,organelle,genetic_code,reference,sequencing_type,genome_range,annotation,adapterremoval,adapters,minlength,minquality,seed_format,seed_file,feature,search_ncbi,search_genes,search_term,max_references,kmers,max_memory,reads_length,insert_size,run_nhmmer,nhmmer_db,run_images
+hs1,test_data/rawreads,mito,2,,short,14000-22000,Yes,No,,,,genbank,test_data/human_mito.gb,CDS,,,,2,"18,23",2,150,251,No,,Yes
+hs2,test_data/rawreads,mito,2,,short,14000-22000,Yes,No,,,,genbank,test_data/human_mito.gb,rRNA,,,,2,"23,39",2,150,251,No,,Yes
+hs3,test_data/rawreads,mito,2,,short,14000-22000,Yes,No,,,,fasta,test_data/human_coi.fasta,,,,,2,"18,33",2,150,251,No,,Yes
+SRR1328237,test_data/rawreads,chloro,11,,short,120000-180000,Yes,No,,,,fasta,test_data/Seed_RUBP.fasta,,,,,,"33,39",2,151,450,No,,Yes

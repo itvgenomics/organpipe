@@ -1,0 +1,102 @@
+################################
+######### PROJECT INFO #########
+################################
+
+# Sample name in the reads input name
+# Use "all" if you want to use all samples in the reads_path
+# The reads must be delimited with _R1/_R2 or _pair1/_pair2
+# In the reads_path, make sure the files are fastq.gz or fasta.gz and only the reads are there
+sample: "hs1, hs2"
+
+# Reads path _R1 and _R2
+reads_path: "test_data/rawreads"
+
+# Organelle (mito or chloro)
+organelle: "mito"
+
+# Genetic code to be used in the mitochondrial annotation step
+genetic_code: 2
+
+# If a reference is available, you can give here the path to the fasta file, blank if not.
+reference: 
+
+################################
+########## INPUT INFO ##########
+################################
+
+# Your input is "Short" or "Long" reads?
+sequencing_type: "short"
+
+# Genome Range
+genome_range: "14000-22000"
+
+# Run the Annotation pipeline for the assembled genome? (Yes or No)
+annotation: "Yes"
+
+################################
+####### QUALITY CONTROL ########
+################################
+
+# Run the AdapterRevomal v2 Software to perform adapter trimming and quality control (illumina short reads only) (Yes or No)
+adapterremoval: "No"
+
+# Adapters list in a .txt file for AdapterRemoval v2 input
+adapters: 
+
+# Reads shorter than this length are discarded following trimming
+minlength:
+
+# Set the threshold for trimming low quality bases
+minquality:
+
+################################
+########## SEED INFO ###########
+################################
+
+# Path to seed file and format to be used ("fasta" or "genbank")
+# If using long reads, leave the seedformat and feature blank
+seed_format: "genbank"
+seed_file:  "test_data/human_mito.gb"
+
+# If Genbank file provided, select the feature to be used (CDS, rRNA or tRNA)
+feature: "CDS"
+
+# If you don't want to provide any seed file, search NCBI (Yes or No) to acquire fasta files
+# If "Yes", make sure that seed_format is blank
+search_ncbi: "No"
+
+# Select which genes will be search at NCBI (e.g. COI,16S,ATP6)
+search_genes:
+
+# What taxon will be used to search NCBI (e.g. Amphisbaena)
+search_term:
+
+# Set max number of sequences per gene to be downloaded
+max_references:
+
+################################
+######## ILLUMINA STEP #########
+################################
+
+# kmers: 19,23,28,33,39
+kmers: "19,23"
+
+# Max memory to be used
+max_memory: 2
+
+# Read and insert sizes
+reads_length: 150
+insert_size: 251
+
+################################
+######## Pipeorg Steps #########
+################################
+
+# Run nhmmer on ncRNA and Intergenes
+run_nhmmer: "No"
+
+# Path to the .hmm hmmer DB
+nhmmer_db: 
+
+# Create the OGDraw, Depth and Recruitment Plot
+run_images: "Yes"

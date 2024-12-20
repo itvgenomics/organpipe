@@ -1,0 +1,229 @@
+#Gene_name(STD)	Product(STD)	Type
+accD	acetyl-CoA carboxylase beta subunit	Protein Coding Gene
+atpA	ATP synthase CF1 alpha subunit	Protein Coding Gene
+atpB	ATP synthase CF1 beta subunit	Protein Coding Gene
+atpE	ATP synthase CF1 epsilon subunit	Protein Coding Gene
+atpF	ATP synthase CF0 subunit I	Protein Coding Gene
+atpH	ATP synthase CF0 subunit III	Protein Coding Gene
+atpI	ATP synthase CF0 subunit IV	Protein Coding Gene
+ccsA	cytochrome c heme attachment protein	Protein Coding Gene
+cemA	chloroplast envelope membrane protein	Protein Coding Gene
+chlB	photochlorophyllide reductase subunit B	Protein Coding Gene
+chlI	magnesium chelatase subunit of protochlorophyllide reductase	Protein Coding Gene
+chlL	photochlorophyllide reductase subunit L	Protein Coding Gene
+chlN	photochlorophyllide reductase subunit N	Protein Coding Gene
+clpP	clp protease proteolytic subunit	Protein Coding Gene
+clpP1	clp protease proteolytic subunit	Protein Coding Gene
+cysA	probable transport protein	Protein Coding Gene
+cysT	probable transport protein	Protein Coding Gene
+ftsH	cell division protein	Protein Coding Gene
+infA	translational initiation factor 1	Protein Coding Gene
+lhbA	LhbA	Protein Coding Gene
+matK	maturase K	Protein Coding Gene
+minD	septum site-determining protein	Protein Coding Gene
+ndhA	NADH-plastoquinone oxidoreductase subunit 1	Protein Coding Gene
+ndhB	NADH-plastoquinone oxidoreductase subunit 2	Protein Coding Gene
+ndhC	NADH-plastoquinone oxidoreductase subunit 3	Protein Coding Gene
+ndhD	NADH-plastoquinone oxidoreductase subunit 4	Protein Coding Gene
+ndhE	NADH-plastoquinone oxidoreductase subunit 4L	Protein Coding Gene
+ndhF	NADH-plastoquinone oxidoreductase subunit 5	Protein Coding Gene
+ndhG	NADH-plastoquinone oxidoreductase subunit 6	Protein Coding Gene
+ndhH	NADH-plastoquinone oxidoreductase subunit 7	Protein Coding Gene
+ndhI	NADH-plastoquinone oxidoreductase subunit I	Protein Coding Gene
+ndhJ	NADH-plastoquinone oxidoreductase subunit J	Protein Coding Gene
+ndhK	NADH-plastoquinone oxidoreductase subunit K	Protein Coding Gene
+odpB	beta subunit of pyruvate dehydrogenase E1 component	Protein Coding Gene
+pafI	photosystem I assembly factor I	Protein Coding Gene
+pafII	photosystem I assembly factor II	Protein Coding Gene
+petA	cytochrome f	Protein Coding Gene
+petB	cytochrome b6	Protein Coding Gene
+petD	cytochrome b6/f complex subunit IV	Protein Coding Gene
+petG	cytochrome b6/f complex subunit V	Protein Coding Gene
+petL	cytochrome b6/f complex subunit VI	Protein Coding Gene
+petN	cytochrome b6/f complex subunit VIII	Protein Coding Gene
+psaA	photosystem I P700 apoprotein A1	Protein Coding Gene
+psaB	photosystem I P700 apoprotein A2	Protein Coding Gene
+psaC	photosystem I subunit VII	Protein Coding Gene
+psaI	photosystem I subunit VIII	Protein Coding Gene
+psaJ	photosystem I subunit IX	Protein Coding Gene
+psaM	photosystem I protein M	Protein Coding Gene
+psbA	photosystem II protein D1	Protein Coding Gene
+psbB	photosystem II 47 kDa protein	Protein Coding Gene
+psbC	photosystem II CP43 chlorophyll apoprotein	Protein Coding Gene
+psbD	photosystem II protein D2	Protein Coding Gene
+psbE	photosystem II cytochrome b559 alpha subunit	Protein Coding Gene
+psbF	photosystem II cytochrome b559 beta subunit	Protein Coding Gene
+psbH	photosystem II phosphoprotein	Protein Coding Gene
+psbG	photosystem II protein G	Protein Coding Gene
+psbI	photosystem II protein I	Protein Coding Gene
+psbJ	photosystem II protein J	Protein Coding Gene
+psbK	photosystem II protein K	Protein Coding Gene
+psbL	photosystem II protein L	Protein Coding Gene
+psbM	photosystem II protein M	Protein Coding Gene
+psbN	photosystem II protein N	Protein Coding Gene
+psbT	photosystem II protein T	Protein Coding Gene
+psbZ	photosystem II protein Z	Protein Coding Gene
+rbcL	ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit	Protein Coding Gene
+rpl12	ribosomal protein L14	Protein Coding Gene
+rpl14	ribosomal protein L14	Protein Coding Gene
+rpl16	ribosomal protein L16	Protein Coding Gene
+rpl19	ribosomal protein L19	Protein Coding Gene
+rpl2	ribosomal protein L2	Protein Coding Gene
+rpl20	ribosomal protein L20	Protein Coding Gene
+rpl21	ribosomal protein L21	Protein Coding Gene
+rpl22	ribosomal protein L22	Protein Coding Gene
+rpl23	ribosomal protein L23	Protein Coding Gene
+rpl32	ribosomal protein L32	Protein Coding Gene
+rpl33	ribosomal protein L33	Protein Coding Gene
+rpl36	ribosomal protein L36	Protein Coding Gene
+rpl5	ribosomal protein L5	Protein Coding Gene
+rpoA	RNA polymerase alpha subunit	Protein Coding Gene
+rpoB	RNA polymerase beta subunit	Protein Coding Gene
+rpoC1	RNA polymerase beta' subunit	Protein Coding Gene
+rpoC2	RNA polymerase beta'' subunit	Protein Coding Gene
+rps11	ribosomal protein S11	Protein Coding Gene
+rps12	ribosomal protein S12	Protein Coding Gene
+rps14	ribosomal protein S14	Protein Coding Gene
+rps15	ribosomal protein S15	Protein Coding Gene
+rps16	ribosomal protein S16	Protein Coding Gene
+rps18	ribosomal protein S18	Protein Coding Gene
+rps19	ribosomal protein S19	Protein Coding Gene
+rps2	ribosomal protein S2	Protein Coding Gene
+rps3	ribosomal protein S3	Protein Coding Gene
+rps4	ribosomal protein S4	Protein Coding Gene
+rps7	ribosomal protein S7	Protein Coding Gene
+rps8	ribosomal protein S8	Protein Coding Gene
+rps9	ribosomal protein S9	Protein Coding Gene
+tufA	translational elongation factor Tu	Protein Coding Gene
+ycf1	hypothetical chloroplast RF1	Protein Coding Gene
+ycf12	hypothetical chloroplast RF12	Protein Coding Gene
+ycf15	hypothetical chloroplast RF15	Protein Coding Gene
+ycf2	Ycf2	Protein Coding Gene
+ycf20	hypothetical chloroplast RF20	Protein Coding Gene
+ycf3	photosystem I assembly protein Ycf3	Protein Coding Gene
+ycf4	photosystem I assembly protein ycf4	Protein Coding Gene
+ycf47	hypothetical chloroplast RF47	Protein Coding Gene
+ycf5	hypothetical protein	Protein Coding Gene
+ycf6	hypothetical protein	Protein Coding Gene
+ycf62	hypothetical chloroplast RF62	Protein Coding Gene
+ycf66	hypothetical chloroplast RF66	Protein Coding Gene
+ycf68	hypothetical chloroplast RF68	Protein Coding Gene
+ycf9	hypothetical protein	Protein Coding Gene
+		
+rrn16S	16S ribosomal RNA	rRNA
+rrn16	16S ribosomal RNA	rRNA
+rrn23S	23S ribosomal RNA	rRNA
+rrn23	23S ribosomal RNA	rRNA
+rrn4.5S	4.5S ribosomal RNA	rRNA
+rrn4.5	4.5S ribosomal RNA	rRNA
+rrn5S	5S ribosomal RNA	rRNA
+rrn5	5S ribosomal RNA	rRNA
+		
+trnA	tRNA-Ala	tRNA
+trnC	tRNA-Cys	tRNA
+trnD	tRNA-Asp	tRNA
+trnE	tRNA-Glu	tRNA
+trnF	tRNA-Phe	tRNA
+trnfM	tRNA-fMet	tRNA
+trnG	tRNA-Gly	tRNA
+trnH	tRNA-His	tRNA
+trnI	tRNA-Ile	tRNA
+trnK	tRNA-Lys	tRNA
+trnL	tRNA-Leu	tRNA
+trnM	tRNA-Met	tRNA
+trnMe	tRNA-eMet	tRNA
+trnN	tRNA-Asn	tRNA
+trnP	tRNA-Pro	tRNA
+trnQ	tRNA-Gln	tRNA
+trnR	tRNA-Arg	tRNA
+trnS	tRNA-Ser	tRNA
+trnT	tRNA-Thr	tRNA
+trnV	tRNA-Val	tRNA
+trnW	tRNA-Trp	tRNA
+trnY	tRNA-Tyr	tRNA
+trnA-UGC	tRNA-Ala	tRNA
+trnC-GCA	tRNA-Cys	tRNA
+trnD-GUC	tRNA-Asp	tRNA
+trnE-UUC	tRNA-Glu	tRNA
+trnF-GAA	tRNA-Phe	tRNA
+trnfM-CAU	tRNA-Met	tRNA
+trnfM-CAU	tRNA-fMet	tRNA
+trnG-GCC	tRNA-Gly	tRNA
+trnG-UCC	tRNA-Gly	tRNA
+trnH-GUG	tRNA-His	tRNA
+trnI-AAU	tRNA-Ile	tRNA
+trnI-CAU	tRNA-Ile	tRNA
+trnI-GAU	tRNA-Ile	tRNA
+trnK-UUU	tRNA-Lys	tRNA
+trnL-CAA	tRNA-Leu	tRNA
+trnL-GAG	tRNA-Leu	tRNA
+trnL-UAA	tRNA-Leu	tRNA
+trnL-UAG	tRNA-Leu	tRNA
+trnM-CAU	tRNA-Met	tRNA
+trnMe-CAU	tRNA-Met	tRNA
+trnMf-CAU	tRNA-Met	tRNA
+trnN-GUU	tRNA-Asn	tRNA
+trnP-GGG	tRNA-Pro	tRNA
+trnP-UGG	tRNA-Pro	tRNA
+trnQ-UUG	tRNA-Gln	tRNA
+trnR-ACG	tRNA-Arg	tRNA
+trnR-CCG	tRNA-Arg	tRNA
+trnR-CCU	tRNA-Arg	tRNA
+trnR-UCG	tRNA-Arg	tRNA
+trnR-UCU	tRNA-Arg	tRNA
+trnS-CGA	tRNA-Ser	tRNA
+trnS-GCU	tRNA-Ser	tRNA
+trnS-GGA	tRNA-Ser	tRNA
+trnS-UGA	tRNA-Ser	tRNA
+trnT-CGT	tRNA-Thr	tRNA
+trnT-GGU	tRNA-Thr	tRNA
+trnT-UGU	tRNA-Thr	tRNA
+trnV-GAC	tRNA-Val	tRNA
+trnV-UAC	tRNA-Val	tRNA
+trnW-CCA	tRNA-Trp	tRNA
+trnY-GUA	tRNA-Tyr	tRNA
+trnA-TGC	tRNA-Ala	tRNA
+trnC-GCA	tRNA-Cys	tRNA
+trnD-GTC	tRNA-Asp	tRNA
+trnE-TTC	tRNA-Glu	tRNA
+trnF-GAA	tRNA-Phe	tRNA
+trnfM-CAT	tRNA-Met	tRNA
+trnfM-CAT	tRNA-fMet	tRNA
+trnG-GCC	tRNA-Gly	tRNA
+trnG-TCC	tRNA-Gly	tRNA
+trnH-GTG	tRNA-His	tRNA
+trnI-AAT	tRNA-Ile	tRNA
+trnI-CAT	tRNA-Ile	tRNA
+trnI-GAT	tRNA-Ile	tRNA
+trnK-TTT	tRNA-Lys	tRNA
+trnL-CAA	tRNA-Leu	tRNA
+trnL-GAG	tRNA-Leu	tRNA
+trnL-TAA	tRNA-Leu	tRNA
+trnL-TAG	tRNA-Leu	tRNA
+trnM-CAT	tRNA-Met	tRNA
+trnMe-CAT	tRNA-Met	tRNA
+trnMf-CAT	tRNA-Met	tRNA
+trnN-GTT	tRNA-Asn	tRNA
+trnP-GGG	tRNA-Pro	tRNA
+trnP-TGG	tRNA-Pro	tRNA
+trnQ-TTG	tRNA-Gln	tRNA
+trnR-ACG	tRNA-Arg	tRNA
+trnR-CCG	tRNA-Arg	tRNA
+trnR-CCT	tRNA-Arg	tRNA
+trnR-TCG	tRNA-Arg	tRNA
+trnR-TCT	tRNA-Arg	tRNA
+trnS-CGA	tRNA-Ser	tRNA
+trnS-GCT	tRNA-Ser	tRNA
+trnS-GGA	tRNA-Ser	tRNA
+trnS-TGA	tRNA-Ser	tRNA
+trnT-CGT	tRNA-Thr	tRNA
+trnT-GGT	tRNA-Thr	tRNA
+trnT-TGT	tRNA-Thr	tRNA
+trnV-GAC	tRNA-Val	tRNA
+trnV-TAC	tRNA-Val	tRNA
+trnW-CCA	tRNA-Trp	tRNA
+trnY-GTA	tRNA-Tyr	tRNA
+trnT-CGU	tRNA-Thr	tRNA
+ngn	CDS product not assigned	CDS
+nrgn	rRNA product not assigned	rRNA
+ntgn	tRNA product not assigned	tRNA

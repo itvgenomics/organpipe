@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+  <feature>
+    <color>255,236,0</color>
+    <fullname>complex I (NADH dehydrogenase)</fullname>
+    <drawflag>1</drawflag>
+    <pattern>(^nad.*)|(^nd.*)</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>52,211,77</color>
+    <fullname>complex II (succinate dehydrogenase)</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^sdh.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>200,250,40</color>
+    <fullname>complex III (ubichinol cytochrome c reductase)</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^cob.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>255,180,255</color>
+    <fullname>complex IV (cytochrome c oxidase)</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^cox.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>151,190,13</color>
+    <fullname>ATP synthase</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^atp.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>50,137,37</color>
+    <fullname>cytochrome c biogenesis</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^ccb.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>189,18,32</color>
+    <fullname>RNA polymerase</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^rpo.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>219,170,115</color>
+    <fullname>ribosomal proteins (SSU)</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^rps.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>158,119,66</color>
+    <fullname>ribosomal proteins (LSU)</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^rpl.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>233,93,15</color>
+    <fullname>maturases</fullname>
+    <drawflag>1</drawflag>
+    <pattern>(^clp.*)|(^mat.*)</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>171,37,157</color>
+    <fullname>other genes</fullname>
+    <drawflag>1</drawflag>
+    <pattern>.*</pattern>
+    <type>other</type>
+  </feature>
+  <feature>
+    <color>87,185,168</color>
+    <fullname>ORFs</fullname>
+    <drawflag>1</drawflag>
+    <pattern>^orf.*</pattern>
+    <type>gene</type>
+  </feature>
+  <feature>
+    <color>22,41,131</color>
+    <fullname>transfer RNAs</fullname>
+    <drawflag>1</drawflag>
+    <pattern>.*</pattern>
+    <type>tRNA</type>
+  </feature>
+  <feature>
+    <color>226,0,26</color>
+    <fullname>ribosomal RNAs</fullname>
+    <drawflag>1</drawflag>
+    <pattern>.*</pattern>
+    <type>rRNA</type>
+  </feature>
+<feature>	
+    <color>255,128,128</color>
+    <fullname>origin of replication</fullname>
+    <drawflag>1</drawflag>
+    <pattern>(^ori.*)|(^D-loop.*)|(^control region.*)|(^CR.*)|(^non-coding region.*)|(^noncoding region.*)|(^NCR.*)|(^A-T rich region.*)|(^A+T rich region.*)|(^AT rich region.*)|(^AT-rich region.*)
+</pattern>
+    <type>rep_origin|D-loop|misc_feature</type>
+  </feature>
+  <feature>
+    <color>255,0,255</color>
+    <fullname>polycistronic transcripts</fullname>
+    <drawflag>1</drawflag>
+    <pattern>.*</pattern>
+    <type>operon|prim_transcript</type>
+  </feature>
+  <feature>
+    <color>255,255,255</color>
+    <fullname>introns</fullname>
+    <drawflag>1</drawflag>
+    <pattern>.*</pattern>
+    <type>intron</type>
+  </feature>
+</config>
