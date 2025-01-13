@@ -14,7 +14,7 @@ Before installing the required software, make sure you have the following:
    Begin by cloning the OrganPipe project repository to your local machine. This will provide you with the necessary files, including an `environment.yaml` file to simplify the installation process.  
    
    ```bash
-   git clone https://github.com/your-username/organpipe.git
+   git clone https://github.com/itvgenomics/organpipe.git
    cd organpipe
 
 2. **Install Conda or Mamba**:
