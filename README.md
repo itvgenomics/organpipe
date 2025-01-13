@@ -1,5 +1,13 @@
 # OrganPipe: An automated tool to facilitate the assembly, annotation, and curation of mitochondrial and chloroplast genomes
 
+## How to cite OrganPipe
+
+ ```
+Moreira-Oliveira, R. R., Silva, B. M., Molina, M., Oliveira-Lima, M., Leão, T. F., Vasconcelos, S., & Nunes, G. L. (2025). OrganPipe: An automated tool to facilitate the assembly, annotation, and curation of mitochondrial and chloroplast genomes. https://doi.org/10.21203/RS.3.RS-5686696/V1
+ ```
+[https://doi.org/10.21203/RS.3.RS-5686696/V1](https://doi.org/10.21203/RS.3.RS-5686696/V1)
+
+
 ## How to Install OrganPipe Enviroment
 
 ### Prerequisites
