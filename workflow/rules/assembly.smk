@@ -1,10 +1,10 @@
 rule create_hash:
     input:
-        r1=lambda wildcards: 
-            "resources/{sample}/rawreads/{sample}.pair1.truncated.gz" if config["samples"][wildcards.sample].get("adapterremoval", "").lower() == "yes" 
+        r1=lambda wildcards:
+            "resources/{sample}/rawreads/{sample}.pair1.truncated.gz" if config["samples"][wildcards.sample].get("adapterremoval", "").lower() == "yes"
             else "resources/{sample}/rawreads/{sample}_R1.fastq.gz",
-        r2=lambda wildcards: 
-            "resources/{sample}/rawreads/{sample}.pair2.truncated.gz" if config["samples"][wildcards.sample].get("adapterremoval", "").lower() == "yes" 
+        r2=lambda wildcards:
+            "resources/{sample}/rawreads/{sample}.pair2.truncated.gz" if config["samples"][wildcards.sample].get("adapterremoval", "").lower() == "yes"
             else "resources/{sample}/rawreads/{sample}_R2.fastq.gz"
     output:
         "results/{sample}/hashtable/kmer{kmer}/hash_config.txt",
@@ -17,7 +17,7 @@ rule create_hash:
     benchmark:
         "benchmarks/{sample}/novoplasty/{sample}_{kmer}_create_hash.benchmark"
     singularity:
-        "docker://brunomsilva/novoplasty:4.3.1"
+        f"{config["sif_dir"]}/novoplasty.sif"
     params:
         organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
         genome_range=lambda wildcards: config["samples"][wildcards.sample]["genome_range"],
@@ -44,7 +44,7 @@ rule run_novoplasty:
         "results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt"
     threads: 1
     singularity:
-        "docker://brunomsilva/novoplasty:4.3.1"
+        f"{config["sif_dir"]}/novoplasty.sif"
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_{seed}_novoplasty.log"
     benchmark:
@@ -79,7 +79,6 @@ rule run_mitohifi:
         reads= "resources/{sample}/rawreads/{sample}.fasta",
         reference_fasta="resources/{sample}/seeds/{seed}.fasta",
         reference_gb="resources/{sample}/seeds/{seed}.gb",
-        sif="resources/mitohifi.sif"
     output:
         "results/{sample}/mitohifi/{seed}/contigs_stats.tsv"
     threads: 8
@@ -90,7 +89,7 @@ rule run_mitohifi:
     params:
         genetic_code=lambda wildcards: config["samples"][wildcards.sample]["genetic_code"]
     singularity:
-        "resources/mitohifi.sif"
+        f"{config["sif_dir"]}/mitohifi.sif"
     shell:
         """
         mkdir -p results/{wildcards.sample}/mitohifi/{wildcards.seed} && \

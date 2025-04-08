@@ -16,7 +16,7 @@ include: "rules/error_correction.smk"
 include: "rules/images.smk"
 
 wildcard_constraints:
-    sample = r"[A-Za-z0-9]+",
+    sample = r"[A-Za-z0-9_]+",
     seed = r"[A-Za-z0-9._:-]+",
     kmer = r"\d+"
 
@@ -29,19 +29,19 @@ def get_output():
         seeds = [seed for seed in config["samples"][sample]["seeds"]]
 
         if config["samples"][sample].get("sequencing_type", "").lower() == "short":
-            
-            if config["samples"][sample].get("adapterremoval", "").lower() == "yes": 
+
+            if config["samples"][sample].get("adapterremoval", "").lower() == "yes":
                 out.append(expand("resources/{sample}/rawreads/{sample}.pair{r}.truncated.gz", sample=sample, r=[1, 2]))
             else:
                 out.append(expand("resources/{sample}/rawreads/{sample}_R{r}.fastq.gz", sample=sample, r=[1, 2]))
-            
+
             out.append(expand("results/{sample}/hashtable/kmer{kmer}/hash_config.txt", sample=sample, kmer=kmers))
             out.append(expand("results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt", sample=sample, kmer=kmers))
             out.append(expand("results/{sample}/hashtable/kmer{kmer}/HASH2C_{sample}.txt", sample=sample, kmer=kmers))
             out.append(expand("results/{sample}/hashtable/kmer{kmer}/HASH_{sample}.txt", sample=sample, kmer=kmers))
             out.append(expand("results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt", sample=sample, seed=seeds, kmer=kmers))
             out.append(expand("results/{sample}/assemblies/{seed}_kmer{kmer}.fasta", sample=sample, seed=seeds, kmer=kmers))
-            
+
             out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.bwa_index.check", sample=sample, seed=seeds, kmer=kmers))
             out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.bwa_mem.check", sample=sample, seed=seeds, kmer=kmers))
             out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.samtools_index.check", sample=sample, seed=seeds, kmer=kmers))
@@ -65,12 +65,11 @@ def get_output():
                         out.append(expand("results/{sample}/images/{sample}.mito.ogdraw.check", sample=sample))
 
                 elif config["samples"][sample].get("organelle", "").lower() == "chloro":
-                    out.append("resources/cpgavas2.sif")
                     out.append("resources/table2asn.linux64")
                     out.append(expand("results/{sample}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check", sample=sample, seed=seeds, kmer=kmers))
-                    
+
                     out.append(expand("results/{sample}/chloe/{seed}_kmer{kmer}.chloe.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.rotated.check", sample=sample, seed=seeds, kmer=kmers))
@@ -95,7 +94,7 @@ def get_output():
                         out.append(expand("results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check", sample=sample, seed=seeds, kmer=kmers))
                         out.append(expand("results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check", sample=sample, seed=seeds, kmer=kmers))
                         out.append(expand("results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check", sample=sample, seed=seeds, kmer=kmers))
-                        
+
                     elif config["samples"][sample].get("organelle", "").lower() == "chloro":
                         out.append(expand("results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check", sample=sample, seed=seeds, kmer=kmers))
                         out.append(expand("results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check", sample=sample, seed=seeds, kmer=kmers))
@@ -104,11 +103,10 @@ def get_output():
 
         elif config["samples"][sample].get("sequencing_type", "").lower() == "long":
             out.append(expand("resources/{sample}/rawreads/{sample}.fasta", sample=sample))
-            
+
             if config["samples"][sample].get("annotation", "").lower() == "yes":
-                out.append("resources/mitohifi.sif")
                 out.append(expand("results/{sample}/mitohifi/{seed}/contigs_stats.tsv", sample=sample, seed=seeds))
-                
+
                 if config["samples"][sample].get("run_nhmmer", "").lower() == "yes":
                     out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_sequences.check", sample=sample, seed=seeds))
                     out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_nhmmer.check", sample=sample, seed=seeds))

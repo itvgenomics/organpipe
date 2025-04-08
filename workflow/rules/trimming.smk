@@ -15,7 +15,7 @@ rule run_adapterremoval2:
         minquality=lambda wildcards: config["samples"][wildcards.sample]["minquality"],
         minlength=lambda wildcards: config["samples"][wildcards.sample]["minlength"]
     singularity:
-        "docker://itvdsbioinfo/pimba_adapterremoval:v2.2.3"
+        f"{config["sif_dir"]}/pimba_adapterremoval.sif"
     shell:
         """
         AdapterRemoval --file1 {input.r1} --file2 {input.r2} \

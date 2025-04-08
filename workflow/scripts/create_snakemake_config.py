@@ -25,6 +25,14 @@ def parse_arguments():
 
     return args
 
+def detect_delimiter(file_path):
+    with open(file_path, 'r') as file:
+        first_line = file.readline()
+        # Check for semicolon
+        if ';' in first_line:
+            return ';'
+        else:
+            return ','  # Default to comma
 
 def create_dirs(sample):
     dirs = [
@@ -302,7 +310,9 @@ if __name__ == "__main__":
             yaml.dump(samples_dict, file)
 
     elif str(args.configfile).endswith(".csv"):
-        df = pd.read_csv(args.configfile)
+        delimiter = detect_delimiter(args.configfile)
+        df = pd.read_csv(args.configfile, delimiter=delimiter)
+
         df.fillna("", inplace=True)
 
         # Initiate the samples dict

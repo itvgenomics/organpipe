@@ -9,7 +9,7 @@ rule run_bwa_index:
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_bwa_index.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         python workflow/scripts/split_fasta.py --fasta_file {input} \
@@ -34,7 +34,7 @@ rule run_bwa_mem:
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_bwa_mem.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -61,7 +61,7 @@ rule run_samtools_index:
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_samtools_index.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -84,7 +84,7 @@ rule run_pilon:
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_pilon.benchmark"
     singularity:
-        "docker://biocontainers/pilon:v1.23dfsg-1-deb_cv1"
+        f"{config["sif_dir"]}/pilon.sif"
     shell:
         """
         export PARALLEL_GC_THREADS={threads} && \

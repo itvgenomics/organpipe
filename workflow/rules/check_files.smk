@@ -24,7 +24,7 @@ def get_longreads(sample):
     return {"single_reads": single_reads[0]}
 
 rule check_shortreads_files:
-    input: 
+    input:
         forward_reads=lambda wildcards: get_shortreads(wildcards.sample)["forward"],
         reverse_reads=lambda wildcards: get_shortreads(wildcards.sample)["reverse"]
     output:
@@ -38,7 +38,7 @@ rule check_shortreads_files:
         """
 
 rule check_longreads_files:
-    input: 
+    input:
         single_reads=lambda wildcards: get_longreads(wildcards.sample)["single_reads"],
     output:
         temp("resources/{sample}/rawreads/{sample}.fasta")
@@ -49,7 +49,7 @@ rule check_longreads_files:
         """
 
 rule check_adapters:
-    input: 
+    input:
         lambda wildcards: config["samples"][wildcards.sample]["adapters"]
     output:
         "resources/{sample}/adapters.txt"
@@ -58,27 +58,6 @@ rule check_adapters:
         """
         cp {input} {output}
         """
-
-rule download_cpgavas_sif:
-    output:
-        "resources/cpgavas2.sif"
-    threads: 1
-    shell:
-        """
-        wget https://xxjzna.bn.files.1drv.com/y4miznP-svjCz0-AfKjAUT9u6C4Idv4mDba2TiWspJt6vaFLDHo-D9hiZ3wGotg2nh3dGdnWELOtuQxE6eTmyVOFXLSd1HqvG1ANEpzAj_kxtEbKISeF_Kx4SMvhT4HEpCSM8IU3AOe-Iiw0SpNcU6PL5OLqq65u6JdDhJpvLa5WB29_6PaXYKaDO5kQZFSfKjLdlJCHgPodkgcZZ7KwgCAWg -O {output}
-        """
-
-
-def build_mitohifi():
-    command = "singularity build resources/mitohifi.sif docker://ghcr.io/marcelauliano/mitohifi:master"
-    subprocess.run(command, shell=True, check=True)
-
-rule build_mitohifi_sif:
-    output:
-        "resources/mitohifi.sif"
-    threads: 1
-    run:
-        build_mitohifi()
 
 rule check_nhmmer_db:
     output:
@@ -110,7 +89,7 @@ rule index_hmmer_db:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     threads: 1
     singularity:
-        "docker://staphb/hmmer:3.4"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         hmmpress {input}

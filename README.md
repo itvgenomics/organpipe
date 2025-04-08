@@ -10,16 +10,16 @@ Before installing the required software, make sure you have the following:
 
 
 ### Snakemake/Singularity/Docker Installation
-1. **Clone the OrganPipe Repository**:  
-   Begin by cloning the OrganPipe project repository to your local machine. This will provide you with the necessary files, including an `environment.yaml` file to simplify the installation process.  
-   
+1. **Clone the OrganPipe Repository**:
+   Begin by cloning the OrganPipe project repository to your local machine. This will provide you with the necessary files, including an `environment.yaml` file to simplify the installation process.
+
    ```bash
    git clone https://github.com/your-username/organpipe.git
    cd organpipe
 
 2. **Install Conda or Mamba**:
     The OrganPipe pipeline requires a working Conda or Mamba installation to manage dependencies. You can find the installation instructions for these tools here:
-    
+
     - [Conda Installation Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
     - [Mamba Installation Guide](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html)
 
@@ -50,9 +50,9 @@ Before installing the required software, make sure you have the following:
 1. **Configure the Pipeline**:
     - Before running the pipeline, you must edit the configuration file to provide information specific to your samples and variables. We provide this file in two formats: YAML and CSV at the `config` directory. **If you don't need to use a specific variable, leave the value blank rather than removing the key/column. (e. g. reaference: '')**
 
-   - **YAML Format**: Each key in the file represents a variable, and each value corresponds to the parameters or settings for that variable. 
+   - **YAML Format**: Each key in the file represents a variable, and each value corresponds to the parameters or settings for that variable.
 
-   - **CSV Format**: Each column corresponds to a variable, and each row represents a sample with specific values for the variables.  
+   - **CSV Format**: Each column corresponds to a variable, and each row represents a sample with specific values for the variables.
 
 The fields to be edited are the following:
 
@@ -87,8 +87,8 @@ The fields to be edited are the following:
 
 2. **Run OrganPipe**:
     - Run the pipeline with default parameters:
- 
-    ``` 
+
+    ```
     bash OrganPipe.sh -d </path/to/work/dir> -t <n_threads> -c </path/to/configfile>
     ```
 
@@ -99,12 +99,13 @@ The fields to be edited are the following:
         - **-np** (Optional) = Perform a dry run to see what jobs will be executed without actually running them.
         - **-unlock** (Optional) = Unlock the working directory if Snakemake has somehow locked it.
         - **-subsample** (Optional) = If you are running a large number of samples, consider using this flag. This slightly improve the DAG resolution time from Snakemake
-        
+        - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
+
 
     - We recommend initially running the pipeline with the -np (dry run) flag. This will allow you to verify that all paths and configurations are correct and that the pipeline will execute as expected. It's a good way to ensure everything is set up properly before running the actual workflow.
 
     ```
-    bash OrganPipe.sh -d </path/to/work/dir> -t <n_threads> -c </path/to/configfile> -np 
+    bash OrganPipe.sh -d </path/to/work/dir> -t <n_threads> -c </path/to/configfile> -np
     ```
 
 3. **Testing with Sample Data**:

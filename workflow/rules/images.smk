@@ -86,7 +86,7 @@ rule run_bwa_index_rotated:
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_bwa_index_rotated.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/images/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -109,7 +109,7 @@ rule run_bwa_mem_rotated:
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_bwa_mem_rotated.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/images/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -135,7 +135,7 @@ rule run_samtools_depth:
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_samtools_depth.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -159,7 +159,7 @@ rule run_samtools_depth_rotated:
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_samtools_depth_rotated.benchmark"
     singularity:
-        "docker://itvdsbioinfo/hic_mapping:1.0"
+        f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/images/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -209,7 +209,7 @@ rule run_ogdraw_mito:
     benchmark:
         "benchmarks/{sample}/images/{sample}_run_ogdraw.benchmark"
     singularity:
-        "docker://itvdsbioinfo/ogdraw:1.1.1"
+        f"{config["sif_dir"]}/ogdraw.sif"
     shell:
         """
         for gb_file in results/{wildcards.sample}/genbanks/*.gb; do
@@ -242,7 +242,7 @@ rule run_ogdraw_chloro:
     benchmark:
         "benchmarks/{sample}/images/{sample}_run_ogdraw.benchmark"
     singularity:
-        "docker://itvdsbioinfo/ogdraw:1.1.1"
+        f"{config["sif_dir"]}/ogdraw.sif"
     shell:
         """
         for gb_file in results/{wildcards.sample}/genbanks/*.gb; do

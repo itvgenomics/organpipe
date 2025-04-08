@@ -9,7 +9,7 @@ rule run_mitos2:
     benchmark:
         "benchmarks/{sample}/mitos2/{kmer}_{seed}_run_mitos2.benchmark"
     singularity:
-        "docker://nanozoo/mitos:2.0.3--9b425c9"
+        f"{config["sif_dir"]}/mitos.sif"
     params:
         genetic_code=lambda wildcards: config["samples"][wildcards.sample]["genetic_code"],
         refseq_dir="resources/refseq89m"
@@ -35,7 +35,6 @@ rule run_mitos2:
 rule run_cpgavas2:
     input:
         fasta="results/{sample}/pilon/{seed}_kmer{kmer}.pilon.check",
-        sif="resources/cpgavas2.sif"
     output:
         "results/{sample}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check"
     log:
@@ -44,7 +43,7 @@ rule run_cpgavas2:
     benchmark:
         "benchmarks/{sample}/cpgavas2/{kmer}_{seed}_run_cpgavas2.benchmark"
     singularity:
-        "resources/cpgavas2.sif"
+        f"{config["sif_dir"]}/pimba_adapterremoval.sif"
     shell:
         """
         sed -i '/maker/s/-quiet/--ignore_nfs_tmp -quiet/' /apps/cpgavas2C/modules/plasAnno/bin/Annotation_Chloroplast_King.py && \
@@ -73,7 +72,7 @@ rule run_chloe:
     benchmark:
         "benchmarks/{sample}/chloe/{kmer}_{seed}_run_chloe.benchmark"
     singularity:
-        "docker://itvdsbioinfo/chloe:1.0"
+        f"{config["sif_dir"]}/chloe.sif"
     shell:
         """
         mkdir -p results/{wildcards.sample}/chloe && \

@@ -33,7 +33,7 @@ rule run_ncRNA_nhmmer_short:
     benchmark:
         "benchmarks/{sample}/nhmmer/{kmer}_{seed}_run_ncRNA_nhmmer.txt"
     singularity:
-        "docker://staphb/hmmer:3.3"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -87,7 +87,7 @@ rule run_intergenes_nhmmer_short:
     benchmark:
         "benchmarks/{sample}/nhmmer/{kmer}_{seed}_run_intergenes_nhmmer.txt"
     singularity:
-        "docker://staphb/hmmer:3.3"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -140,7 +140,7 @@ rule run_ncRNA_nhmmer_long:
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_run_ncRNA_nhmmer.txt"
     singularity:
-        "docker://staphb/hmmer:3.3"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         if [ -e "results/{wildcards.sample}/nhmmer/{wildcards.seed}/rRNA-tRNA.fasta" ]; then
@@ -190,7 +190,7 @@ rule run_intergenes_nhmmer_long:
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_run_intergenes_nhmmer.txt"
     singularity:
-        "docker://staphb/hmmer:3.3"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         if [ -e "results/{wildcards.sample}/nhmmer/{wildcards.seed}/intergenes_filter.fasta" ]; then
@@ -240,7 +240,7 @@ rule run_intergenes_nhmmer_chloro:
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_run_intergenes_nhmmer.txt"
     singularity:
-        "docker://staphb/hmmer:3.4"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
@@ -293,7 +293,7 @@ rule run_ncRNA_nhmmer_chloro:
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_run_ncRNA_nhmmer.txt"
     singularity:
-        "docker://staphb/hmmer:3.4"
+        f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do

@@ -27,6 +27,7 @@ SETNP=""
 SETUNLOCK=""
 SETSUBSAMPLE=false
 SETSUBSAMPLEFLAG=""
+SIFDIR=""
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -50,6 +51,10 @@ while [ "$1" != "" ]; do
         ;;
     -subsample)
         SETSUBSAMPLE=true
+        ;;
+    -sifdir)
+        shift
+        SIFDIR=$1
         ;;
     *)
         exit 1
@@ -80,6 +85,16 @@ echo "CONFIGTYPE: $CONFIGTYPE"
 
 python "$SCRIPTDIR"/workflow/scripts/create_snakemake_config.py \
         --configfile "$CONFIGFILE"
+
+if [ -n "$SIFDIR" ]; then
+    SIFDIR=$(realpath "$SIFDIR")
+    python $WORKDIR/workflow/scripts/singularity.py --sifdir $SIFDIR
+    grep -qxF "sif_dir: '$SIFDIR'" config/snakemake_config.yaml || echo "sif_dir: '$SIFDIR'" >> config/snakemake_config.yaml
+
+else
+    python $WORKDIR/workflow/scripts/singularity.py --sifdir $WORKDIR/resources/sif_dir
+    grep -qxF "sif_dir: 'resources/sif_dir'" config/snakemake_config.yaml || echo "sif_dir: 'resources/sif_dir'" >> config/snakemake_config.yaml
+fi
 
 mkdir -p $WORKDIR/tmp $WORKDIR/singularity
 
