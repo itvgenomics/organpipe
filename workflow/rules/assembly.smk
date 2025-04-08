@@ -31,7 +31,7 @@ rule create_hash:
         --sample {wildcards.sample} --genome_range {params.genome_range} --reads_length {params.reads_length} \
         --insert_size {params.insert_size} --forward {input.r1} \
         --reverse {input.r2} --max_memory {params.max_memory} --kmer {wildcards.kmer} && \
-        NOVOPlasty.pl -c results/{wildcards.sample}/hashtable/kmer{wildcards.kmer}/hash_config.txt >> {log} 2>1
+        NOVOPlasty.pl -c results/{wildcards.sample}/hashtable/kmer{wildcards.kmer}/hash_config.txt >> {log} 2>&1
         """
 
 rule run_novoplasty:
@@ -71,7 +71,7 @@ rule run_novoplasty:
             --hash2b {input.hash2b} \
             --hash2c {input.hash2c} \
             --reference {params.reference} && \
-        NOVOPlasty.pl -c results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/config.txt >> {log} 2>1
+        NOVOPlasty.pl -c results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/config.txt >> {log} 2>&1
         """
 
 rule run_mitohifi:
@@ -115,5 +115,5 @@ rule get_assemblies:
         """
         python workflow/scripts/get_assemblies.py \
             --organelle {params.organelle} --genome_range {params.genome_range} \
-            --sample {wildcards.sample} --kmer {wildcards.kmer} --seed {wildcards.seed} >> {log} 2>1
+            --sample {wildcards.sample} --kmer {wildcards.kmer} --seed {wildcards.seed} >> {log} 2>&1
         """
