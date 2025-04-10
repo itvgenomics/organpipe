@@ -106,14 +106,14 @@ The fields to be edited are the following:
         - **-t** {int} (Required) = Number of threads to use
         - **-np** (Optional) = Perform a dry run to see what jobs will be executed without actually running them.
         - **-unlock** (Optional) = Unlock the working directory if Snakemake has somehow locked it.
-        - **-subsample** (Optional) = If you are running a large number of samples, consider using this flag. This slightly improve the DAG resolution time from Snakemake
+        - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improve the DAG resolution time from Snakemake
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
 
 
     - We recommend initially running the pipeline with the -np (dry run) flag. This will allow you to verify that all paths and configurations are correct and that the pipeline will execute as expected. It's a good way to ensure everything is set up properly before running the actual workflow.
 
     ```
-    bash OrganPipe.sh -d </path/to/work/dir> -t <n_threads> -c </path/to/configfile> -np
+    bash OrganPipe.sh -d </path/to/work/dir> -t 1 -c </path/to/configfile> -np
     ```
 
 3. **Testing with Sample Data**:

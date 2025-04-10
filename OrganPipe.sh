@@ -26,8 +26,8 @@ EOF
 SETNP=""
 SETUNLOCK=""
 SETSUBSAMPLE=false
-SETSUBSAMPLEFLAG=""
 SIFDIR=""
+SETBATCH="false"
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -49,8 +49,8 @@ while [ "$1" != "" ]; do
     -unlock)
         SETUNLOCK="--unlock"
         ;;
-    -subsample)
-        SETSUBSAMPLE=true
+    -batch)
+        SETBATCH=true
         ;;
     -sifdir)
         shift
@@ -98,9 +98,22 @@ fi
 
 mkdir -p $WORKDIR/tmp $WORKDIR/singularity
 
-export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
-export TMPDIR=$WORKDIR/tmp && \
-snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-    --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
-    --max-jobs-per-second $THREADS --max-status-checks-per-second $THREADS \
-    --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK $SETSUBSAMPLEFLAG
+
+if [ "$SETBATCH" = true ]; then
+    for batch in {1..100}
+    do
+        export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+        export TMPDIR=$WORKDIR/tmp && \
+        snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
+            --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
+            --max-jobs-per-second $THREADS --max-status-checks-per-second $THREADS \
+            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/100
+    done
+else
+    export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+    export TMPDIR=$WORKDIR/tmp && \
+    snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
+        --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
+        --max-jobs-per-second $THREADS --max-status-checks-per-second $THREADS \
+        --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK
+fi
