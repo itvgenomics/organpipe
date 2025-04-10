@@ -106,7 +106,6 @@ if [ "$SETBATCH" = true ]; then
         export TMPDIR=$WORKDIR/tmp && \
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
             --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
-            --max-jobs-per-second $THREADS --max-status-checks-per-second $THREADS \
             --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/100
     done
 else
@@ -114,6 +113,5 @@ else
     export TMPDIR=$WORKDIR/tmp && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
         --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
-        --max-jobs-per-second $THREADS --max-status-checks-per-second $THREADS \
         --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK
 fi
