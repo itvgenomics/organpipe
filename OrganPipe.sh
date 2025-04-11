@@ -28,6 +28,7 @@ SETUNLOCK=""
 SETSUBSAMPLE=false
 SIFDIR=""
 SETBATCH="false"
+NBATCH=50
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -55,6 +56,10 @@ while [ "$1" != "" ]; do
     -sifdir)
         shift
         SIFDIR=$1
+        ;;
+    -nbatch)
+        shift
+        NBATCH=$1
         ;;
     *)
         exit 1
@@ -100,14 +105,15 @@ mkdir -p $WORKDIR/tmp $WORKDIR/singularity
 
 
 if [ "$SETBATCH" = true ]; then
-    for batch in {1..100}
+    for ((batch=1; batch<=NBATCH; batch++))
     do
         export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
         export TMPDIR=$WORKDIR/tmp && \
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
             --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
-            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/100
+            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
     done
+
 else
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
     export TMPDIR=$WORKDIR/tmp && \
