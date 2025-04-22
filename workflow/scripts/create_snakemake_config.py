@@ -230,13 +230,15 @@ if __name__ == "__main__":
                 sample_id.strip() for sample_id in str(data["sample"]).split(",")
             ]
 
-        create_dirs("all")
+
         samples_dict = {"samples": {}}
         for sample_id in sample_ids:
             logging.info(f"Preparing Sample: {sample_id}")
 
             sample = sample_id
             kmers = data["kmers"].split(",")
+
+            create_dirs(sample)
 
             if data["search_genes"] == None:
                 genes = ""
@@ -246,7 +248,7 @@ if __name__ == "__main__":
             seeds = prepare_seeds(
                 seed_format=data["seed_format"],
                 seed_file=data["seed_file"],
-                sample="all",
+                sample=sample_id,
                 search_ncbi=data["search_ncbi"],
                 search_term=data["search_term"],
                 genes=genes,
