@@ -42,7 +42,7 @@ def parse_arguments():
 
 def clean_sequence(sequence):
     """Remove non-ATCG characters from the sequence."""
-    return ''.join(filter(lambda x: x in 'ATCG', str(sequence)))
+    return "".join(filter(lambda x: x in "ATCG", str(sequence)))
 
 
 if __name__ == "__main__":
@@ -70,8 +70,7 @@ if __name__ == "__main__":
             break
         elif file.startswith("Option_"):
             options = True
-            break  
-
+            break
 
     for file in os.listdir(asm_dir):
         full_file_path = os.path.join(asm_dir, file)
@@ -81,18 +80,28 @@ if __name__ == "__main__":
                 for record in SeqIO.parse(input_handle, "fasta"):
                     # Clean the sequence
                     cleaned_seq = clean_sequence(record.seq)
-                    header = str(f"{file.split('.fasta')[0]}_{seed}_{kmer}")
+                    header = str(f"{file.split('.fasta')[0]}_{seed}_{kmer}").replace(
+                        "Circularized_assembly", "CA"
+                    )
                     record.id = header
                     record.description = header
-                    record.seq = cleaned_seq  # Update the record with the cleaned sequence
+                    record.seq = (
+                        cleaned_seq  # Update the record with the cleaned sequence
+                    )
                     all_sequences.append(record)  # Append the record to the list
 
         elif file.startswith("Option_") and not circularized:
             with open(full_file_path, "r") as input_handle:
                 for record in SeqIO.parse(input_handle, "fasta"):
                     cleaned_seq = clean_sequence(record.seq)
-                    if int(genome_range_min) <= len(cleaned_seq) <= int(genome_range_max):
-                        header = str(f"{file.split('.fasta')[0]}_{seed}_{kmer}")
+                    if (
+                        int(genome_range_min)
+                        <= len(cleaned_seq)
+                        <= int(genome_range_max)
+                    ):
+                        header = str(
+                            f"{file.split('.fasta')[0]}_{seed}_{kmer}"
+                        ).replace("Option_", "OPT_")
                         record.id = header
                         record.description = header
                         record.seq = cleaned_seq
@@ -102,8 +111,12 @@ if __name__ == "__main__":
             with open(full_file_path, "r") as input_handle:
                 for record in SeqIO.parse(input_handle, "fasta"):
                     cleaned_seq = clean_sequence(record.seq)
-                    if len(cleaned_seq) >= 1000 and len(cleaned_seq) <= int(genome_range_max):
-                        header = str(f"{file.split('.fasta')[0]}_{seed}_{kmer}")
+                    if len(cleaned_seq) >= int(genome_range_min) and len(
+                        cleaned_seq
+                    ) <= int(genome_range_max):
+                        header = str(
+                            f"{file.split('.fasta')[0]}_{seed}_{kmer}"
+                        ).replace("Contigs_", "CTG_")
                         record.id = header
                         record.description = header
                         record.seq = cleaned_seq
@@ -116,4 +129,3 @@ if __name__ == "__main__":
     else:
         with open(fasta_file, "w") as output_handle:
             output_handle.write(">INVALIDSEED")
-        

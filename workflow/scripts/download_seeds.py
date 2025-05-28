@@ -125,59 +125,60 @@ def find_seed(organism, gene, max_n, outpath, organelle):
     if gb_record:
         logging.info(f"Writing FASTA files.")
 
-        with open(f"{outpath}/{gene}.gb", "w") as gb_file:
+        gb_filepath = f"{outpath}/{gene}.gb"
+        with open(gb_filepath, "w") as gb_file:
             for record in gb_record:
                 gb_file.write(record)
 
-        for record in SeqIO.parse(
-            f"{outpath}/{gene}.gb",
-            "genbank",
-        ):
-            organism_name = record.annotations.get("organism", "")
-            sequence = str(record.seq)
+        for record in SeqIO.parse(gb_filepath, "genbank"):
+            # Extract taxon ID from source feature
+            taxon_id = None
+            for feature in record.features:
+                if feature.type == "source":
+                    db_xrefs = feature.qualifiers.get("db_xref", [])
+                    for db_ref in db_xrefs:
+                        if db_ref.startswith("taxon:"):
+                            taxon_id = db_ref.split(":")[1]
+                            break
+                if taxon_id:
+                    break
 
-            if organism_name not in organisms:
-                organisms.append(organism_name)
+            if not taxon_id:
+                logging.warning("Taxon ID not found for a record; skipping.")
+                continue
 
-                organism_name = (
-                    organism_name.replace(" ", "_")
-                    .replace("/", ".")
-                    .replace(":", ".")
-                    .replace("'", "")
-                    .replace("(", "")
-                    .replace(")", "")
-                    .replace("_aff.", "")
-                )
+            if taxon_id not in organisms:
+                organisms.append(taxon_id)
 
-                fasta_file = f"{outpath}/{gene}_{organism_name}.fasta"
+                fasta_file = f"{outpath}/{gene}_{taxon_id}.fasta"
+                sequence = str(record.seq)
 
                 if len(sequence) > 3000:
                     for feature in record.features:
-                        gene_name = str(feature.qualifiers.get("gene"))
+                        gene_name = str(feature.qualifiers.get("gene", [""])[0])
 
                         if feature.type == "gene" and (
-                            gene.lower() in gene_name or gene.upper() in gene_name
+                            gene.lower() in gene_name.lower()
                         ):
                             gene_sequence = str(feature.location.extract(record).seq)
                             with open(fasta_file, "w") as output:
-                                output.write(f">{gene}_{organism_name}\n")
+                                output.write(f">{gene}_{taxon_id}\n")
                                 output.write(gene_sequence)
-
                             break
                 else:
                     with open(fasta_file, "w") as output:
-                        output.write(f">{gene}_{organism_name}\n")
+                        output.write(f">{gene}_{taxon_id}\n")
                         output.write(sequence)
 
                 n += 1
 
             if n == max_n:
                 return logging.info(
-                    f"Got {len(organisms)} distinct organisms and {n} sequences for gene {gene}"
+                    f"Got {len(organisms)} distinct taxon IDs and {n} sequences for gene {gene}"
                 )
 
     return logging.info(
-        f"Got {len(organisms)} distinct organisms and {n} sequences for gene {gene}"
+        f"Got {len(organisms)} distinct taxon IDs and {n} sequences for gene {gene}"
     )
 
 
@@ -204,13 +205,17 @@ def main(taxon, outpath, maxcount, genes, organelle):
 
     # Iterate over each file in the input folder
     for filename in os.listdir(outpath):
-        if filename.endswith(".fasta"):
+        if filename.endswith(".fasta") and filename != "seeds.fasta":
             filepath = os.path.join(outpath, filename)
-            # Append the contents of the current file to the output file
-            with open(filepath, "r") as infile, open(
-                f"{outpath}/seeds.fasta", "a"
-            ) as outfile:
-                records = SeqIO.read(infile, "fasta")
-                SeqIO.write(records, outfile, "fasta")
+
+            with open(filepath, "r") as infile:
+                record = SeqIO.read(infile, "fasta")
+
+            with open(f"{outpath}/seeds.fasta", "a") as outfile:
+                SeqIO.write(record, outfile, "fasta")
+
+            # Delete the individual FASTA file
+            os.remove(filepath)
+            logging.info(f"Deleted temporary file: {filename}")
 
     logging.info("Done!")
