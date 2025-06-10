@@ -12,7 +12,7 @@ args = parser.parse_args()
 docker_images = [
     "itvdsbioinfo/chloe:1.0",
     "nanozoo/mitos:2.0.3--9b425c9",
-    "brunomsilva/novoplasty:4.3.1",
+    "itvdsbioinfo/novoplasty:4.3.5",
     "ghcr.io/marcelauliano/mitohifi:master",
     "staphb/hmmer:3.4",
     "biocontainers/pilon:v1.23dfsg-1-deb_cv1",
@@ -21,7 +21,7 @@ docker_images = [
     "pegi3s/blast:2.13.0",
     "staphb/hmmer:3.4",
     "itvdsbioinfo/pimba_adapterremoval:v2.2.3",
-    "brunomsilva/cpgavas2:latest"
+    "brunomsilva/cpgavas2:latest",
 ]
 
 sif_dir = args.sifdir
