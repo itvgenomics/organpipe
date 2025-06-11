@@ -21,7 +21,7 @@ def parse_arguments():
         "--seed", help="Seed used to assemble the mitogenome", required=False, nargs="?",
     )
     parser.add_argument(
-        "--kmer", help="kmer used to assemble the mitogenome", required=False, nargs="?",
+        "--kmer", help="k-mer used to assemble the mitogenome", required=False, nargs="?",
     )
     parser.add_argument(
         "--software", help="Software used", required=False, nargs="?",
@@ -40,7 +40,7 @@ def parse_arguments():
 def list_directories(path):
     # List to hold directories
     directories = []
-    
+
     # Iterate through the items in the specified path
     for item in os.listdir(path):
         # Create the full path
@@ -48,7 +48,7 @@ def list_directories(path):
         # Check if it is a directory
         if os.path.isdir(full_path):
             directories.append(item)
-    
+
     return directories
 
 def create_features_table(gene2product, gff_file, features_file, fasta):
@@ -298,7 +298,7 @@ def create_features_table(gene2product, gff_file, features_file, fasta):
 
     out.close()
 
-    print("GBFile have successfully be created, Great")
+    print("GenBank File have successfully be created.")
 
 
 def GFF_Parse_GetFeatureBlock(annotate_block):
@@ -319,7 +319,7 @@ def GFF_Parse_GetFeatureBlock(annotate_block):
                 D_gene[geneID]["geneLine"] = line
                 D_gene[geneID]["geneID"] = geneID
 
-            elif featuretype in ["rRNA", "mRNA", "tRNA", "CDS"]:  # if may be error
+            elif featuretype in ["rRNA", "mRNA", "tRNA", "CDS"]:  # Might produce an error if unexpected feature types appear
                 mRNAID = line.split("\t")[8].split("ID=")[1].split(";")[0]
                 mRNAParent = (
                     line.split("\t")[8].split("parent=")[1].split(";")[0].strip()
@@ -376,7 +376,7 @@ if __name__ == "__main__":
 -   SOFTWARE: {args.software}
 """
     )
-    
+
     sample = args.sample
     seed = args.seed
     kmer = args.kmer
@@ -385,7 +385,7 @@ if __name__ == "__main__":
 
     if not os.path.exists(f"results/{sample}/genbanks"):
         os.makedirs(f"results/{sample}/genbanks")
-    
+
     # Create GB from chloe files
     annotations_path = f"results/{sample}/chloe/"
     if args.software == "chloe":
@@ -395,7 +395,7 @@ if __name__ == "__main__":
                                 gff_file=f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.gff")}",
                                 gene2product=gene2product,
                                 features_file=f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.tbl")}")
-                    
+
                     edit_fasta_header(fasta_file=f"results/{sample}/chloe/{file}",
                                       new_header="Asm_Contig")
 
@@ -409,9 +409,9 @@ if __name__ == "__main__":
                     ]
                     subprocess.run(command, check=True)
 
-                    shutil.copy(f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.gbf")}", 
+                    shutil.copy(f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.gbf")}",
                                 f"results/{sample}/genbanks/{file.replace(".chloe.fa", ".chloe.gb")}")
-     
+
     # Copy cpgavas2 files
     elif args.software == "cpgavas2":
         annotations_path = f"results/{sample}/cpgavas2/{seed}_kmer{kmer}"

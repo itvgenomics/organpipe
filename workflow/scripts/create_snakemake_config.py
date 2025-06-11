@@ -25,14 +25,16 @@ def parse_arguments():
 
     return args
 
+
 def detect_delimiter(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         first_line = file.readline()
         # Check for semicolon
-        if ';' in first_line:
-            return ';'
+        if ";" in first_line:
+            return ";"
         else:
-            return ','  # Default to comma
+            return ","  # Default to comma
+
 
 def create_dirs(sample):
     dirs = [
@@ -82,7 +84,7 @@ def prepare_seeds(
                 output_dir=f"resources/{sample}/seeds/",
             )
 
-        # Extract the headers to use as seeds into snakemake config file
+        # Extract the headers to use them as seeds in the Snakemake config file
         seeds = get_seeds.get_fasta_headers(
             fasta_file=f"resources/{sample}/seeds/seeds.fasta"
         )
@@ -99,7 +101,7 @@ def prepare_seeds(
                 fasta_file=seed_file,
                 output_dir=f"resources/{sample}/seeds/",
             )
-        # Extract the headers to use as seeds into snakemake config file
+        # Extract the headers to use them as seeds in the Snakemake config file
         seeds = get_seeds.get_fasta_headers(
             fasta_file=f"resources/{sample}/seeds/seeds.fasta"
         )
@@ -146,20 +148,6 @@ def prepare_seeds(
                 )
 
             return seeds
-
-
-def get_samples_ids(reads_path):
-    # List all files in the directory
-    file_list = os.listdir(reads_path)
-
-    # Extract sample IDs
-    sample_ids = set(
-        filename.split("_")[0]
-        for filename in file_list
-        if filename.endswith(".fasta.gz")
-    )
-
-    return sample_ids
 
 
 def get_samples_ids(reads_path):
@@ -229,7 +217,6 @@ if __name__ == "__main__":
             sample_ids = [
                 sample_id.strip() for sample_id in str(data["sample"]).split(",")
             ]
-
 
         samples_dict = {"samples": {}}
         for sample_id in sample_ids:

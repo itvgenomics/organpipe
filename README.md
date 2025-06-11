@@ -8,7 +8,7 @@ Moreira-Oliveira, R. R., Silva, B. M., Molina, M., Oliveira-Lima, M., Leão, T. 
 [https://doi.org/10.21203/RS.3.RS-5686696/V1](https://doi.org/10.21203/RS.3.RS-5686696/V1)
 
 
-## How to Install OrganPipe Enviroment
+## How to Install OrganPipe Environment
 
 ### Prerequisites
 Before installing the required software, make sure you have the following:
@@ -56,7 +56,7 @@ Before installing the required software, make sure you have the following:
 ## How to run OrganPipe
 
 1. **Configure the Pipeline**:
-    - Before running the pipeline, you must edit the configuration file to provide information specific to your samples and variables. We provide this file in two formats: YAML and CSV at the `config` directory. **If you don't need to use a specific variable, leave the value blank rather than removing the key/column. (e. g. reaference: '')**
+    - Before running the pipeline, you must edit the configuration file to provide information specific to your samples and variables. We provide this file in two formats: YAML and CSV at the `config` directory. **If you don't need to use a specific variable, leave the value blank rather than removing the key/column. (e. g. reference: '')**
 
    - **YAML Format**: Each key in the file represents a variable, and each value corresponds to the parameters or settings for that variable.
 
@@ -66,7 +66,7 @@ The fields to be edited are the following:
 
 | **Field**           | **Example**          | **Description/Comment**                                                                                                                                                              | **Field Requirement**                         |
 |----------------------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|
-| `sample`            | `sample1`           | Specify the sample name to process. Use "all" to process all samples in `reads_path`. You can also set a comma separeted list of samples (e.g. "sample1,sample2,sample3"). All samples will be running with the same parameters, if you do want different values for each sample, use the .csv format | Required.                                     |
+| `sample`            | `sample1`           | Specify the sample name to process. Use "all" to process all samples in `reads_path`. You can also set a comma separated list of samples (e.g. "sample1,sample2,sample3"). All samples will be running with the same parameters, if you do want different values for each sample, use the .csv format | Required.                                     |
 | `reads_path`        | `/path/to/reads`    | Directory containing sequencing read files (_R1/_R2 or _pair1/_pair2) in fastq.gz format.                                                                                          | Required.                                     |
 | `organelle`         | `mito`              | Type of organelle genome to assemble: "mito" for mitochondrial or "chloro" for chloroplast.                                                                                         | Required.                                     |
 | `genetic_code`      | `2`                 | Genetic code for mitochondrial genome annotation (e.g., 2 for The Vertebrate Mitochondrial Code).                                                                                                       | Required.                                     |
@@ -102,11 +102,11 @@ The fields to be edited are the following:
 
     - **Flags**:
         - **-d** </path/to/work/dir> (Required) = Path to your working directory where all the workflow file are
-        - **-c** </path/to/config.yaml> (Required) = Overwrite the default configuration file with all nedded parameters (e.g. config/config.yaml/csv)
+        - **-c** </path/to/config.yaml> (Required) = Overwrite the default configuration file with all needed parameters (e.g. config/config.yaml/csv)
         - **-t** {int} (Required) = Number of threads to use
         - **-np** (Optional) = Perform a dry run to see what jobs will be executed without actually running them.
         - **-unlock** (Optional) = Unlock the working directory if Snakemake has somehow locked it.
-        - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improve the DAG resolution time from Snakemake. You can set the number with -nbatch (Default = 50)
+        - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with -nbatch (Default = 50)
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
 
 
@@ -125,6 +125,6 @@ The fields to be edited are the following:
     bash OrganPipe.sh -d . -t 4 -c test_data/config.csv
     ```
 
-4. **Cheking the Results**:
+4. **Checking the Results**:
 
 All results will be compiled in the `workflow/reports` directory. If you want to check the raw output files from the software used in the pipeline, you can find them in the `workflow/results` directory.

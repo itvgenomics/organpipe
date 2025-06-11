@@ -137,7 +137,7 @@ if __name__ == "__main__":
     sample = args.sample
     seed = args.seed
     kmer = args.kmer
-    sofware = args.software
+    software = args.software
 
     gb_dir = f"results/{sample}/genbanks"
 
@@ -160,7 +160,7 @@ if __name__ == "__main__":
             if (
                 seed in str(file)
                 and kmer in str(file)
-                and sofware in str(file)
+                and software in str(file)
                 and ".rotated." not in str(file)
             ):
                 output_file = str(file).replace(".gb", ".rotated.gb")

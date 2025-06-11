@@ -180,7 +180,7 @@ def main():
     # Initialize an empty list to store the IDs
     id_list = []
 
-    # Open the file and read each line
+    # Read Rfam IDs from file
     try:
         with open(args.rfam_ids, "r") as file:
             for line in file:

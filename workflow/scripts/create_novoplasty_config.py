@@ -79,7 +79,7 @@ def create_config_file(
     Genome Range          = {genome_range}
     K-mer                 = {kmer}
     Max memory            = {max_memory}
-    Extended log          =
+    Extended log          = 1
     Save assembled reads  = yes
     Seed Input            = resources/{sample}/seeds/{seed}.fasta
     Reference sequence    = {reference}
@@ -109,7 +109,6 @@ def create_config_file(
     Insert Range          =
     Insert Range strict   =
     Use Quality Scores    = no
-    Extented log          = 1
     Output path           = results/{sample}/novoplasty/{seed}/kmer{kmer}/
     """
 

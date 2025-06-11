@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This script finds mitogenomes from related species in public databases. 
+This script finds mitogenomes from related species in public databases.
 
 License:
     Copyright 2022 Ksenia Krasheninnikova
@@ -31,7 +31,7 @@ def get_lineage(species):
     if not len(record["IdList"]):
         raise Exception("No such species in NCBI!")
     if len(record["IdList"]) > 1:
-        raise Exception("More than one appropriate entires in NCBI!")
+        raise Exception("More than one appropriate entries in NCBI!")
     handle = Entrez.efetch(db="Taxonomy", id=record["IdList"][0], retmode="xml")
     records = Entrez.read(handle)
     handle.close()
@@ -96,17 +96,19 @@ def main(species, email, outfolder, min_length, n):
     if n < 1:
         print("Number of genomes to report must be at least 1 (default)")
         return
-    
+
     Entrez.email = email
     if not os.path.isdir(outfolder):
         os.makedirs(outfolder, exist_ok=True)
-    
+
     print("Looking for " + org_type + " for " + species)
     considered = set()
     for g in [species] + list(get_lineage(species)):
         if n > 0:
             print("Looking for an appropriate organelle among " + g)
-            considered, n = find_full_mito(g, outfolder, min_length, considered, org_type, n)
-    
+            considered, n = find_full_mito(
+                g, outfolder, min_length, considered, org_type, n
+            )
+
     if n == 1:  # Assuming n was originally set to 1
         print("No appropriate mitogenome found")

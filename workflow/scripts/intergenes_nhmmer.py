@@ -22,7 +22,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--sequencing_type",
-        help="Equipment used in the sequencing (e.g. shotr or long)",
+        help="Equipment used in the sequencing (e.g. short or long)",
         required=True,
     )
     parser.add_argument(
@@ -91,7 +91,7 @@ def parse_fasta(fasta_file):
 def extract_intergenes_sequences(
     genome_file, position_list, output_file, positions_dict
 ):
-    logging.info(f"Extracting intergenes regions")
+    logging.info(f"Extracting intergene regions")
     ranges = []
     positions = set()
     sequences = {}
@@ -321,10 +321,10 @@ if __name__ == "__main__":
                 if annotation.endswith(".cpgavas2.gb") and (
                     "Circularized_assembly_1" in annotation or "Option_1" in annotation
                 ) and args.kmer in annotation and args.seed in annotation:
-                    
+
                     if not os.path.exists(output_path):
                         os.makedirs(output_path)
-                    
+
                     unannotated_regions = extract_unannotated_regions_gb(
                         os.path.join(annotations_path, annotation)
                     )
