@@ -33,7 +33,7 @@ rule run_blastn:
     benchmark:
         "benchmarks/{sample}/images/{seed}_{kmer}_run_blastn.benchmark"
     singularity:
-        "docker://pegi3s/blast:2.13.0"
+        f"{config["sif_dir"]}/blast.sif"
     shell:
         """
         cat results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R1.fasta \
