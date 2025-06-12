@@ -87,12 +87,13 @@ rule run_pilon:
         f"{config["sif_dir"]}/pilon.sif"
     shell:
         """
+        chmod +x resources/pilon.sh && \
         export PARALLEL_GC_THREADS={threads} && \
 		export JAVA_TOOL_OPTIONS='-XX:ParallelGCThreads={threads}' && \
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
-                pilon --genome "$fasta_file" \
+                ./resources/pilon.sh --genome "$fasta_file" \
                 --fix all --changes \
                 --bam results/{wildcards.sample}/pilon/$fasta_header/"$fasta_header"_mapping.bam \
                 --output results/{wildcards.sample}/pilon/$fasta_header/$fasta_header --threads {threads} \
