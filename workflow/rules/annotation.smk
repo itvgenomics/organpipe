@@ -43,7 +43,7 @@ rule run_cpgavas2:
     benchmark:
         "benchmarks/{sample}/cpgavas2/{kmer}_{seed}_run_cpgavas2.benchmark"
     singularity:
-        f"{config["sif_dir"]}/pimba_adapterremoval.sif"
+        f"{config["sif_dir"]}/cpgavas2.sif"
     shell:
         """
         sed -i '/maker/s/-quiet/--ignore_nfs_tmp -quiet/' /apps/cpgavas2C/modules/plasAnno/bin/Annotation_Chloroplast_King.py && \
