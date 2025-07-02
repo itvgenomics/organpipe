@@ -110,7 +110,7 @@ if [ "$SETBATCH" = true ]; then
         export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
         export TMPDIR=$WORKDIR/tmp && \
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-            --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
+            --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
             --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
     done
 
@@ -118,6 +118,6 @@ else
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
     export TMPDIR=$WORKDIR/tmp && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-        --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
+        --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
         --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK
 fi
