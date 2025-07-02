@@ -16,18 +16,32 @@ rule run_mitos2:
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ "$fasta_header" != "INVALIDSEED_1" ]; then
-                awk '/^>/{{sub(/_pilon$/,"",$0)}}1' results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta > results/{wildcards.sample}/pilon/$fasta_header/temp.fasta && \
-                mv results/{wildcards.sample}/pilon/$fasta_header/temp.fasta results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta && \
-                mkdir -p results/{wildcards.sample}/mitos2/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header && \
+            original_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
+            if [ "$original_header" != "INVALIDSEED_1" ]; then
+                pilon_dir=results/{wildcards.sample}/pilon/$original_header
+
+                # Remove the _pilon sufix from the header
+                awk '/^>/{{sub(/_pilon$/,"",$0)}}1' $pilon_dir/$original_header.fasta > $pilon_dir/temp.fasta && \
+                mv $pilon_dir/temp.fasta $pilon_dir/$original_header.fasta && \
+
+                mitos_outdir=results/{wildcards.sample}/mitos2/{wildcards.seed}_kmer{wildcards.kmer}/$original_header
+
+                # Rewrite header to temporary short name
+                awk -v new_header=">temp_header" '/^>/{{$0=new_header}}1' "$pilon_dir/$original_header.fasta" > "$pilon_dir/temp.fasta"
+
+                # Run MITOS2
+                mkdir -p "$mitos_outdir" && \
                 runmitos.py --code {params.genetic_code} \
-                --input results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta \
-                --outdir results/{wildcards.sample}/mitos2/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header \
-                --refdir {params.refseq_dir} --noplots --best \
-                > results/{wildcards.sample}/mitos2/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/mitos.log 2>{log}
+                    --input "$pilon_dir/temp.fasta" \
+                    --outdir "$mitos_outdir" \
+                    --refdir {params.refseq_dir} --noplots --best \
+                    > "$mitos_outdir/mitos.log" 2>{log}
+
+                # Remove the temp.fasta file
+                rm "$pilon_dir/temp.fasta"
             fi
         done
+
         touch {output}
         """
 
