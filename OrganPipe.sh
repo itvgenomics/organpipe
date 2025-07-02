@@ -28,7 +28,7 @@ SETUNLOCK=""
 SETSUBSAMPLE=false
 SIFDIR=""
 SETBATCH="false"
-NBATCH=50
+NBATCH=15
 
 while [ "$1" != "" ]; do
     case $1 in
