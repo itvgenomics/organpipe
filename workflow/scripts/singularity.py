@@ -21,7 +21,7 @@ docker_images = [
     "pegi3s/blast:2.13.0",
     "staphb/hmmer:3.4",
     "itvdsbioinfo/pimba_adapterremoval:v2.2.3",
-    "brunomsilva/cpgavas2:latest",
+    "cpgavas2",
 ]
 
 sif_dir = args.sifdir
@@ -41,11 +41,25 @@ for image in docker_images:
         print(f"INFO: {output_file} already exists. Skipping pull for {image}.")
         continue
 
-    command = f"singularity pull {output_file} docker://{image}"
+    if image == "cpgavas2":
 
-    # Execute the command
-    try:
-        subprocess.run(command, shell=True, check=True)
-        print(f"INFO: Successfully pulled {image} to {output_file}")
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: Error pulling {image}: {e}")
+        command = f"singularity pull --arch amd64 {output_file} library://cliu/default/cpgavas2:0.03"
+
+        try:
+            subprocess.run(command, shell=True, check=True)
+            print(f"INFO: Successfully pulled {image} to {output_file}")
+        except subprocess.CalledProcessError as e:
+            print(f"ERROR: Error pulling {image}: {e}"
+                  )
+
+    else:
+
+        command = f"singularity pull {output_file} docker://{image}"
+
+        # Execute the command
+        try:
+            subprocess.run(command, shell=True, check=True)
+            print(f"INFO: Successfully pulled {image} to {output_file}")
+        except subprocess.CalledProcessError as e:
+            print(f"ERROR: Error pulling {image}: {e}")
+
