@@ -25,10 +25,10 @@ EOF
 
 SETNP=""
 SETUNLOCK=""
-SETSUBSAMPLE=false
 SIFDIR=""
 SETBATCH="false"
 NBATCH=15
+RERUN=false
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -53,6 +53,9 @@ while [ "$1" != "" ]; do
     -batch)
         SETBATCH=true
         ;;
+    -rerun)
+        RERUN=true
+        ;;
     -sifdir)
         shift
         SIFDIR=$1
@@ -68,9 +71,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-if [ "$SETSUBSAMPLE" = true ]; then
-    SETSUBSAMPLEFLAG="--scheduler-subsample $THREADS"
-fi
 
 CONFIGFILE=$(realpath "$CONFIGFILE")
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
@@ -88,6 +88,10 @@ fi
 echo "CONFIGFILE: $CONFIGFILE"
 echo "CONFIGTYPE: $CONFIGTYPE"
 
+if [ "$RERUN" = true ]; then
+    python $WORKDIR/workflow/scripts/rerun.py
+fi
+
 python "$SCRIPTDIR"/workflow/scripts/create_snakemake_config.py \
         --configfile "$CONFIGFILE"
 
@@ -102,7 +106,6 @@ else
 fi
 
 mkdir -p $WORKDIR/tmp $WORKDIR/singularity
-
 
 if [ "$SETBATCH" = true ]; then
     for ((batch=1; batch<=NBATCH; batch++))
