@@ -108,6 +108,8 @@ The fields to be edited are the following:
         - **-unlock** (Optional) = Unlock the working directory if Snakemake has somehow locked it.
         - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with -nbatch (Default = 15)
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
+        - **-rerun** (Optional) = Delete previous results and temporary files for the specified sample(s) to ensure a clean re-run with updated configurations. Use this when reprocessing samples with different parameters.
+
 
 
     - We recommend initially running the pipeline with the -np (dry run) flag. This will allow you to verify that all paths and configurations are correct and that the pipeline will execute as expected. It's a good way to ensure everything is set up properly before running the actual workflow.
