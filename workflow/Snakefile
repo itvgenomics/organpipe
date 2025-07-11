@@ -30,8 +30,10 @@ def get_output():
 
         if config["samples"][sample].get("sequencing_type", "").lower() == "short":
 
-            if config["samples"][sample].get("adapterremoval", "").lower() == "yes":
-                out.append(expand("resources/{sample}/rawreads/{sample}.pair{r}.truncated.gz", sample=sample, r=[1, 2]))
+            if config["samples"][sample].get("run_trimming", "").lower() == "yes":
+                out.append(expand("resources/{sample}/rawreads/{sample}.R{r}.trimmed.gz", sample=sample, r=[1, 2]))
+                if config["samples"][sample].get("adapters", ""):
+                    out.append(expand("resources/{sample}/adapters.txt", sample=sample))
             else:
                 out.append(expand("resources/{sample}/rawreads/{sample}_R{r}.fastq.gz", sample=sample, r=[1, 2]))
 

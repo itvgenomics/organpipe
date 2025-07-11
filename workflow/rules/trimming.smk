@@ -1,25 +1,26 @@
-rule run_adapterremoval2:
+rule run_fastp:
     input:
         r1 = "resources/{sample}/rawreads/{sample}_R1.fastq.gz",
         r2 = "resources/{sample}/rawreads/{sample}_R2.fastq.gz",
-        adapters="resources/{sample}/adapters.txt",
     output:
-        r1 = temp("resources/{sample}/rawreads/{sample}.pair1.truncated.gz"),
-        r2 = temp("resources/{sample}/rawreads/{sample}.pair2.truncated.gz")
+        r1 = temp("resources/{sample}/rawreads/{sample}.R1.trimmed.gz"),
+        r2 = temp("resources/{sample}/rawreads/{sample}.R2.trimmed.gz")
     log:
-        "logs/{sample}/trimming/{sample}_run_adapterremoval2.log"
+        "logs/{sample}/trimming/{sample}_run_fastp.log"
     threads: 4
     benchmark:
-        "benchmarks/{sample}/trimming/{sample}_run_adapterremoval2.benchmark"
+        "benchmarks/{sample}/trimming/{sample}_run_fastp.benchmark"
     params:
         minquality=lambda wildcards: config["samples"][wildcards.sample]["minquality"],
-        minlength=lambda wildcards: config["samples"][wildcards.sample]["minlength"]
+        minlength=lambda wildcards: config["samples"][wildcards.sample]["minlength"],
+        adapters=lambda wildcards: f"--adapter_fasta resources/{wildcards.sample}/adapters.txt" if config["samples"][wildcards.sample].get("adapters", "") else " --detect_adapter_for_pe "
     singularity:
-        f"{config["sif_dir"]}/pimba_adapterremoval.sif"
+        f"{config["sif_dir"]}/fastp.sif"
     shell:
         """
-        AdapterRemoval --file1 {input.r1} --file2 {input.r2} \
-        --threads {threads} --adapter-list {input.adapters} \
-        --trimwindows 10 --minquality {params.minquality} --minlength {params.minlength} \
-        --qualitymax 42 --mm 5 --basename resources/{wildcards.sample}/rawreads/{wildcards.sample} --gzip >> {log} 2>&1
+        fastp --in1 {input.r1} --in2 {input.r2} {params.adapters} \
+        --length_required {params.minlength} --cut_mean_quality {params.minquality} --thread {threads} \
+        --html resources/{wildcards.sample}/rawreads/fastp.html \
+        --json resources/{wildcards.sample}/rawreads/fastp.json \
+        --out1 {output.r1} --out2 {output.r2} >> {log} 2>&1
         """

@@ -18,7 +18,7 @@ organelle: "mito"
 genetic_code: 2
 
 # If a reference is available, you can give here the path to the fasta file, blank if not.
-reference: 
+reference:
 
 ################################
 ########## INPUT INFO ##########
@@ -37,11 +37,11 @@ annotation: "Yes"
 ####### QUALITY CONTROL ########
 ################################
 
-# Run the AdapterRevomal v2 Software to perform adapter trimming and quality control (illumina short reads only) (Yes or No)
-adapterremoval: "No"
+# Run the Fastp Software to perform adapter trimming and quality control (illumina short reads only) (Yes or No)
+run_trimming: "No"
 
-# Adapters list in a .txt file for AdapterRemoval v2 input
-adapters: 
+# Adapters list in a .txt file for Fastp input
+adapters:
 
 # Reads shorter than this length are discarded following trimming
 minlength:
@@ -55,11 +55,11 @@ minquality:
 
 # Path to seed file and format to be used ("fasta" or "genbank")
 # If using long reads, leave the seedformat and feature blank
-seed_format: 
-seed_file: 
+seed_format:
+seed_file:
 
 # If Genbank file provided, select the feature to be used (CDS, rRNA or tRNA)
-feature: 
+feature:
 
 # If you don't want to provide any seed file, search NCBI (Yes or No) to acquire fasta files
 # If "Yes", make sure that seed_format is blank
@@ -96,7 +96,7 @@ insert_size: 251
 run_nhmmer: "No"
 
 # Path to the .hmm hmmer DB
-nhmmer_db: 
+nhmmer_db:
 
 # Create the OGDraw, Depth and Recruitment Plot
 run_images: "Yes"

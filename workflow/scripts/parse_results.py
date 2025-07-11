@@ -1024,6 +1024,14 @@ if __name__ == "__main__":
 
         for sample in sample_keys:
             if config["samples"][sample]["sequencing_type"].lower() == "short":
+                if config["samples"][sample]["run_trimming"].lower() == "yes":
+                    logging.info("Getting Fastp files for sample: {sample}")
+                    os.makedirs(f"workflow/reports/{sample}/files/", exist_ok=True)
+                    shutil.copy(
+                        f"workflow/resources/{sample}/rawreads/fastp.html",
+                        f"workflow/reports/{sample}/files/fastp.html",
+                    )
+
                 logging.info(f"Parsing NOVOPlasty sample: {sample}")
                 for root, dirs, files in os.walk(f"results/{sample}/novoplasty"):
                     for file in files:

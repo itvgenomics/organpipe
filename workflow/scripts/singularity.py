@@ -1,6 +1,17 @@
 import os
 import subprocess
 import argparse
+import logging
+import sys
+
+FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
+
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format=FORMAT,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 parser = argparse.ArgumentParser(description="Process some Docker images.")
 parser.add_argument(
@@ -20,7 +31,7 @@ docker_images = [
     "itvdsbioinfo/ogdraw:1.1.1",
     "pegi3s/blast:2.13.0",
     "staphb/hmmer:3.4",
-    "itvdsbioinfo/pimba_adapterremoval:v2.2.3",
+    "swglh/fastp:1.0.1",
     "cpgavas2",
 ]
 
@@ -29,7 +40,7 @@ sif_dir = args.sifdir
 os.makedirs(os.path.abspath(sif_dir), exist_ok=True)
 
 for image in docker_images:
-    print(f"INFO: Fetching {image} to {sif_dir}.")
+    logging.info(f"Fetching {image} to {sif_dir}.")
 
     # Construct the singularity pull command with output directory
     output_file = os.path.join(
@@ -38,7 +49,7 @@ for image in docker_images:
 
     # Check if the SIF file already exists
     if os.path.exists(output_file):
-        print(f"INFO: {output_file} already exists. Skipping pull for {image}.")
+        logging.info(f"{output_file} already exists. Skipping pull for {image}.")
         continue
 
     if image == "cpgavas2":
@@ -47,10 +58,9 @@ for image in docker_images:
 
         try:
             subprocess.run(command, shell=True, check=True)
-            print(f"INFO: Successfully pulled {image} to {output_file}")
+            logging.info(f"Successfully pulled {image} to {output_file}")
         except subprocess.CalledProcessError as e:
-            print(f"ERROR: Error pulling {image}: {e}"
-                  )
+            logging.info(f"ERROR: Error pulling {image}: {e}")
 
     else:
 
@@ -59,7 +69,6 @@ for image in docker_images:
         # Execute the command
         try:
             subprocess.run(command, shell=True, check=True)
-            print(f"INFO: Successfully pulled {image} to {output_file}")
+            logging.info(f"Successfully pulled {image} to {output_file}")
         except subprocess.CalledProcessError as e:
-            print(f"ERROR: Error pulling {image}: {e}")
-
+            logging.error(f"ERROR: Error pulling {image}: {e}")

@@ -1,10 +1,10 @@
 rule create_hash:
     input:
         r1=lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.pair1.truncated.gz" if config["samples"][wildcards.sample].get("adapterremoval", "").lower() == "yes"
+            "resources/{sample}/rawreads/{sample}.R1.trimmed.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
             else "resources/{sample}/rawreads/{sample}_R1.fastq.gz",
         r2=lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.pair2.truncated.gz" if config["samples"][wildcards.sample].get("adapterremoval", "").lower() == "yes"
+            "resources/{sample}/rawreads/{sample}.R2.trimmed.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
             else "resources/{sample}/rawreads/{sample}_R2.fastq.gz"
     output:
         "results/{sample}/hashtable/kmer{kmer}/hash_config.txt",

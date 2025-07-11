@@ -33,11 +33,11 @@ genome_range:
 ####### QUALITY CONTROL ########
 ################################
 
-# Choose whether to run the AdapterRemoval v2 software for adapter trimming and quality control on Illumina short reads.
+# Choose whether to run the Fastp software for adapter trimming and quality control on Illumina short reads.
 # Options: "Yes" to perform trimming, "No" to skip this step.
-adapterremoval:
+run_trimming:
 
-# Provide the path to a text file listing adapter sequences to be removed by AdapterRemoval v2.
+# Provide the path to a text file listing adapter sequences to be removed by Fastp. You can leave this blank if Fastp can identify your adapters automatically.
 adapters:
 
 # Set the minimum read length to retain after trimming. Reads shorter than this length will be discarded.
