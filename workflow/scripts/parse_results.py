@@ -115,22 +115,28 @@ def concat_csv_files(directory):
     # Create an empty list to hold the DataFrames
     dataframes = []
 
-    # Loop through all files in the directory
-    for filename in os.listdir(directory):
-        if filename.endswith(".csv"):
-            # Construct full file path
-            file_path = os.path.join(directory, filename)
-            # Read the CSV file and append the DataFrame to the list
-            df = pd.read_csv(file_path)
-            dataframes.append(df)
-
     try:
-        # Concatenate all DataFrames in the list into a single DataFrame
-        combined_df = pd.concat(dataframes, ignore_index=True)
-        return combined_df
+        # Loop through all files in the directory
+        for filename in os.listdir(directory):
+            if filename.endswith(".csv"):
+                # Construct full file path
+                file_path = os.path.join(directory, filename)
+                # Read the CSV file and append the DataFrame to the list
+                df = pd.read_csv(file_path)
+                dataframes.append(df)
+
+        try:
+            # Concatenate all DataFrames in the list into a single DataFrame
+            combined_df = pd.concat(dataframes, ignore_index=True)
+            return combined_df
+
+        except Exception as e:
+            logging.error(f"Warning while parsing Table: {e}")
 
     except Exception as e:
-        logging.error(f"Warning while parsing Table 1: {e}")
+        logging.error(
+            f"Warning: {e}. This might be due to an empty directory or no CSV files found."
+        )
 
 
 def parse_mitos2(logfile):
@@ -507,7 +513,7 @@ def parse_cpgavas2_report_table(logfile):
                 index=False,
             )
         except Exception as e:
-            logging.error(f"Warning while parsing Table 1: {e}")
+            logging.error(f"Warning while parsing Table: {e}")
 
         # Parse Table 2: Lengths of Introns and Exons
         try:
@@ -536,7 +542,7 @@ def parse_cpgavas2_report_table(logfile):
                 index=False,
             )
         except Exception as e:
-            logging.error(f"Warning while parsing Table 2: {e}")
+            logging.error(f"Warning while parsing Table: {e}")
 
         # Parse Table 3: Codon Usage
         try:
@@ -556,7 +562,7 @@ def parse_cpgavas2_report_table(logfile):
                 index=False,
             )
         except Exception as e:
-            logging.error(f"Warning while parsing Table 3: {e}")
+            logging.error(f"Warning while parsing Table: {e}")
 
 
 def parse_cpgavas2_problems(logfile):
@@ -647,7 +653,7 @@ def parse_ncRNA_nhmmer(logfile):
         df.to_csv(f"workflow/reports/{sample}/nhmmer/ncRNA/{assembly}.csv", index=False)
 
     except Exception as e:
-        logging.error(f"Warning while parsing Table 1: {e}")
+        logging.error(f"Warning while parsing Table: {e}")
 
 
 def parse_intergenes_nhmmer(logfile):
@@ -703,7 +709,7 @@ def parse_intergenes_nhmmer(logfile):
         )
 
     except Exception as e:
-        logging.error(f"Warning while parsing Table 1: {e}")
+        logging.error(f"Warning while parsing Table: {e}")
 
 
 def parse_mitohifi(statsfile):
@@ -768,7 +774,7 @@ def parse_ncRNA_nhmmer_long(logfile):
         df.to_csv(f"workflow/reports/{sample}/nhmmer/ncRNA/{seed}.csv", index=False)
 
     except Exception as e:
-        logging.error(f"Warning while parsing Table 1: {e}")
+        logging.error(f"Warning while parsing Table: {e}")
 
 
 def parse_intergenes_nhmmer_long(logfile):
@@ -819,7 +825,7 @@ def parse_intergenes_nhmmer_long(logfile):
         )
 
     except Exception as e:
-        logging.error(f"Warning while parsing Table 1: {e}")
+        logging.error(f"Warning while parsing Table: {e}")
 
 
 def convert_genbank_to_fasta(genbank_file, fasta_file):
@@ -1076,13 +1082,15 @@ if __name__ == "__main__":
                     combined_df = concat_csv_files(
                         f"workflow/reports/{sample}/cpgavas2/report_table/codon_usage"
                     )
-                    combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
-                    combined_df.reset_index(drop=True, inplace=True)
 
-                    combined_df.to_csv(
-                        f"workflow/reports/{sample}/cpgavas2_codon_usage.csv",
-                        index=False,
-                    )
+                    if combined_df is not None and not combined_df.empty:
+                        combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
+                        combined_df.reset_index(drop=True, inplace=True)
+
+                        combined_df.to_csv(
+                            f"workflow/reports/{sample}/cpgavas2_codon_usage.csv",
+                            index=False,
+                        )
 
                     logging.info(
                         f"Joining CPGAVAS2 Report Table Intron Exon .csv files for sample: {sample}"
@@ -1091,13 +1099,15 @@ if __name__ == "__main__":
                     combined_df = concat_csv_files(
                         f"workflow/reports/{sample}/cpgavas2/report_table/intron_exon"
                     )
-                    combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
-                    combined_df.reset_index(drop=True, inplace=True)
 
-                    combined_df.to_csv(
-                        f"workflow/reports/{sample}/cpgavas2_intron_exon.csv",
-                        index=False,
-                    )
+                    if combined_df is not None and not combined_df.empty:
+                        combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
+                        combined_df.reset_index(drop=True, inplace=True)
+
+                        combined_df.to_csv(
+                            f"workflow/reports/{sample}/cpgavas2_intron_exon.csv",
+                            index=False,
+                        )
 
                     logging.info(
                         f"Joining CPGAVAS2 Report Table Gene Composition .csv files for sample: {sample}"
@@ -1106,13 +1116,15 @@ if __name__ == "__main__":
                     combined_df = concat_csv_files(
                         f"workflow/reports/{sample}/cpgavas2/report_table/gene_composition"
                     )
-                    combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
-                    combined_df.reset_index(drop=True, inplace=True)
 
-                    combined_df.to_csv(
-                        f"workflow/reports/{sample}/cpgavas2_gene_composition.csv",
-                        index=False,
-                    )
+                    if combined_df is not None and not combined_df.empty:
+                        combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
+                        combined_df.reset_index(drop=True, inplace=True)
+
+                        combined_df.to_csv(
+                            f"workflow/reports/{sample}/cpgavas2_gene_composition.csv",
+                            index=False,
+                        )
 
                     logging.info(
                         f"Joining CPGAVAS2 Problems .csv files for sample: {sample}"
@@ -1121,13 +1133,15 @@ if __name__ == "__main__":
                     combined_df = concat_csv_files(
                         f"workflow/reports/{sample}/cpgavas2/problems"
                     )
-                    combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
-                    combined_df.reset_index(drop=True, inplace=True)
 
-                    combined_df.to_csv(
-                        f"workflow/reports/{sample}/cpgavas2_problems.csv",
-                        index=False,
-                    )
+                    if combined_df is not None and not combined_df.empty:
+                        combined_df = combined_df.sort_values(by=["Seed", "Kmer"])
+                        combined_df.reset_index(drop=True, inplace=True)
+
+                        combined_df.to_csv(
+                            f"workflow/reports/{sample}/cpgavas2_problems.csv",
+                            index=False,
+                        )
 
                 logging.info(f"Parsing PILON sample: {sample}")
                 for root, dirs, files in os.walk(f"results/{sample}/pilon"):
