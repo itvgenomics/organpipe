@@ -26,7 +26,7 @@ reference:
 # Indicate the type of sequencing data: "Short" for Illumina short reads or "Long" for PacBio/ONT reads.
 sequencing_type:
 
-# Specify the expected genome size range in kilobases (e.g., 15000-18000 for mitochondria).
+# Specify the expected genome size range in kilobases (e.g., "15000-18000" for mitochondria).
 genome_range:
 
 ################################
@@ -62,7 +62,7 @@ feature:
 # Options: "Yes" to search NCBI, "No" to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
 search_ncbi:
 
-# List the specific genes (e.g., "COI", "16S", "ATP6") to search for on NCBI if NCBI search is enabled.
+# List the specific genes (e.g., "COI,16S,ATP6") to search for on NCBI if NCBI search is enabled.
 search_genes:
 
 # Specify the taxon name to use as a query when searching NCBI (e.g., "Amphisbaena").
@@ -90,7 +90,7 @@ insert_size:
 ################################
 
 # Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
-annotation:
+annotation: "Yes"
 
 # Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: "Yes" or "No".
 run_nhmmer: "No"
@@ -101,4 +101,4 @@ run_nhmmer: "No"
 nhmmer_db: "resources/rfam.hmm"
 
 # Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: "Yes" or "No".
-run_images: "Yes"
+run_images: "No"
