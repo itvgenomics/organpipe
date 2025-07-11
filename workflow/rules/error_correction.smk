@@ -41,9 +41,10 @@ rule run_bwa_mem:
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             mkdir -p results/{wildcards.sample}/pilon/$fasta_header && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
-                bwa-mem2.avx mem -t {threads} "$fasta_file" \
-                results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R1.fasta \
-                results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R2.fasta | samtools view - -Sb | samtools sort - -@ {threads} \
+                {{ bwa-mem2.avx mem -t {threads} "$fasta_file" \
+                    results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R1.fasta \
+                    results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R2.fasta 2>> {log}
+                }} | samtools view - -Sb | samtools sort - -@ {threads} \
                 -o results/{wildcards.sample}/pilon/$fasta_header/"$fasta_header"_mapping.bam >> {log} 2>&1
             fi
         done

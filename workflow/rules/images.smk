@@ -115,9 +115,10 @@ rule run_bwa_mem_rotated:
         for fasta_file in results/{wildcards.sample}/images/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [[ "$fasta_header" == *.rotated ]]; then
-                bwa-mem2.avx mem -t {threads} "$fasta_file" \
+                {{ bwa-mem2.avx mem -t {threads} "$fasta_file" \
                 results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R1.fasta \
-                results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R2.fasta | samtools view - -Sb | samtools sort - -@ {threads} \
+                results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R2.fasta 2>> {log}
+                }} | samtools view - -Sb | samtools sort - -@ {threads} \
                 -o results/{wildcards.sample}/images/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header"_mapping.bam >> {log} 2>&1
             fi
         done
