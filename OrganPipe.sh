@@ -29,6 +29,7 @@ SIFDIR=""
 SETBATCH="false"
 NBATCH=15
 RERUN=false
+SETNOTEMP=""
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -49,6 +50,9 @@ while [ "$1" != "" ]; do
         ;;
     -unlock)
         SETUNLOCK="--unlock"
+        ;;
+    -notemp)
+        SETNOTEMP="--notemp"
         ;;
     -batch)
         SETBATCH=true
@@ -114,7 +118,7 @@ if [ "$SETBATCH" = true ]; then
         export TMPDIR=$WORKDIR/tmp && \
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
             --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
-            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
+            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK $SETNOTEMP --batch all=$batch/$NBATCH
     done
 
 else
@@ -122,5 +126,5 @@ else
     export TMPDIR=$WORKDIR/tmp && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
         --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
-        --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK
+        --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK $SETNOTEMP
 fi

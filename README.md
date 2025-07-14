@@ -109,6 +109,7 @@ The fields to be edited are the following:
         - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with -nbatch (Default = 15)
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
         - **-rerun** (Optional) = Delete previous results and temporary files for the specified sample(s) to ensure a clean re-run with updated configurations. Use this when reprocessing samples with different parameters.
+        - **-notemp** (Optional) = Instructs Snakemake to ignore all temp() declarations. This prevents deletion of temporary files that may still be needed by other steps in the workflow. Recommended when running only a portion of the pipeline or working with multiple samples, as it helps avoid accidentally removing shared intermediate files that other jobs depend on.
 
 
 
