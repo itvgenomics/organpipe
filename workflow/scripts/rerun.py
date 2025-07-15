@@ -64,3 +64,12 @@ if __name__ == "__main__":
             shutil.rmtree(f"resources/{sample}", ignore_errors=True)
         except:
             logging.warning(f"Failed to remove resources/{sample}. It may not exist.")
+
+        logging.info(f"Removing workflow/reports/{sample} files.")
+
+        try:
+            shutil.rmtree(f"workflow/reports/{sample}", ignore_errors=True)
+        except:
+            logging.warning(
+                f"Failed to remove workflow/reports/{sample}. It may not exist."
+            )
