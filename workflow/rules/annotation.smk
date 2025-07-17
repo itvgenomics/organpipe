@@ -67,6 +67,7 @@ rule run_cpgavas2:
                 random_pid=$(( (RANDOM + RANDOM * 32768 + RANDOM * 32768 * 32768) % 999999999 + 1 )) && \
                 awk '/^>/{{sub(/_pilon$/,"",$0)}}1' results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta > results/{wildcards.sample}/pilon/$fasta_header/temp.fasta && \
                 mv results/{wildcards.sample}/pilon/$fasta_header/temp.fasta results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta && \
+                rm -rf results/{wildcards.sample}/cpgavas2/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header && \
                 mkdir -p results/{wildcards.sample}/cpgavas2/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header && \
                 run-cpgavas2 -pid $random_pid -in results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta -db 2 >> {log} 2>&1 && \
                 mv /tmp/dir_$random_pid/* results/{wildcards.sample}/cpgavas2/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/
