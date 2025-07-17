@@ -223,7 +223,11 @@ if __name__ == "__main__":
             logging.info(f"Preparing Sample: {sample_id}")
 
             sample = sample_id
-            kmers = data["kmers"].split(",")
+
+            if data["sequencing_type"].lower() == "short":
+                kmers = data["kmers"].split(",")
+            else:
+                kmers = ""
 
             create_dirs(sample)
 

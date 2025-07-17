@@ -23,6 +23,17 @@ import os
 from Bio import Entrez
 from Bio import SeqIO
 from io import StringIO
+import logging
+import sys
+
+FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
+
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format=FORMAT,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def get_lineage(species):
@@ -65,7 +76,7 @@ def find_full_mito(
                 considered.add(seqrecord.id)
                 if len(seqrecord) > length_threshold:
                     if len(seqrecord.features) < 10:
-                        print(
+                        logging.info(
                             "Not enough features in gb file! skipping " + seqrecord.id
                         )
                         continue
@@ -80,7 +91,7 @@ def find_full_mito(
                         os.path.join(outfolder, ncbi_code + ".fasta"), "w"
                     ) as out:
                         out.write(record_)
-                    print(
+                    logging.info(
                         "output is written to "
                         + os.path.join(outfolder, ncbi_code)
                         + ".[gb,fasta]"
@@ -94,21 +105,21 @@ def find_full_mito(
 def main(species, email, outfolder, min_length, n):
     org_type = "mitochondrion"
     if n < 1:
-        print("Number of genomes to report must be at least 1 (default)")
+        logging.info("Number of genomes to report must be at least 1 (default)")
         return
 
     Entrez.email = email
     if not os.path.isdir(outfolder):
         os.makedirs(outfolder, exist_ok=True)
 
-    print("Looking for " + org_type + " for " + species)
+    logging.info("Looking for " + org_type + " for " + species)
     considered = set()
     for g in [species] + list(get_lineage(species)):
         if n > 0:
-            print("Looking for an appropriate organelle among " + g)
+            logging.info("Looking for an appropriate organelle among " + g)
             considered, n = find_full_mito(
                 g, outfolder, min_length, considered, org_type, n
             )
 
     if n == 1:  # Assuming n was originally set to 1
-        print("No appropriate mitogenome found")
+        logging.info("No appropriate mitogenome found")
