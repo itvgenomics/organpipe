@@ -107,6 +107,7 @@ def check_reads_path(config):
     path = config.get("reads_path")
     sample_field = config.get("sample", "")
     samples = parse_samples(sample_field)
+    sequencing_type = config.get("sequencing_type", "").strip().lower()
 
     if not path:
         return ["Field `reads_path` is not set."]
@@ -114,32 +115,58 @@ def check_reads_path(config):
         return [f"`reads_path` '{path}' is not a valid directory."]
 
     files = os.listdir(path)
-    fastq_fasta_files = [
-        f for f in files if f.endswith(".fastq.gz") or f.endswith(".fasta.gz")
-    ]
 
-    if not fastq_fasta_files:
+    if sequencing_type == "short":
+        fastq_fasta_files = [
+            f for f in files if f.endswith(".fastq.gz") or f.endswith(".fasta.gz")
+        ]
+
+        if not fastq_fasta_files:
+            errors.append(
+                f"`reads_path` '{path}' does not contain any .fastq.gz or .fasta.gz files."
+            )
+
+        r1_files = [f for f in fastq_fasta_files if "_R1" in f or "_pair1" in f]
+        r2_files = [f for f in fastq_fasta_files if "_R2" in f or "_pair2" in f]
+
+        if not r1_files:
+            errors.append("No read files found with `_R1` or `_pair1` in the filename.")
+        if not r2_files:
+            errors.append("No read files found with `_R2` or `_pair2` in the filename.")
+
+        # Sample validation
+        if samples and samples != ["all"]:
+            for sample in samples:
+                sample_matches = [f for f in fastq_fasta_files if sample in f]
+                if not sample_matches:
+                    errors.append(
+                        f"No read filenames in '{path}' contain the sample name '{sample}'. "
+                        "Filenames must include each sample name."
+                    )
+
+        return errors
+
+    elif sequencing_type == "long":
+        fasta_files = [f for f in files if f.endswith(".fasta")]
+
+        if not fasta_files:
+            errors.append(
+                f"`reads_path` '{path}' does not contain any .fasta files for long reads."
+            )
+
+        # Sample validation
+        if samples and samples != ["all"]:
+            for sample in samples:
+                sample_matches = [f for f in fasta_files if sample in f]
+                if not sample_matches:
+                    errors.append(
+                        f"No .fasta.gz filenames in '{path}' contain the sample name '{sample}'. "
+                        "Filenames must include each sample name."
+                    )
+    else:
         errors.append(
-            f"`reads_path` '{path}' does not contain any .fastq.gz or .fasta.gz files."
+            f"`sequencing_type` must be 'short' or 'long', but found: '{config.get('sequencing_type')}'"
         )
-
-    r1_files = [f for f in fastq_fasta_files if "_R1" in f or "_pair1" in f]
-    r2_files = [f for f in fastq_fasta_files if "_R2" in f or "_pair2" in f]
-
-    if not r1_files:
-        errors.append("No read files found with `_R1` or `_pair1` in the filename.")
-    if not r2_files:
-        errors.append("No read files found with `_R2` or `_pair2` in the filename.")
-
-    # Sample validation
-    if samples and samples != ["all"]:
-        for sample in samples:
-            sample_matches = [f for f in fastq_fasta_files if sample in f]
-            if not sample_matches:
-                errors.append(
-                    f"No read filenames in '{path}' contain the sample name '{sample}'. "
-                    "Filenames must include each sample name."
-                )
 
     return errors
 
@@ -301,13 +328,35 @@ def check_yes_no_fields(config):
     fields = ["annotation", "run_trimming", "run_nhmmer", "run_images"]
     allowed = {"yes", "no", "Yes", "No"}
 
+    sequencing_type = str(config.get("sequencing_type", "")).strip().lower()
+
     for field in fields:
-        value = str(config.get(field, "")).strip().lower()
-        if value not in allowed:
-            errors.append(
-                f"Invalid value for `{field}`: '{config.get(field)}'. "
-                "Accepted values are: 'yes' or 'no'."
-            )
+        if field == "run_trimming":
+            if sequencing_type == "long":
+                allowed = {"None", "nan", "no", "No", "none"}
+                value = str(config.get(field, "")).strip().lower()
+                if value not in allowed:
+                    errors.append(
+                        f"Invalid value for `{field}`: '{config.get(field)}'. "
+                        "Accepted values are: empty or 'no'."
+                    )
+
+            elif sequencing_type == "short":
+                value = str(config.get(field, "")).strip().lower()
+                if value not in allowed:
+                    errors.append(
+                        f"Invalid value for `{field}`: '{config.get(field)}'. "
+                        "Accepted values are: 'yes' or 'no'."
+                    )
+
+        else:
+            value = str(config.get(field, "")).strip().lower()
+            if value not in allowed:
+                errors.append(
+                    f"Invalid value for `{field}`: '{config.get(field)}'. "
+                    "Accepted values are: 'yes' or 'no'."
+                )
+
     return errors
 
 
@@ -335,54 +384,65 @@ def check_seed_format_and_file(config):
     errors = []
     seed_format = str(config.get("seed_format", "")).strip().lower()
     seed_file = str(config.get("seed_file", "")).strip()
+    sequencing_type = config.get("sequencing_type", "").strip().lower()
 
-    if seed_format == "fasta":
-        if seed_file in ["None", "nan"]:
+    if sequencing_type == "short":
+        if seed_format == "fasta":
+            if seed_file in ["None", "nan"]:
+                errors.append(
+                    f"`seed_format` is set to '{seed_format}', but no `seed_file` is provided."
+                )
+            elif not os.path.isfile(seed_file):
+                errors.append(
+                    f"`seed_file` is set to '{seed_file}', but this file does not exist."
+                )
+
+            valid_exts = (".fasta", ".fa", ".fna")
+            if not seed_file.endswith(valid_exts):
+                errors.append(
+                    f"`seed_file` is set to '{seed_file}', but it doesn't end with a valid FASTA extension "
+                    f"(expected one of: {', '.join(valid_exts)})."
+                )
+
+        elif seed_format == "genbank":
+            feature = str(config.get("feature", "")).strip()
+            if not feature or feature not in ["CDS", "rRNA", "tRNA"]:
+                errors.append(
+                    f"`feature` is not set appropriate. Must be 'CDS', 'rRNA' or 'tRNA' (case sensitive)."
+                )
+
+            if seed_file in ["None", "nan"]:
+                errors.append(
+                    f"`seed_format` is set to '{seed_format}', but no `seed_file` is provided."
+                )
+            elif not os.path.isfile(seed_file):
+                errors.append(
+                    f"`seed_file` is set to '{seed_file}', but this file does not exist."
+                )
+
+            valid_exts = (".gb", ".gbk", ".genbank")
+            if not seed_file.endswith(valid_exts):
+                errors.append(
+                    f"`seed_file` is set to '{seed_file}', but it doesn't end with a valid GENBANK extension "
+                    f"(expected one of: {', '.join(valid_exts)})."
+                )
+
+        elif seed_format in ["None", "nan"]:
             errors.append(
-                f"`seed_format` is set to '{seed_format}', but no `seed_file` is provided."
-            )
-        elif not os.path.isfile(seed_file):
-            errors.append(
-                f"`seed_file` is set to '{seed_file}', but this file does not exist."
+                f"Invalid value for `seed_format`: '{config.get('seed_format')}'. "
+                "Accepted values are: 'fasta' or 'genbank' (case sensitive)."
             )
 
-        valid_exts = (".fasta", ".fa", ".fna")
-        if not seed_file.endswith(valid_exts):
+        return errors
+
+    if sequencing_type == "long":
+        if seed_format not in ["None", "nan"] and seed_file not in ["None", "nan"]:
+
             errors.append(
-                f"`seed_file` is set to '{seed_file}', but it doesn't end with a valid FASTA extension "
-                f"(expected one of: {', '.join(valid_exts)})."
+                f"`sequencing_type` is set to '{sequencing_type}', so `seed_format` and `seed_file` must be empty. Set `search_ncbi` to 'yes' to search NCBI for seed sequences."
             )
 
-    elif seed_format == "genbank":
-        feature = str(config.get("feature", "")).strip()
-        if not feature or feature not in ["CDS", "rRNA", "tRNA"]:
-            errors.append(
-                f"`feature` is not set appropriate. Must be 'CDS', 'rRNA' or 'tRNA' (case sensitive)."
-            )
-
-        if seed_file in ["None", "nan"]:
-            errors.append(
-                f"`seed_format` is set to '{seed_format}', but no `seed_file` is provided."
-            )
-        elif not os.path.isfile(seed_file):
-            errors.append(
-                f"`seed_file` is set to '{seed_file}', but this file does not exist."
-            )
-
-        valid_exts = (".gb", ".gbk", ".genbank")
-        if not seed_file.endswith(valid_exts):
-            errors.append(
-                f"`seed_file` is set to '{seed_file}', but it doesn't end with a valid GENBANK extension "
-                f"(expected one of: {', '.join(valid_exts)})."
-            )
-
-    elif seed_format in ["None", "nan"]:
-        errors.append(
-            f"Invalid value for `seed_format`: '{config.get('seed_format')}'. "
-            "Accepted values are: 'fasta' or 'genbank' (case sensitive)."
-        )
-
-    return errors
+            return errors
 
 
 def check_run_trimming_requirements(config):
@@ -412,19 +472,35 @@ def check_search_ncbi_requirements(config):
             "Accepted values are: 'yes' or 'no'."
         )
 
-    if search_ncbi == "yes":
-        if str(config.get("search_genes", "")).strip() in ["None", "nan"]:
-            errors.append("`search_ncbi` is 'Yes', but `search_genes` is not set.")
-        if str(config.get("search_term", "")).strip() in ["None", "nan"]:
-            errors.append("`search_ncbi` is 'Yes', but `search_term` is not set.")
-        if str(config.get("max_references", "")).strip() in ["None", "nan"]:
-            errors.append("`search_ncbi` is 'Yes', but `max_references` is not set.")
-
-    if seq_type in ["Long", "long"]:
+    if seq_type == "long":
         if search_ncbi == "yes":
+
+            if str(config.get("search_term", "")).strip() in ["None", "nan"]:
+                errors.append("`search_ncbi` is 'Yes', but `search_term` is not set.")
+
+            if str(config.get("max_references", "")).strip() in ["None", "nan"]:
+                errors.append(
+                    "`search_ncbi` is 'Yes', but `max_references` is not set."
+                )
+
+        else:
             errors.append(
-                "`seq_type` is 'long', but `search_ncbi` is set to 'yes'. Please change it to 'no'"
+                f"Invalid value for `search_ncbi`: '{config.get('search_ncbi')}'."
+                f"If your sequencing_type is set to `long`, you need to run with search_ncbi: `yes`."
             )
+
+    elif seq_type == "short":
+        if search_ncbi == "yes":
+            if str(config.get("search_genes", "")).strip() in ["None", "nan"]:
+                errors.append("`search_ncbi` is 'Yes', but `search_genes` is not set.")
+
+            if str(config.get("search_term", "")).strip() in ["None", "nan"]:
+                errors.append("`search_ncbi` is 'Yes', but `search_term` is not set.")
+
+            if str(config.get("max_references", "")).strip() in ["None", "nan"]:
+                errors.append(
+                    "`search_ncbi` is 'Yes', but `max_references` is not set."
+                )
 
     return errors
 
