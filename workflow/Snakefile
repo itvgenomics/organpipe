@@ -106,14 +106,20 @@ def get_output():
                         out.append(expand("results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check", sample=sample, seed=seeds, kmer=kmers))
 
         elif config["samples"][sample].get("sequencing_type", "").lower() == "long":
-            out.append(expand("resources/{sample}/rawreads/{sample}.fasta", sample=sample))
+
+            if config["samples"][sample].get("run_trimming", "").lower() == "yes":
+                out.append(expand("resources/{sample}/rawreads/{sample}.trimmed.fastq.gz", sample=sample))
+                out.append(expand("resources/{sample}/rawreads/{sample}.trimmed.fasta", sample=sample))
+            else:
+                out.append(expand("resources/{sample}/rawreads/{sample}.fasta", sample=sample))
+
             out.append(expand("results/{sample}/mitohifi/{seed}/contigs_stats.tsv", sample=sample, seed=seeds))
 
-                if config["samples"][sample].get("run_nhmmer", "").lower() == "yes":
-                    out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_sequences.check", sample=sample, seed=seeds))
-                    out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_nhmmer.check", sample=sample, seed=seeds))
-                    out.append(expand("results/{sample}/nhmmer/{seed}/ncRNA_sequences.check", sample=sample, seed=seeds))
-                    out.append(expand("results/{sample}/nhmmer/{seed}/ncRNA_nhmmer.check", sample=sample, seed=seeds))
+            if config["samples"][sample].get("run_nhmmer", "").lower() == "yes":
+                out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_sequences.check", sample=sample, seed=seeds))
+                out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_nhmmer.check", sample=sample, seed=seeds))
+                out.append(expand("results/{sample}/nhmmer/{seed}/ncRNA_sequences.check", sample=sample, seed=seeds))
+                out.append(expand("results/{sample}/nhmmer/{seed}/ncRNA_nhmmer.check", sample=sample, seed=seeds))
 
     return out
 

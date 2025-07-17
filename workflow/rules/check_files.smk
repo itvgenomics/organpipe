@@ -20,8 +20,8 @@ def get_longreads(sample):
             file_path = os.path.join(root, file)
             files_list.append(file_path)
 
-    single_reads = [file for file in files_list if sample in file]
-    return {"single_reads": single_reads[0]}
+    long_reads = [file for file in files_list if sample in file]
+    return {"long_reads": long_reads[0]}
 
 rule check_shortreads_files:
     input:
@@ -37,15 +37,34 @@ rule check_shortreads_files:
         cp {input.reverse_reads} {output.r2}
         """
 
-rule check_longreads_files:
+rule check_fastq_longreads:
     input:
-        single_reads=lambda wildcards: get_longreads(wildcards.sample)["single_reads"],
+        long_reads=lambda wildcards: get_longreads(wildcards.sample)["long_reads"],
+    output:
+        temp("resources/{sample}/rawreads/{sample}.fastq.gz")
+    threads: 1
+    shell:
+        """
+        if [ -f {input} ]; then
+            cp {input} {output}
+        else
+            touch {output}
+        fi
+        """
+
+rule check_fasta_longreads:
+    input:
+        long_reads=lambda wildcards: get_longreads(wildcards.sample)["long_reads"],
     output:
         temp("resources/{sample}/rawreads/{sample}.fasta")
     threads: 1
     shell:
         """
-        cp {input.single_reads} {output}
+        if [ -f {input} ]; then
+            cp {input} {output}
+        else
+            touch {output}
+        fi
         """
 
 rule check_adapters:

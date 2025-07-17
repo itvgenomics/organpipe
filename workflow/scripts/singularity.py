@@ -32,6 +32,8 @@ docker_images = [
     "pegi3s/blast:2.13.0",
     "staphb/hmmer:3.4",
     "swglh/fastp:1.0.1",
+    "nanozoo/seqtk:1.3--dc0d16b",
+    "pipecraft/cutadapt:4.4",
     "cpgavas2",
 ]
 

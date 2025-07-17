@@ -4,7 +4,8 @@
 
 # Specify the sample name to be used. If you want to process all samples in the reads_path, use "all".
 # The reads filenames should include delimiters like _R1/_R2 or _pair1/_pair2 to distinguish paired-end reads.
-# Ensure that only the sequencing read files (in fastq.gz format) are present in reads_path.
+# For short reads, ensure that only the sequencing read files (in fastq.gz format) are present in reads_path.
+# For long reads, ensure that the reads are in fasta format or in fastq.gz format.
 sample:
 
 # Provide the directory path where the sequencing read files (_R1/_R2 or _pair1/_pair2) are located.
@@ -33,7 +34,8 @@ genome_range:
 ####### QUALITY CONTROL ########
 ################################
 
-# Choose whether to run the Fastp software for adapter trimming and quality control on Illumina short reads.
+# Choose whether to run the Fastp software for adapter trimming and quality control.
+# For long reads, only .fastq.gz files are supported.
 # Options: "Yes" to perform trimming, "No" to skip this step.
 run_trimming:
 
@@ -45,6 +47,10 @@ minlength:
 
 # Set the minimum base quality score threshold for trimming low-quality bases from reads.
 minquality:
+
+# If you are using PacBio reads and want to trim them, make sure your files are in fastq.gz format.
+# Change the following variables you want to customize cutadapt settings.
+pacbio_adapters: '-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT'
 
 ################################
 ########## SEED INFO ###########

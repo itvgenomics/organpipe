@@ -25,3 +25,44 @@ rule run_fastp:
         --json resources/{wildcards.sample}/rawreads/fastp.json \
         --out1 {output.r1} --out2 {output.r2} >> {log} 2>&1
         """
+
+rule run_cutadapt:
+    input:
+        "resources/{sample}/rawreads/{sample}.fastq.gz"
+    output:
+        temp("resources/{sample}/rawreads/{sample}.trimmed.fastq.gz")
+    log:
+        "logs/{sample}.run_cutadapt.log"
+    benchmark:
+        "benchmarks/{sample}.run_cutadapt.txt"
+    threads: 8
+    params:
+        adapters=lambda wildcards: config["samples"][wildcards.sample]["pacbio_adapters"]
+    singularity:
+        f"{config["sif_dir"]}/cutadapt.sif"
+    shell:
+        """
+        cutadapt -j {threads} --discard -O 35 --rc \
+            -e 0.1 {params} -o {output} {input} >> {log} 2>&1
+        """
+
+rule run_seqtk:
+    input:
+        lambda wildcards:
+            "resources/{sample}/rawreads/{sample}.trimmed.fastq.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
+            else "resources/{sample}/rawreads/{sample}.fastq.gz",
+    output:
+        temp("resources/{sample}/rawreads/{sample}.trimmed.fasta")
+    log:
+        "logs/{sample}.run_seqtk.log"
+    benchmark:
+        "benchmarks/{sample}.run_seqtk.txt"
+    threads: 1
+    params:
+        adapters=lambda wildcards: config["samples"][wildcards.sample]["pacbio_adapters"]
+    singularity:
+        f"{config["sif_dir"]}/seqtk.sif"
+    shell:
+        """
+        seqtk seq -a {input} > {output} 2>&1
+        """

@@ -16,6 +16,7 @@ REQUIRED_FIELDS = {
     "sequencing_type": "Type of sequencing data: 'Short' (Illumina) or 'Long' (PacBio/ONT).",
     "genome_range": "Expected genome size range in kb (e.g., 15000-18000).",
     "run_trimming": "Set to 'Yes' to run Fastp for trimming, 'No' to skip.",
+    "pacbio_adapters": "Set the adapters used for cutadapt on trimmming PacBio reads.",
     "adapters": "Path to the text file listing adapter sequences (used if run_trimming is 'Yes').",
     "minlength": "Minimum read length to retain after trimming.",
     "minquality": "Minimum base quality score threshold for trimming.",
@@ -147,11 +148,13 @@ def check_reads_path(config):
         return errors
 
     elif sequencing_type == "long":
-        fasta_files = [f for f in files if f.endswith(".fasta")]
+        fasta_files = [
+            f for f in files if f.endswith(".fasta") or f.endswith(".fastq.gz")
+        ]
 
         if not fasta_files:
             errors.append(
-                f"`reads_path` '{path}' does not contain any .fasta files for long reads."
+                f"`reads_path` '{path}' does not contain any .fasta or .fastq.gz files for long reads."
             )
 
         # Sample validation
@@ -333,12 +336,12 @@ def check_yes_no_fields(config):
     for field in fields:
         if field == "run_trimming":
             if sequencing_type == "long":
-                allowed = {"None", "nan", "no", "No", "none"}
+                allowed = {"None", "nan", "no", "No", "none", "Yes", "yes"}
                 value = str(config.get(field, "")).strip().lower()
                 if value not in allowed:
                     errors.append(
                         f"Invalid value for `{field}`: '{config.get(field)}'. "
-                        "Accepted values are: empty or 'no'."
+                        "Accepted values are: empty, yes or 'no'."
                     )
 
             elif sequencing_type == "short":
@@ -448,15 +451,24 @@ def check_seed_format_and_file(config):
 def check_run_trimming_requirements(config):
     errors = []
     run_trimming = str(config.get("run_trimming", "")).strip().lower()
+    sequencing_type = str(config.get("sequencing_type", "")).strip().lower()
+    pacbio_adapters = config.get("pacbio_adapters", "").strip()
 
     if run_trimming in ["Yes", "yes"]:
-        minlength = str(config.get("minlength", ""))
-        minquality = str(config.get("minquality", ""))
+        if sequencing_type == "short":
+            minlength = str(config.get("minlength", ""))
+            minquality = str(config.get("minquality", ""))
 
-        if minlength in ["None", "nan"]:
-            errors.append("`run_trimming` is 'Yes', but `minlength` is not set.")
-        if minquality in ["None", "nan"]:
-            errors.append("`run_trimming` is 'Yes', but `minquality` is not set.")
+            if minlength in ["None", "nan"]:
+                errors.append("`run_trimming` is 'Yes', but `minlength` is not set.")
+            if minquality in ["None", "nan"]:
+                errors.append("`run_trimming` is 'Yes', but `minquality` is not set.")
+
+        elif sequencing_type == "long":
+            if pacbio_adapters in ["None", "nan"]:
+                errors.append(
+                    "`run_trimming` is 'Yes', but `pacbio_adapters` is not set."
+                )
 
     return errors
 
@@ -500,6 +512,29 @@ def check_search_ncbi_requirements(config):
             if str(config.get("max_references", "")).strip() in ["None", "nan"]:
                 errors.append(
                     "`search_ncbi` is 'Yes', but `max_references` is not set."
+                )
+
+    return errors
+
+
+def check_pacbio_adapters(config):
+    errors = []
+    seq_type = config.get("sequencing_type", "").strip().lower()
+    adapter_value = config.get("pacbio_adapters", "").strip()
+
+    if seq_type == "long":
+        if not adapter_value:
+            errors.append(
+                "`sequencing_type` is 'long' but `pacbio_adapters` is not set."
+            )
+        else:
+            # Accept multiple -b flags, each followed by a DNA sequence
+            pattern = r"^(?:-b\s+[ACGT]+(?:\s+|$))+$"
+            if not re.match(pattern, adapter_value):
+                errors.append(
+                    f"`pacbio_adapters` value '{adapter_value}' is not valid.\n"
+                    "It must contain one or more adapter sequences in this format:\n"
+                    "  -b ACTG... -b ACTG... (valid characters: A, C, G, T)"
                 )
 
     return errors
@@ -645,6 +680,13 @@ def main():
             logging.info("\n Problem with NCBI Search Configuration:")
             for msg in search_errors:
                 raise ValueError(f" - {msg}")
+
+        pacbio_adapters = check_pacbio_adapters(config)
+
+        if pacbio_adapters:
+            logging.info("\n Problem with `pacbio_adapters` setting:")
+            for msg in pacbio_adapters:
+                logging.info(f" - {msg}")
 
 
 if __name__ == "__main__":

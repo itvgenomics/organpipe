@@ -77,7 +77,9 @@ rule run_novoplasty:
 
 rule run_mitohifi:
     input:
-        reads= "resources/{sample}/rawreads/{sample}.fasta",
+        reads = lambda wildcards:
+            "resources/{sample}/rawreads/{sample}.trimmed.fasta" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
+            else "resources/{sample}/rawreads/{sample}.fasta",
         reference_fasta="resources/{sample}/seeds/{seed}.fasta",
         reference_gb="resources/{sample}/seeds/{seed}.gb",
     output:

@@ -147,6 +147,12 @@ def prepare_seeds(
                     n=int(max_references),
                 )
 
+            seeds = [
+                f.split(".fasta")[0]
+                for f in os.listdir(f"resources/{sample}/seeds/")
+                if f.endswith(".fasta")
+            ]
+
             return seeds
 
 
@@ -280,6 +286,7 @@ if __name__ == "__main__":
                 ),
                 "reads_path": data["reads_path"],
                 "adapters": data["adapters"],
+                "pacbio_adapters": data["pacbio_adapters"],
                 "max_references": (
                     int(data["max_references"])
                     if data["max_references"] != None
@@ -371,6 +378,7 @@ if __name__ == "__main__":
                 ),
                 "reads_path": row["reads_path"],
                 "adapters": row["adapters"],
+                "pacbio_adapters": row["pacbio_adapters"],
                 "max_references": (
                     int(row["max_references"])
                     if row["max_references"] != ""
