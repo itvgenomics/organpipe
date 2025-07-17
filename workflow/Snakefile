@@ -107,9 +107,7 @@ def get_output():
 
         elif config["samples"][sample].get("sequencing_type", "").lower() == "long":
             out.append(expand("resources/{sample}/rawreads/{sample}.fasta", sample=sample))
-
-            if config["samples"][sample].get("annotation", "").lower() == "yes":
-                out.append(expand("results/{sample}/mitohifi/{seed}/contigs_stats.tsv", sample=sample, seed=seeds))
+            out.append(expand("results/{sample}/mitohifi/{seed}/contigs_stats.tsv", sample=sample, seed=seeds))
 
                 if config["samples"][sample].get("run_nhmmer", "").lower() == "yes":
                     out.append(expand("results/{sample}/nhmmer/{seed}/intergenes_sequences.check", sample=sample, seed=seeds))
