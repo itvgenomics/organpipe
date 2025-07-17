@@ -46,6 +46,10 @@ minlength:
 # Set the minimum base quality score threshold for trimming low-quality bases from reads.
 minquality:
 
+# If you are using PacBio reads and want to trim them, make sure your files are in fastq.gz format.
+# Change the following variables you want to customize cutadapt settings.
+pacbio_adapters: "-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT"
+
 ################################
 ########## SEED INFO ###########
 ################################
