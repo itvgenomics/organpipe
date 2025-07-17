@@ -33,9 +33,11 @@ def get_output():
             if config["samples"][sample].get("run_trimming", "").lower() == "yes":
                 out.append(expand("resources/{sample}/rawreads/{sample}.R{r}.trimmed.gz", sample=sample, r=[1, 2]))
                 if config["samples"][sample].get("adapters", ""):
-                    out.append(expand("resources/{sample}/adapters.txt", sample=sample))
+                    out.append(expand("resources/{sample}/adapters.fasta", sample=sample))
             else:
                 out.append(expand("resources/{sample}/rawreads/{sample}_R{r}.fastq.gz", sample=sample, r=[1, 2]))
+
+            out.append(expand("resources/{sample}/reference.fasta", sample=sample))
 
             out.append(expand("results/{sample}/hashtable/kmer{kmer}/hash_config.txt", sample=sample, kmer=kmers))
             out.append(expand("results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt", sample=sample, kmer=kmers))

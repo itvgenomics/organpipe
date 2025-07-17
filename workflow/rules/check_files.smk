@@ -50,13 +50,17 @@ rule check_longreads_files:
 
 rule check_adapters:
     input:
-        lambda wildcards: config["samples"][wildcards.sample]["adapters"]
+        lambda wildcards: f"resources/{wildcards.sample}/adapters.fasta" if config["samples"][wildcards.sample].get("adapters", "") else "test_data/adapters.fasta"
     output:
-        "resources/{sample}/adapters.txt"
+        "resources/{sample}/adapters.fasta"
     threads: 1
     shell:
         """
-        cp {input} {output}
+        if [ -f {input} ]; then
+            cp {input} {output}
+        else
+            touch {output}
+        fi
         """
 
 rule check_nhmmer_db:
@@ -93,4 +97,19 @@ rule index_hmmer_db:
     shell:
         """
         hmmpress {input}
+        """
+
+rule check_reference:
+    input:
+        lambda wildcards: f"resources/{wildcards.sample}/reference.fasta" if config["samples"][wildcards.sample].get("reference", "") else "test_data/reference.fasta"
+    output:
+        "resources/{sample}/reference.fasta"
+    threads: 1
+    shell:
+        """
+        if [ -f {input} ]; then
+            cp {input} {output}
+        else
+            touch {output}
+        fi
         """

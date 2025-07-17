@@ -92,6 +92,8 @@ fi
 echo "CONFIGFILE: $CONFIGFILE"
 echo "CONFIGTYPE: $CONFIGTYPE"
 
+python $WORKDIR/workflow/scripts/check_config.py -c $CONFIGFILE
+
 if [ "$RERUN" = true ]; then
     python $WORKDIR/workflow/scripts/rerun.py
 fi

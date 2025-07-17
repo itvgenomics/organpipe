@@ -23,7 +23,7 @@ rule create_hash:
         genome_range=lambda wildcards: config["samples"][wildcards.sample]["genome_range"],
         reads_length=lambda wildcards: config["samples"][wildcards.sample]["reads_length"],
         insert_size=lambda wildcards: config["samples"][wildcards.sample]["insert_size"],
-        max_memory=lambda wildcards: config["samples"][wildcards.sample]["max_memory"]
+        max_memory=lambda wildcards: config["samples"][wildcards.sample]["max_memory"],
     shell:
         """
         mkdir -p results/{wildcards.sample}/hashtable/kmer{wildcards.kmer}/ && \
@@ -39,7 +39,8 @@ rule run_novoplasty:
         hash2b = "results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt",
         hash2c = "results/{sample}/hashtable/kmer{kmer}/HASH2C_{sample}.txt",
         hashtable = "results/{sample}/hashtable/kmer{kmer}/HASH_{sample}.txt",
-        seed = "resources/{sample}/seeds/{seed}.fasta"
+        seed = "resources/{sample}/seeds/{seed}.fasta",
+        reference = "resources/{sample}/reference.fasta"
     output:
         "results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt"
     threads: 1
@@ -55,7 +56,7 @@ rule run_novoplasty:
         reads_length=lambda wildcards: config["samples"][wildcards.sample]["reads_length"],
         insert_size=lambda wildcards: config["samples"][wildcards.sample]["insert_size"],
         max_memory=lambda wildcards: config["samples"][wildcards.sample]["max_memory"],
-        reference=lambda wildcards: config["samples"][wildcards.sample]["reference"]
+        reference=lambda wildcards: f"resources/{wildcards.sample}/reference.fasta" if config["samples"][wildcards.sample].get("reference", "") else ""
     shell:
         """
         python workflow/scripts/create_novoplasty_config.py \

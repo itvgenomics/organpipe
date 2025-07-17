@@ -2,6 +2,7 @@ rule run_fastp:
     input:
         r1 = "resources/{sample}/rawreads/{sample}_R1.fastq.gz",
         r2 = "resources/{sample}/rawreads/{sample}_R2.fastq.gz",
+        adapters = "resources/{sample}/adapters.fasta"
     output:
         r1 = temp("resources/{sample}/rawreads/{sample}.R1.trimmed.gz"),
         r2 = temp("resources/{sample}/rawreads/{sample}.R2.trimmed.gz")
@@ -13,7 +14,7 @@ rule run_fastp:
     params:
         minquality=lambda wildcards: config["samples"][wildcards.sample]["minquality"],
         minlength=lambda wildcards: config["samples"][wildcards.sample]["minlength"],
-        adapters=lambda wildcards: f"--adapter_fasta resources/{wildcards.sample}/adapters.txt" if config["samples"][wildcards.sample].get("adapters", "") else " --detect_adapter_for_pe "
+        adapters=lambda wildcards: f"--adapter_fasta resources/{wildcards.sample}/adapters.fasta" if config["samples"][wildcards.sample].get("adapters", "") else " --detect_adapter_for_pe "
     singularity:
         f"{config["sif_dir"]}/fastp.sif"
     shell:

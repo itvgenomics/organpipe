@@ -49,27 +49,29 @@ if __name__ == "__main__":
 
     for sample in sample_keys:
         logging.info(f"Removing files for sample: {sample}")
-        logging.info(f"Removing workflow/results/{sample} files.")
+        logging.info(f"Removing results/{sample} files.")
 
         try:
-            shutil.rmtree(f"workflow/results/{sample}", ignore_errors=True)
+            shutil.rmtree(f"results/{sample}")
         except:
             logging.warning(
-                f"Failed to remove workflow/results/{sample}. It may not exist."
+                f"Failed to remove results/{sample}. It may not exist. Try running the pipeline without the '-rerun' flag first"
             )
 
         logging.info(f"Removing resources/{sample} files.")
 
         try:
-            shutil.rmtree(f"resources/{sample}", ignore_errors=True)
+            shutil.rmtree(f"resources/{sample}")
         except:
-            logging.warning(f"Failed to remove resources/{sample}. It may not exist.")
+            logging.warning(
+                f"Failed to remove resources/{sample}. It may not exist. Try running the pipeline without the '-rerun' flag first."
+            )
 
         logging.info(f"Removing workflow/reports/{sample} files.")
 
         try:
-            shutil.rmtree(f"workflow/reports/{sample}", ignore_errors=True)
+            shutil.rmtree(f"workflow/reports/{sample}")
         except:
             logging.warning(
-                f"Failed to remove workflow/reports/{sample}. It may not exist."
+                f"Failed to remove workflow/reports/{sample}. It may not exist. Try running the pipeline without the '-rerun' flag first."
             )
