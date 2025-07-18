@@ -388,6 +388,7 @@ def check_seed_format_and_file(config):
     seed_format = str(config.get("seed_format", "")).strip().lower()
     seed_file = str(config.get("seed_file", "")).strip()
     sequencing_type = config.get("sequencing_type", "").strip().lower()
+    search_ncbi = str(config.get("search_ncbi", "")).strip().lower()
 
     if sequencing_type == "short":
         if seed_format == "fasta":
@@ -431,10 +432,11 @@ def check_seed_format_and_file(config):
                 )
 
         elif seed_format in ["None", "nan"]:
-            errors.append(
-                f"Invalid value for `seed_format`: '{config.get('seed_format')}'. "
-                "Accepted values are: 'fasta' or 'genbank' (case sensitive)."
-            )
+            if search_ncbi == "no":
+                errors.append(
+                    "`seed_format` is empty, but `search_ncbi` is also set to 'no'. "
+                    "Either provide a seed file or set `search_ncbi` to 'yes' to search NCBI for seed sequences."
+                )
 
         return errors
 
@@ -452,7 +454,7 @@ def check_run_trimming_requirements(config):
     errors = []
     run_trimming = str(config.get("run_trimming", "")).strip().lower()
     sequencing_type = str(config.get("sequencing_type", "")).strip().lower()
-    pacbio_adapters = config.get("pacbio_adapters", "").strip()
+    pacbio_adapters = str(config.get("pacbio_adapters", "")).strip()
 
     if run_trimming in ["Yes", "yes"]:
         if sequencing_type == "short":
@@ -520,7 +522,7 @@ def check_search_ncbi_requirements(config):
 def check_pacbio_adapters(config):
     errors = []
     seq_type = config.get("sequencing_type", "").strip().lower()
-    adapter_value = config.get("pacbio_adapters", "").strip()
+    adapter_value = str(config.get("pacbio_adapters", "")).strip()
 
     if seq_type == "long":
         if not adapter_value:
