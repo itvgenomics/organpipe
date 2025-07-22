@@ -1,5 +1,7 @@
 # OrganPipe: A pipeline for the assembly, annotation, and curation of mitochondrial and chloroplast genomes
 
+![OrganPipe Logo](OrganPipe.png)
+
 ## How to cite OrganPipe (preprint)
 
  ```
