@@ -12,12 +12,15 @@ sample:
 reads_path:
 
 # Specify the type of organelle genome you are assembling: "mito" for mitochondrial or "chloro" for chloroplast.
+# Only short reads are supported for chloroplast assembly.
+# For long reads, use "mito" for mitochondrial assembly.
 organelle:
 
 # Define the genetic code to be used for mitochondrial genome annotation (e.g., 1 for Standard Code).
 genetic_code:
 
 # If a reference genome is available, specify its path as a fasta file. Leave blank if no reference is available.
+# This is not supported for long reads.
 reference:
 
 ################################
@@ -43,9 +46,11 @@ run_trimming:
 adapters:
 
 # Set the minimum read length to retain after trimming. Reads shorter than this length will be discarded.
+# This is not supported for long reads.
 minlength:
 
 # Set the minimum base quality score threshold for trimming low-quality bases from reads.
+# This is not supported for long reads.
 minquality:
 
 # If you are using PacBio reads and want to trim them, make sure your files are in fastq.gz format.
@@ -58,10 +63,12 @@ pacbio_adapters: '-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCT
 
 # Specify the path to a seed file to initialize assembly. Supported formats: "fasta" or "genbank".
 # For long-read sequencing, leave seed_format and feature blank.
+# This is not supported for long reads.
 seed_format:
 seed_file:
 
 # If a GenBank file is provided as the seed file, specify the feature type to use for assembly: "CDS", "rRNA", or "tRNA".
+# This is not supported for long reads.
 feature:
 
 # If no seed file is provided, indicate whether to search NCBI for reference sequences.
@@ -69,6 +76,7 @@ feature:
 search_ncbi:
 
 # List the specific genes (e.g., "COI,16S,ATP6") to search for on NCBI if NCBI search is enabled.
+# This is not supported for long reads.
 search_genes:
 
 # Specify the taxon name to use as a query when searching NCBI (e.g., "Amphisbaena").
@@ -82,12 +90,15 @@ max_references:
 ################################
 
 # Specify the list of k-mer sizes to be used in genome assembly (e.g., 19,23,28,33,39).
+# This is not supported for long reads.
 kmers:
 
 # Set the maximum amount of memory (in GB) that can be used during assembly.
+# This is not supported for long reads.
 max_memory:
 
 # Provide the read length (in base pairs) and average insert size (in base pairs) of the sequencing data.
+# This is not supported for long reads.
 reads_length:
 insert_size:
 
@@ -96,6 +107,7 @@ insert_size:
 ##################################
 
 # Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
+# This is not supported for long reads.
 annotation: "Yes"
 
 # Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: "Yes" or "No".
@@ -107,4 +119,5 @@ run_nhmmer: "No"
 nhmmer_db: "resources/rfam.hmm"
 
 # Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: "Yes" or "No".
+# This is not supported for long reads.
 run_images: "No"
