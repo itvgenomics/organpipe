@@ -73,7 +73,7 @@ search_genes:
 search_term: "Vanessa atalanta"
 
 # Set the maximum number of reference sequences to download per gene during the NCBI search.
-max_references: 4
+max_references: 2
 
 ################################
 ######## ILLUMINA STEP #########
@@ -89,9 +89,9 @@ max_memory:
 reads_length:
 insert_size:
 
-################################
-######## Pipeorg Steps #########
-################################
+##################################
+######## OrganPipe Steps #########
+##################################
 
 # Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
 annotation: "Yes"

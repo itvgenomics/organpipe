@@ -91,9 +91,9 @@ max_memory:
 reads_length:
 insert_size:
 
-################################
-######## Pipeorg Steps #########
-################################
+##################################
+######## OrganPipe Steps #########
+##################################
 
 # Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
 annotation: "Yes"

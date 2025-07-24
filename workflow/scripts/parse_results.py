@@ -1028,7 +1028,7 @@ if __name__ == "__main__":
                     logging.info("Getting Fastp files for sample: {sample}")
                     os.makedirs(f"workflow/reports/{sample}/files/", exist_ok=True)
                     shutil.copy(
-                        f"workflow/resources/{sample}/rawreads/fastp.html",
+                        f"resources/{sample}/rawreads/fastp.html",
                         f"workflow/reports/{sample}/files/fastp.html",
                     )
 

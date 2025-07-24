@@ -8,9 +8,9 @@ rule create_hash:
             else "resources/{sample}/rawreads/{sample}_R2.fastq.gz"
     output:
         "results/{sample}/hashtable/kmer{kmer}/hash_config.txt",
-        "results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt",
-        "results/{sample}/hashtable/kmer{kmer}/HASH2C_{sample}.txt",
-        "results/{sample}/hashtable/kmer{kmer}/HASH_{sample}.txt",
+        temp("results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt"),
+        temp("results/{sample}/hashtable/kmer{kmer}/HASH2C_{sample}.txt"),
+        temp("results/{sample}/hashtable/kmer{kmer}/HASH_{sample}.txt"),
     threads: 1
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_create_hash.log"

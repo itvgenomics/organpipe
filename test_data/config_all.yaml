@@ -49,6 +49,10 @@ minlength:
 # Set the threshold for trimming low quality bases
 minquality:
 
+# If you are using PacBio reads and want to trim them, make sure your files are in fastq.gz format.
+# Change the following variables you want to customize cutadapt settings.
+pacbio_adapters:
+
 ################################
 ########## SEED INFO ###########
 ################################
@@ -89,7 +93,7 @@ reads_length: 150
 insert_size: 251
 
 ################################
-######## Pipeorg Steps #########
+######## OrganPipe Steps #########
 ################################
 
 # Run nhmmer on ncRNA and Intergenes

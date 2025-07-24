@@ -5,7 +5,9 @@ rule run_fastp:
         adapters = "resources/{sample}/adapters.fasta"
     output:
         r1 = temp("resources/{sample}/rawreads/{sample}.R1.trimmed.gz"),
-        r2 = temp("resources/{sample}/rawreads/{sample}.R2.trimmed.gz")
+        r2 = temp("resources/{sample}/rawreads/{sample}.R2.trimmed.gz"),
+        html = "resources/{sample}/rawreads/fastp.html",
+        json = "resources/{sample}/rawreads/fastp.json"
     log:
         "logs/{sample}/trimming/{sample}_run_fastp.log"
     threads: 4
@@ -30,7 +32,8 @@ rule run_cutadapt:
     input:
         "resources/{sample}/rawreads/{sample}.fastq.gz"
     output:
-        temp("resources/{sample}/rawreads/{sample}.trimmed.fastq.gz")
+        reads=temp("resources/{sample}/rawreads/{sample}.trimmed.fastq.gz"),
+        check="resources/{sample}/rawreads/{sample}.trimmed.check"
     log:
         "logs/{sample}.run_cutadapt.log"
     benchmark:
@@ -43,7 +46,9 @@ rule run_cutadapt:
     shell:
         """
         cutadapt -j {threads} --discard -O 35 --rc \
-            -e 0.1 {params} -o {output} {input} >> {log} 2>&1
+            -e 0.1 {params} -o {output.reads} {input} >> {log} 2>&1
+
+        touch {output.check}
         """
 
 rule run_seqtk:
