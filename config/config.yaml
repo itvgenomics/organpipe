@@ -89,7 +89,7 @@ max_references:
 ######## ILLUMINA STEP #########
 ################################
 
-# Specify the list of k-mer sizes to be used in genome assembly (e.g., 19,23,28,33,39).
+# Specify the list of k-mer sizes to be used in genome assembly (e.g., "19,23,28,33,39").
 # This is not supported for long reads.
 kmers:
 
