@@ -20,6 +20,7 @@ organelle:
 genetic_code:
 
 # If a reference genome is available, specify its path as a fasta file. Leave blank if no reference is available.
+# This is used by NOVOPlasty as a guide to resolve duplicated regions in the plant mitochondria or the inverted repeat in the chloroplast.
 # This is not supported for long reads.
 reference:
 

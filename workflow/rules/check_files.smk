@@ -120,7 +120,7 @@ rule index_hmmer_db:
 
 rule check_reference:
     input:
-        lambda wildcards: f"resources/{wildcards.sample}/reference.fasta" if config["samples"][wildcards.sample].get("reference", "") else "test_data/reference.fasta"
+        lambda wildcards: config["samples"][wildcards.sample]["reference"] if config["samples"][wildcards.sample].get("reference", "") else "test_data/reference.fasta"
     output:
         "resources/{sample}/reference.fasta"
     threads: 1

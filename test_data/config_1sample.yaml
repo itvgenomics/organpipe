@@ -18,7 +18,7 @@ organelle: "mito"
 genetic_code: 2
 
 # If a reference is available, you can give here the path to the fasta file, blank if not.
-reference:
+reference: "test_data/reference.fasta"
 
 ################################
 ########## INPUT INFO ##########
