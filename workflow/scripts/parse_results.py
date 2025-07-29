@@ -1025,7 +1025,7 @@ if __name__ == "__main__":
         for sample in sample_keys:
             if config["samples"][sample]["sequencing_type"].lower() == "short":
                 if config["samples"][sample]["run_trimming"].lower() == "yes":
-                    logging.info("Getting Fastp files for sample: {sample}")
+                    logging.info(f"Getting Fastp files for sample: {sample}")
                     os.makedirs(f"workflow/reports/{sample}/files/", exist_ok=True)
                     shutil.copy(
                         f"resources/{sample}/rawreads/fastp.html",
