@@ -30,6 +30,7 @@ SETBATCH="false"
 NBATCH=15
 RERUN=false
 SETNOTEMP=""
+SETSLURM="false"
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -57,6 +58,9 @@ while [ "$1" != "" ]; do
     -batch)
         SETBATCH=true
         ;;
+    -slurm)
+        SETSLURM=true
+        ;;
     -rerun)
         RERUN=true
         ;;
@@ -69,22 +73,6 @@ while [ "$1" != "" ]; do
         NBATCH=$1
         ;;
     *)
-        echo "Invalid option: $1"
-        echo "Usage: bash OrganPipe.sh -d </path/to/work/dir> -t <n_threads> -c </path/to/configfile> [options]"
-        echo ""
-        echo "Required:"
-        echo "  -d </path/to/work/dir>    Path to your working directory where all the workflow files are"
-        echo "  -c </path/to/config.yaml> Overwrite the default configuration file (e.g. config/config.yaml)"
-        echo "  -t {int}                  Number of threads to use"
-        echo ""
-        echo "Optional Flags:"
-        echo "  -np                       Perform a dry run to preview job execution without running"
-        echo "  -unlock                   Unlock the working directory if Snakemake is locked"
-        echo "  -batch                    Improve DAG resolution time for large workflows"
-        echo "  -nbatch {int}             Set batch size (default: 15) for large sample sets"
-        echo "  -sifdir </path>           Directory to build/store Singularity images (default: resources/sif_dir)"
-        echo "  -rerun                    Clean previous results/temp files for clean reprocessing"
-        echo "  -notemp                   Prevent deletion of temporary files (e.g. for partial runs)"
         exit 1
         ;;
     esac
@@ -129,20 +117,37 @@ fi
 
 mkdir -p $WORKDIR/tmp $WORKDIR/singularity
 
-if [ "$SETBATCH" = true ]; then
+if [ "$SETBATCH" = true ] && [ "$SETSLURM" = true ]; then
+    export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+    export TMPDIR=$WORKDIR/tmp && \
+    sed -i "s|<WORKDIR>|$WORKDIR|g" $WORKDIR/profiles/slurm/config.yaml && \
+    for ((batch=1; batch<=NBATCH; batch++))
+    do
+        snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS \
+            --scheduler greedy --rerun-incomplete --profile $WORKDIR/profiles/slurm/ $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
+    done
+
+elif [ "$SETBATCH" = true ]; then
     for ((batch=1; batch<=NBATCH; batch++))
     do
         export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
         export TMPDIR=$WORKDIR/tmp && \
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-            --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
-            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK $SETNOTEMP --batch all=$batch/$NBATCH
+            --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
+            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
     done
+
+elif [ "$SETSLURM" = true ]; then
+    export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+    export TMPDIR=$WORKDIR/tmp && \
+    sed -i "s|<WORKDIR>|$WORKDIR|g" $WORKDIR/profiles/slurm/config.yaml && \
+    snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS \
+        --scheduler greedy --rerun-incomplete --profile $WORKDIR/profiles/slurm/ $SETNP $SETUNLOCK
 
 else
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
     export TMPDIR=$WORKDIR/tmp && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-        --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
-        --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK $SETNOTEMP
+        --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --writable" \
+        --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK
 fi
