@@ -10,7 +10,6 @@ rule run_fastp:
         json = "resources/{sample}/rawreads/fastp.json"
     log:
         "logs/{sample}/trimming/{sample}_run_fastp.log"
-    threads: 4
     benchmark:
         "benchmarks/{sample}/trimming/{sample}_run_fastp.benchmark"
     params:
@@ -38,7 +37,6 @@ rule run_cutadapt:
         "logs/{sample}.run_cutadapt.log"
     benchmark:
         "benchmarks/{sample}.run_cutadapt.txt"
-    threads: 8
     params:
         adapters=lambda wildcards: config["samples"][wildcards.sample]["pacbio_adapters"]
     singularity:
@@ -62,7 +60,6 @@ rule run_seqtk:
         "logs/{sample}.run_seqtk.log"
     benchmark:
         "benchmarks/{sample}.run_seqtk.txt"
-    threads: 1
     params:
         adapters=lambda wildcards: config["samples"][wildcards.sample]["pacbio_adapters"]
     singularity:

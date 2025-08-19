@@ -119,35 +119,41 @@ mkdir -p $WORKDIR/tmp $WORKDIR/singularity
 
 if [ "$SETBATCH" = true ] && [ "$SETSLURM" = true ]; then
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+    export SINGULARITY_TMPDIR=$WORKDIR/tmp && \
     export TMPDIR=$WORKDIR/tmp && \
-    sed -i "s|<WORKDIR>|$WORKDIR|g" $WORKDIR/profiles/slurm/config.yaml && \
+    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" $WORKDIR/config/slurm_params.yaml > $WORKDIR/profiles/slurm/config.yaml && \
     for ((batch=1; batch<=NBATCH; batch++))
     do
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS \
-            --scheduler greedy --rerun-incomplete --profile $WORKDIR/profiles/slurm/ $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
+            --scheduler greedy --profile $WORKDIR/profiles/slurm/ \
+            $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
     done
 
 elif [ "$SETBATCH" = true ]; then
     for ((batch=1; batch<=NBATCH; batch++))
     do
         export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+        export SINGULARITY_TMPDIR=$WORKDIR/tmp && \
         export TMPDIR=$WORKDIR/tmp && \
+        sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" $WORKDIR/config/local_params.yaml > $WORKDIR/profiles/local/config.yaml && \
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-            --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
-            --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
+            --profile $WORKDIR/profiles/local/ --scheduler greedy \
+            $SETNP $SETUNLOCK --batch all=$batch/$NBATCH
     done
 
 elif [ "$SETSLURM" = true ]; then
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+    export SINGULARITY_TMPDIR=$WORKDIR/tmp && \
     export TMPDIR=$WORKDIR/tmp && \
-    sed -i "s|<WORKDIR>|$WORKDIR|g" $WORKDIR/profiles/slurm/config.yaml && \
+    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" $WORKDIR/config/slurm_params.yaml > $WORKDIR/profiles/slurm/config.yaml && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS \
-        --scheduler greedy --rerun-incomplete --profile $WORKDIR/profiles/slurm/ $SETNP $SETUNLOCK
+        --scheduler greedy --profile $WORKDIR/profiles/slurm/ $SETNP $SETUNLOCK
 
 else
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
+    export SINGULARITY_TMPDIR=$WORKDIR/tmp && \
     export TMPDIR=$WORKDIR/tmp && \
+    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" $WORKDIR/config/local_params.yaml > $WORKDIR/profiles/local/config.yaml && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS --use-singularity \
-        --singularity-args "-B $WORKDIR:/mnt -B $WORKDIR/tmp:/tmp --pwd /mnt --no-home --writable" \
-        --scheduler greedy --rerun-incomplete $SETNP $SETUNLOCK
+        --profile $WORKDIR/profiles/local/ --scheduler greedy $SETNP $SETUNLOCK
 fi

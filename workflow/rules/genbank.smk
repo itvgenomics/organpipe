@@ -3,7 +3,6 @@ rule write_genbank_mitos2:
         "results/{sample}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
     output:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.check"
-    threads: 1
     log:
         "logs/{sample}/genbanks/{sample}_{kmer}_{seed}_write_genbank_mitos2.log"
     params:
@@ -20,7 +19,6 @@ rule write_genbank_chloe:
         "results/{sample}/chloe/{seed}_kmer{kmer}.chloe.check"
     output:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check"
-    threads: 1
     log:
         "logs/{sample}/genbanks/{sample}_{kmer}_{seed}_write_genbank_chloe.log"
     params:
@@ -38,7 +36,6 @@ rule write_genbank_cpgavas2:
         "results/{sample}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check"
     output:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check"
-    threads: 1
     log:
         "logs/{sample}/genbanks/{sample}_{kmer}_{seed}_write_genbank_cpgavas2.log"
     params:
@@ -56,7 +53,6 @@ rule rotate_mito_genbanks:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.check"
     output:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.rotated.check"
-    threads: 1
     log:
         "logs/{sample}/genbanks/{seed}_kmer{kmer}.genbank_rotate.log"
     params:
@@ -74,7 +70,6 @@ rule rotate_cpgavas_genbanks:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check"
     output:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check"
-    threads: 1
     log:
         "logs/{sample}/genbanks/{seed}_kmer{kmer}.genbank.rotated.log"
     params:
@@ -92,7 +87,6 @@ rule rotate_chloe_genbanks:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check"
     output:
         "results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.rotated.check"
-    threads: 1
     log:
         "logs/{sample}/genbanks/{seed}_kmer{kmer}.genbank.rotated.log"
     params:

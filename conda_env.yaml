@@ -1,8 +1,7 @@
 name: organpipe
 channels:
-  - bioconda
   - conda-forge
-  - defaults
+  - bioconda
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
@@ -20,9 +19,9 @@ dependencies:
   - bz2file=0.98=py_0
   - bzip2=1.0.8=hd590300_5
   - c-ares=1.27.0=hd590300_0
-  - ca-certificates=2024.2.2=hbcca054_0
+  - ca-certificates=2025.7.14=hbd8a1cb_0
   - cachetools=5.3.2=pyhd8ed1ab_0
-  - certifi=2024.2.2=pyhd8ed1ab_0
+  - certifi=2025.7.14=pyhd8ed1ab_0
   - cffi=1.16.0=py312hf06ca03_0
   - charset-normalizer=3.3.2=pyhd8ed1ab_0
   - cni=1.0.1=ha975731_1
@@ -103,7 +102,7 @@ dependencies:
   - nbformat=5.9.2=pyhd8ed1ab_0
   - ncurses=6.4=h59595ed_2
   - oniguruma=6.9.9=hd590300_0
-  - openssl=3.2.1=hd590300_0
+  - openssl=3.3.1=hb9d3cd8_3
   - packaging=23.2=pyhd8ed1ab_0
   - peppy=0.40.1=pyhd8ed1ab_0
   - pip=24.0=pyhd8ed1ab_0
@@ -147,6 +146,8 @@ dependencies:
   - smart_open=3.0.0=pyh9f0ad1d_0
   - smmap=5.0.0=pyhd8ed1ab_0
   - snakemake=8.5.1=hdfd78af_0
+  - snakemake-executor-plugin-slurm=0.1.4=pyhdfd78af_0
+  - snakemake-executor-plugin-slurm-jobstep=0.1.10=pyhdfd78af_0
   - snakemake-interface-common=1.17.1=pyhdfd78af_0
   - snakemake-interface-executor-plugins=8.2.0=pyhdfd78af_0
   - snakemake-interface-report-plugins=1.0.0=pyhdfd78af_0

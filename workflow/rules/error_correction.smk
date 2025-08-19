@@ -5,7 +5,6 @@ rule run_bwa_index:
         "results/{sample}/pilon/{seed}_kmer{kmer}.bwa_index.check"
     log:
         "logs/{sample}/pilon/{kmer}_{seed}_run_bwa_index.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_bwa_index.benchmark"
     singularity:
@@ -30,7 +29,6 @@ rule run_bwa_mem:
         "results/{sample}/pilon/{seed}_kmer{kmer}.bwa_mem.check"
     log:
         "logs/{sample}/pilon/{kmer}_{seed}_run_bwa_mem.log"
-    threads: 4
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_bwa_mem.benchmark"
     singularity:
@@ -58,7 +56,6 @@ rule run_samtools_index:
         "results/{sample}/pilon/{seed}_kmer{kmer}.samtools_index.check"
     log:
         "logs/{sample}/pilon/{kmer}_{seed}_run_samtools_index.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_samtools_index.benchmark"
     singularity:
@@ -81,7 +78,6 @@ rule run_pilon:
         "results/{sample}/pilon/{seed}_kmer{kmer}.pilon.check"
     log:
         "logs/{sample}/pilon/{kmer}_{seed}_run_pilon.log"
-    threads: 2
     benchmark:
         "benchmarks/{sample}/pilon/{kmer}_{seed}_run_pilon.benchmark"
     singularity:

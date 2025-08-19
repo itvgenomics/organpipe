@@ -30,7 +30,6 @@ rule check_shortreads_files:
     output:
         r1 = temp("resources/{sample}/rawreads/{sample}_R1.fastq.gz"),
         r2 = temp("resources/{sample}/rawreads/{sample}_R2.fastq.gz")
-    threads: 1
     shell:
         """
         cp {input.forward_reads} {output.r1}
@@ -42,7 +41,6 @@ rule check_fastq_longreads:
         long_reads=lambda wildcards: get_longreads(wildcards.sample)["long_reads"],
     output:
         temp("resources/{sample}/rawreads/{sample}.fastq.gz")
-    threads: 1
     shell:
         """
         if [ -f {input} ]; then
@@ -57,7 +55,6 @@ rule check_fasta_longreads:
         long_reads=lambda wildcards: get_longreads(wildcards.sample)["long_reads"],
     output:
         temp("resources/{sample}/rawreads/{sample}.fasta")
-    threads: 1
     shell:
         """
         if [ -f {input} ]; then
@@ -72,7 +69,6 @@ rule check_adapters:
         lambda wildcards: f"resources/{wildcards.sample}/adapters.fasta" if config["samples"][wildcards.sample].get("adapters", "") else "test_data/adapters.fasta"
     output:
         "resources/{sample}/adapters.fasta"
-    threads: 1
     shell:
         """
         if [ -f {input} ]; then
@@ -85,7 +81,6 @@ rule check_adapters:
 rule check_nhmmer_db:
     output:
         "resources/nhmmer_db.hmm"
-    threads: 1
     shell:
         """
         NHMMER_DB=$(grep 'nhmmer_db:' config/snakemake_config.yaml | grep -v "''" | sed -E 's/.*: *//; s/[[:space:]]*$//' | uniq) && \
@@ -99,7 +94,6 @@ rule extract_table2asn:
         "resources/table2asn.linux64.gz"
     output:
         "resources/table2asn.linux64"
-    threads: 1
     shell:
         """
         cd resources && gunzip table2asn.linux64.gz && chmod +x table2asn.linux64
@@ -110,7 +104,6 @@ rule index_hmmer_db:
         "resources/nhmmer_db.hmm"
     output:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    threads: 1
     singularity:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
@@ -123,7 +116,6 @@ rule check_reference:
         lambda wildcards: config["samples"][wildcards.sample]["reference"] if config["samples"][wildcards.sample].get("reference", "") else "test_data/reference.fasta"
     output:
         "resources/{sample}/reference.fasta"
-    threads: 1
     shell:
         """
         if [ -f {input} ]; then

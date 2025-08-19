@@ -11,7 +11,6 @@ rule create_hash:
         temp("results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt"),
         temp("results/{sample}/hashtable/kmer{kmer}/HASH2C_{sample}.txt"),
         temp("results/{sample}/hashtable/kmer{kmer}/HASH_{sample}.txt"),
-    threads: 1
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_create_hash.log"
     benchmark:
@@ -43,7 +42,6 @@ rule run_novoplasty:
         reference = "resources/{sample}/reference.fasta"
     output:
         "results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt"
-    threads: 1
     singularity:
         f"{config["sif_dir"]}/novoplasty.sif"
     log:
@@ -84,7 +82,6 @@ rule run_mitohifi:
         reference_gb="resources/{sample}/seeds/{seed}.gb",
     output:
         "results/{sample}/mitohifi/{seed}/contigs_stats.tsv"
-    threads: 8
     log:
         "logs/{sample}/mitohifi/{seed}_run_mitohifi.log"
     benchmark:
@@ -108,7 +105,6 @@ rule get_assemblies:
         "results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt"
     output:
         "results/{sample}/assemblies/{seed}_kmer{kmer}.fasta"
-    threads: 1
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_{seed}_get_assemblies.log"
     params:

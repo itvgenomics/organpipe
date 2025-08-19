@@ -1,17 +1,15 @@
-executor: slurm
+executor: local
 use-singularity: true
-singularity-args: "-B <WORKDIR>:/mnt -B <WORKDIR>/tmp:/tmp --pwd /mnt --no-home --writable"
-latency-wait: 10
+singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
+latency-wait: 30
 show-failed-logs: True
 keep-going: False
 printshellcmds: True
 rerun-incomplete: True
-max-jobs-per-second: 20
-max-status-checks-per-second: 20
-jobs: 100
+max-jobs-per-second: {THREADS}
+max-status-checks-per-second: {THREADS}
+jobs: {THREADS}
 
-default_resources:
-  tmpdir: '<WORKDIR>/tmp'
 
 set-threads:
   all: 1
@@ -65,290 +63,194 @@ set-threads:
 
 set-resources:
   all:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.all'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_mitos2:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_mitos2'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   run_cpgavas2:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_cpgavas2'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   run_chloe:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_chloe'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   create_hash:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.create_hash'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   run_novoplasty:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_novoplasty'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   run_mitohifi:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_mitohifi'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   get_assemblies:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_assemblies'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   check_shortreads_files:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.check_shortreads_files'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   check_longreads_files:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.check_longreads_files'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   check_adapters:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.check_adapters'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   check_reference:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.check_reference'"
     mem_mb: 1000
     runtime: 4320
     node:
   check_nhmmer_db:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.check_nhmmer_db'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   extract_table2asn:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.extract_table2asn'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   index_hmmer_db:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.index_hmmer_db'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_bwa_index:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_bwa_index'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_bwa_mem:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_bwa_mem'"
     mem_mb: 10000
     runtime: 4320
     node: 1
   run_samtools_index:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_samtools_index'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_pilon:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_pilon'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   write_genbank_mitos2:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.write_genbank_mitos2'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   write_genbank_chloe:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.write_genbank_chloe'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   write_genbank_cpgavas2:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.write_genbank_cpgavas2'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   rotate_mito_genbanks:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.rotate_mito_genbanks'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   rotate_cpgavas_genbanks:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.rotate_cpgavas_genbanks'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   rotate_chloe_genbanks:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.rotate_chloe_genbanks'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   get_genbank_fastas:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_genbank_fastas'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_blastn:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_blastn'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   run_recruitment_plot:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_recruitment_plot'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   run_bwa_index_rotated:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_bwa_index_rotated'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_bwa_mem_rotated:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_bwa_mem_rotated'"
     mem_mb: 50000
     runtime: 4320
     node: 1
   run_samtools_depth:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_samtools_depth'"
     mem_mb: 2000
     runtime: 4320
     node: 1
   run_samtools_depth_rotated:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_samtools_depth_rotated'"
     mem_mb: 2000
     runtime: 4320
     node: 1
   run_depth_plot:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_depth_plot'"
     mem_mb: 2000
     runtime: 4320
     node: 1
   run_ogdraw_mito:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_ogdraw_mito'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_ogdraw_chloro:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_ogdraw_chloro'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   get_mito_ncRNA_sequences_short:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_mito_ncRNA_sequences_short'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_ncRNA_nhmmer_short:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_ncRNA_nhmmer_short'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   get_mito_intergenes_sequences_short:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_mito_intergenes_sequences_short'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_intergenes_nhmmer_short:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_intergenes_nhmmer_short'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   get_mito_ncRNA_sequences_long:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_mito_ncRNA_sequences_long'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_ncRNA_nhmmer_long:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_ncRNA_nhmmer_long'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   get_mito_intergenes_sequences_long:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_mito_intergenes_sequences_long'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_intergenes_nhmmer_long:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_intergenes_nhmmer_long'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   get_chloro_intergenes_sequences:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_chloro_intergenes_sequences'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_intergenes_nhmmer_chloro:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_intergenes_nhmmer_chloro'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   get_chloro_ncRNA_sequences:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.get_chloro_ncRNA_sequences'"
     mem_mb: 1000
     runtime: 4320
     node: 1
   run_ncRNA_nhmmer_chloro:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_ncRNA_nhmmer_chloro'"
     mem_mb: 8000
     runtime: 4320
     node: 1
   run_fastp:
-    slurm_partition: "medium_gen"
-    slurm_extra: "'--job-name=op.run_fastp'"
     mem_mb: 4000
     runtime: 4320
     node: 1

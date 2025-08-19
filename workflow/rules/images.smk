@@ -8,7 +8,6 @@ rule get_genbank_fastas:
         ]
     output:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check"
-    threads: 1
     log:
         "logs/{sample}/images/{seed}_{kmer}_get_genbank_fastas.log"
     benchmark:
@@ -27,7 +26,6 @@ rule run_blastn:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check"
     output:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check"
-    threads: 1
     log:
         "logs/{sample}/images/{seed}_{kmer}_run_blastn.log"
     benchmark:
@@ -56,7 +54,6 @@ rule run_recruitment_plot:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check"
     output:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.recruitment_plot.check"
-    threads: 1
     log:
         "logs/{sample}/images/{seed}_{kmer}_run_recruitment_plot.log"
     benchmark:
@@ -82,7 +79,6 @@ rule run_bwa_index_rotated:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check"
     log:
         "logs/{sample}/images/{kmer}_{seed}_run_bwa_index_rotated.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_bwa_index_rotated.benchmark"
     singularity:
@@ -105,7 +101,6 @@ rule run_bwa_mem_rotated:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check"
     log:
         "logs/{sample}/images/{kmer}_{seed}_run_bwa_mem_rotated.log"
-    threads: 4
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_bwa_mem_rotated.benchmark"
     singularity:
@@ -132,7 +127,6 @@ rule run_samtools_depth:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check"
     log:
         "logs/{sample}/images/{kmer}_{seed}_run_samtools_depth.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_samtools_depth.benchmark"
     singularity:
@@ -156,7 +150,6 @@ rule run_samtools_depth_rotated:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check"
     log:
         "logs/{sample}/images/{kmer}_{seed}_run_samtools_depth_rotated.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/images/{kmer}_{seed}_run_samtools_depth_rotated.benchmark"
     singularity:
@@ -179,7 +172,6 @@ rule run_depth_plot:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check"
     output:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.depth_plot.check"
-    threads: 1
     log:
         "logs/{sample}/images/{seed}_{kmer}_run_depth_plot.log"
     benchmark:
@@ -204,7 +196,6 @@ rule run_ogdraw_mito:
             seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
     output:
         "results/{sample}/images/{sample}.mito.ogdraw.check"
-    threads: 1
     log:
         "logs/{sample}/images/{sample}_run_ogdraw.log"
     benchmark:
@@ -237,7 +228,6 @@ rule run_ogdraw_chloro:
             seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
     output:
         "results/{sample}/images/{sample}.chloro.ogdraw.check"
-    threads: 1
     log:
         "logs/{sample}/images/{sample}_run_ogdraw.log"
     benchmark:

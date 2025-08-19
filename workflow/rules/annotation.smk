@@ -5,7 +5,6 @@ rule run_mitos2:
         "results/{sample}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
     log:
         "logs/{sample}/mitos2/{kmer}_{seed}_run_mitos2.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/mitos2/{kmer}_{seed}_run_mitos2.benchmark"
     singularity:
@@ -53,7 +52,6 @@ rule run_cpgavas2:
         "results/{sample}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check"
     log:
         "logs/{sample}/cpgavas2/{kmer}_{seed}_run_cpgavas2.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/cpgavas2/{kmer}_{seed}_run_cpgavas2.benchmark"
     singularity:
@@ -83,7 +81,6 @@ rule run_chloe:
         "results/{sample}/chloe/{seed}_kmer{kmer}.chloe.check"
     log:
         "logs/{sample}/chloe/{kmer}_{seed}_run_chloe.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/chloe/{kmer}_{seed}_run_chloe.benchmark"
     singularity:

@@ -5,7 +5,6 @@ rule get_mito_ncRNA_sequences_short:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check"
     log:
         "logs/{sample}/nhmmer/{kmer}_{seed}_get_mito_ncRNA_sequences.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/nhmmer/{kmer}_{seed}_get_mito_ncRNA_sequences.txt"
     params:
@@ -27,7 +26,6 @@ rule run_ncRNA_nhmmer_short:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check"
-    threads: 4
     log:
         "logs/{sample}/nhmmer/{kmer}_{seed}_run_ncRNA_nhmmer.log"
     benchmark:
@@ -59,7 +57,6 @@ rule get_mito_intergenes_sequences_short:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check"
     log:
         "logs/{sample}/nhmmer/{kmer}_{seed}_get_mito_intergenes_sequences.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/nhmmer/{kmer}_{seed}_get_mito_intergenes_sequences.txt"
     params:
@@ -81,7 +78,6 @@ rule run_intergenes_nhmmer_short:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check"
-    threads: 4
     log:
         "logs/{sample}/nhmmer/{kmer}_{seed}_run_intergenes_nhmmer.log"
     benchmark:
@@ -113,7 +109,6 @@ rule get_mito_ncRNA_sequences_long:
         "results/{sample}/nhmmer/{seed}/ncRNA_sequences.check"
     log:
         "logs/{sample}/nhmmer/{seed}_get_mito_ncRNA_sequences.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_get_mito_ncRNA_sequences.txt"
     params:
@@ -134,7 +129,6 @@ rule run_ncRNA_nhmmer_long:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}/ncRNA_nhmmer.check"
-    threads: 4
     log:
         "logs/{sample}/nhmmer/{seed}_run_ncRNA_nhmmer.log"
     benchmark:
@@ -163,7 +157,6 @@ rule get_mito_intergenes_sequences_long:
         "results/{sample}/nhmmer/{seed}/intergenes_sequences.check"
     log:
         "logs/{sample}/nhmmer/{seed}_get_mito_intergenes_sequences.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_get_mito_intergenes_sequences.txt"
     params:
@@ -184,7 +177,6 @@ rule run_intergenes_nhmmer_long:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}/intergenes_nhmmer.check"
-    threads: 4
     log:
         "logs/{sample}/nhmmer/{seed}_run_intergenes_nhmmer.log"
     benchmark:
@@ -213,7 +205,6 @@ rule get_chloro_intergenes_sequences:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check"
     log:
         "logs/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_intergenes_sequences.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_intergenes_sequences.txt"
     params:
@@ -234,7 +225,6 @@ rule run_intergenes_nhmmer_chloro:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check",
-    threads: 4
     log:
         "logs/{sample}/nhmmer/{seed}_kmer{kmer}_run_intergenes_nhmmer.log"
     benchmark:
@@ -266,7 +256,6 @@ rule get_chloro_ncRNA_sequences:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check"
     log:
         "logs/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_ncRNA_sequences.log"
-    threads: 1
     benchmark:
         "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_ncRNA_sequences.txt"
     params:
@@ -287,7 +276,6 @@ rule run_ncRNA_nhmmer_chloro:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check",
-    threads: 4
     log:
         "logs/{sample}/nhmmer/{seed}_kmer{kmer}_run_ncRNA_nhmmer.log"
     benchmark:

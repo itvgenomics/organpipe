@@ -1,0 +1,304 @@
+executor: slurm
+use-singularity: true
+singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
+latency-wait: 30
+show-failed-logs: True
+keep-going: False
+printshellcmds: True
+rerun-incomplete: True
+max-jobs-per-second: {THREADS}
+max-status-checks-per-second: {THREADS}
+jobs: {THREADS}
+
+
+set-threads:
+  all: 1
+  run_mitos2: 1
+  run_cpgavas2: 1
+  run_chloe: 1
+  create_hash: 1
+  run_novoplasty: 1
+  run_mitohifi: 8
+  get_assemblies: 1
+  check_shortreads_files: 1
+  check_longreads_files: 1
+  check_adapters: 1
+  check_nhmmer_db: 1
+  extract_table2asn: 1
+  index_hmmer_db: 1
+  run_bwa_index: 1
+  run_bwa_mem: 4
+  run_samtools_index: 1
+  run_pilon: 2
+  write_genbank_mitos2: 1
+  write_genbank_chloe: 1
+  write_genbank_cpgavas2: 1
+  rotate_mito_genbanks: 1
+  rotate_cpgavas_genbanks: 1
+  rotate_chloe_genbanks: 1
+  get_genbank_fastas: 1
+  run_blastn: 1
+  run_recruitment_plot: 1
+  run_bwa_index_rotated: 1
+  run_bwa_mem_rotated: 4
+  run_samtools_depth: 1
+  run_samtools_depth_rotated: 1
+  run_depth_plot: 1
+  run_ogdraw_mito: 1
+  run_ogdraw_chloro: 1
+  get_mito_ncRNA_sequences_short: 1
+  run_ncRNA_nhmmer_short: 4
+  get_mito_intergenes_sequences_short: 1
+  run_intergenes_nhmmer_short: 4
+  get_mito_ncRNA_sequences_long: 1
+  run_ncRNA_nhmmer_long: 4
+  get_mito_intergenes_sequences_long: 1
+  run_intergenes_nhmmer_long: 4
+  get_chloro_intergenes_sequences: 1
+  run_intergenes_nhmmer_chloro: 4
+  get_chloro_ncRNA_sequences: 1
+  run_ncRNA_nhmmer_chloro: 4
+  run_fastp: 4
+  check_reference: 1
+
+set-resources:
+  all:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_mitos2:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  run_cpgavas2:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  run_chloe:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  create_hash:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  run_novoplasty:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  run_mitohifi:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  get_assemblies:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  check_shortreads_files:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  check_longreads_files:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  check_adapters:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  check_reference:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node:
+  check_nhmmer_db:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  extract_table2asn:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  index_hmmer_db:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_bwa_index:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_bwa_mem:
+    slurm_partition: "op2_slurm"
+    mem_mb: 10000
+    runtime: 4320
+    node: 1
+  run_samtools_index:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_pilon:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  write_genbank_mitos2:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  write_genbank_chloe:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  write_genbank_cpgavas2:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  rotate_mito_genbanks:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  rotate_cpgavas_genbanks:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  rotate_chloe_genbanks:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  get_genbank_fastas:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_blastn:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  run_recruitment_plot:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  run_bwa_index_rotated:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_bwa_mem_rotated:
+    slurm_partition: "op2_slurm"
+    mem_mb: 50000
+    runtime: 4320
+    node: 1
+  run_samtools_depth:
+    slurm_partition: "op2_slurm"
+    mem_mb: 2000
+    runtime: 4320
+    node: 1
+  run_samtools_depth_rotated:
+    slurm_partition: "op2_slurm"
+    mem_mb: 2000
+    runtime: 4320
+    node: 1
+  run_depth_plot:
+    slurm_partition: "op2_slurm"
+    mem_mb: 2000
+    runtime: 4320
+    node: 1
+  run_ogdraw_mito:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_ogdraw_chloro:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  get_mito_ncRNA_sequences_short:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_ncRNA_nhmmer_short:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_mito_intergenes_sequences_short:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_intergenes_nhmmer_short:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_mito_ncRNA_sequences_long:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_ncRNA_nhmmer_long:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_mito_intergenes_sequences_long:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_intergenes_nhmmer_long:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_chloro_intergenes_sequences:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_intergenes_nhmmer_chloro:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_chloro_ncRNA_sequences:
+    slurm_partition: "op2_slurm"
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_ncRNA_nhmmer_chloro:
+    slurm_partition: "op2_slurm"
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  run_fastp:
+    slurm_partition: "op2_slurm"
+    mem_mb: 4000
+    runtime: 4320
+    node: 1

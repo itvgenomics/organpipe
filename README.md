@@ -111,9 +111,9 @@ The fields to be edited are the following:
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
         - **-rerun** (Optional) = Delete previous results and temporary files for the specified sample(s) to ensure a clean re-run with updated configurations. Use this when reprocessing samples with different parameters.
         - **-notemp** (Optional) = Instructs Snakemake to ignore all temp() declarations. This prevents deletion of temporary files that may still be needed by other steps in the workflow. Recommended when running only a portion of the pipeline or working with multiple samples, as it helps avoid accidentally removing shared intermediate files that other jobs depend on.
-        - **slurm** (Optional) = Use the `profiles/slurm/config.yaml` file to run the workflow with SLURM job submission using Snakemake’s profile system. This enables use of SLURM-specific resource configuration, submission rules, and cluster-specific options. If you want to change any default SLURM settings, such as the partition: Edit profiles/slurm/config.yaml and set the appropriate value for the slurm_partition variable.
+        - **slurm** (Optional) = Use the `config/slurm_params.yaml` file to run the workflow with SLURM job submission using Snakemake’s profile system. This enables use of SLURM-specific resource configuration, submission rules, and cluster-specific options. If you want to change any default SLURM settings, such as the partition: Edit `config/slurm_params.yaml` and set the appropriate value for the slurm_partition variable.
 
-
+    - If you want to change any default settings, such as the threads number and memory usage: Edit config/local_params.yaml. **DO NOT CHANGE THE {WORKDIR} and {THREADS} VARIABLES**.
 
     - We recommend initially running the pipeline with the -np (dry run) flag. This will allow you to verify that all paths and configurations are correct and that the pipeline will execute as expected. It's a good way to ensure everything is set up properly before running the actual workflow.
 
