@@ -31,6 +31,7 @@ NBATCH=15
 RERUN=false
 SETNOTEMP=""
 SETSLURM="false"
+PARTITION=""
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -61,6 +62,10 @@ while [ "$1" != "" ]; do
     -slurm)
         SETSLURM=true
         ;;
+    -partition)
+        shift
+        PARTITION=$1
+        ;;
     -rerun)
         RERUN=true
         ;;
@@ -79,6 +84,10 @@ while [ "$1" != "" ]; do
     shift
 done
 
+if [ "$SETSLURM" = true ] && [ -z "$PARTITION" ]; then
+    echo "ERROR: -partition flag is required when using -slurm."
+    exit 1
+fi
 
 CONFIGFILE=$(realpath "$CONFIGFILE")
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
@@ -121,7 +130,8 @@ if [ "$SETBATCH" = true ] && [ "$SETSLURM" = true ]; then
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
     export SINGULARITY_TMPDIR=$WORKDIR/tmp && \
     export TMPDIR=$WORKDIR/tmp && \
-    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" $WORKDIR/config/slurm_params.yaml > $WORKDIR/profiles/slurm/config.yaml && \
+    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g; s|{PARTITION}|$PARTITION|g" \
+        $WORKDIR/config/slurm_params.yaml > $WORKDIR/profiles/slurm/config.yaml && \
     for ((batch=1; batch<=NBATCH; batch++))
     do
         snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS \
@@ -145,7 +155,8 @@ elif [ "$SETSLURM" = true ]; then
     export SINGULARITY_CACHEDIR=$WORKDIR/singularity && \
     export SINGULARITY_TMPDIR=$WORKDIR/tmp && \
     export TMPDIR=$WORKDIR/tmp && \
-    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" $WORKDIR/config/slurm_params.yaml > $WORKDIR/profiles/slurm/config.yaml && \
+    sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g; s|{PARTITION}|$PARTITION|g" \
+        $WORKDIR/config/slurm_params.yaml > $WORKDIR/profiles/slurm/config.yaml && \
     snakemake -d $WORKDIR -s $WORKDIR/workflow/Snakefile --cores $THREADS \
         --scheduler greedy --profile $WORKDIR/profiles/slurm/ $SETNP $SETUNLOCK
 

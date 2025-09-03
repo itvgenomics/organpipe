@@ -6,9 +6,6 @@ show-failed-logs: True
 keep-going: False
 printshellcmds: True
 rerun-incomplete: True
-max-jobs-per-second: {THREADS}
-max-status-checks-per-second: {THREADS}
-jobs: {THREADS}
 
 
 set-threads:

@@ -10,6 +10,10 @@ def extract_sequences(genbank_file, fasta_file, featuretype):
         for feature in record.features:
             if feature.type == featuretype:
                 product = feature.qualifiers.get("product", ["Unknown"])[0]
+
+                if product == "Unknown":
+                    product = feature.qualifiers.get("gene", ["Unknown"])[0]
+
                 nucleotide_seq = feature.location.extract(record).seq
                 cds_sequences.append((product, nucleotide_seq))
 
