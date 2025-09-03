@@ -132,7 +132,7 @@ set-resources:
     runtime: 4320
     node: 1
   run_pilon:
-    mem_mb: 50000
+    mem_mb: 80000
     runtime: 4320
     node: 1
   write_genbank_mitos2:

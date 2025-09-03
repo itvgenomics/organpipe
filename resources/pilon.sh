@@ -8,4 +8,4 @@ export JAVA_CMD=java
 . /usr/lib/java-wrappers/java-wrappers.sh
 
 # For memory setting see https://github.com/rrwick/Unicycler/issues/63
-run_java -Xmx50G -Xss2560k -jar /usr/share/java/pilon.jar "$@"
+run_java -Xmx80G -Xss2560k -jar /usr/share/java/pilon.jar "$@"
