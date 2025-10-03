@@ -162,24 +162,22 @@ def get_samples_ids(reads_path):
     sample_ids = []
 
     for filename in file_list:
-        if str(filename).endswith(".fasta.gz"):
+        if str(filename).endswith(".fasta.gz") and "Undetermined" not in filename:
             sample_id = filename.split(".fasta.gz")[0]
-            sample_ids.append(
-                str(sample_id)
-                .replace("_R1", "")
-                .replace("_R2", "")
-                .replace("_pair1", "")
-                .replace("_pair2", "")
-            )
+            if "_R1" in sample_id:
+                prefix = sample_id.split("_R1")[0]
+                sample_ids.append(prefix)
+            elif "_pair1" in sample_id:
+                prefix = sample_id.split("_pair1")[0]
+                sample_ids.append(prefix)
         elif str(filename).endswith(".fastq.gz"):
             sample_id = filename.split(".fastq.gz")[0]
-            sample_ids.append(
-                str(sample_id)
-                .replace("_R1", "")
-                .replace("_R2", "")
-                .replace("_pair1", "")
-                .replace("_pair2", "")
-            )
+            if "_R1" in sample_id:
+                prefix = sample_id.split("_R1")[0]
+                sample_ids.append(prefix)
+            elif "_pair1" in sample_id:
+                prefix = sample_id.split("_pair1")[0]
+                sample_ids.append(prefix)
 
     return set(sample_ids)
 

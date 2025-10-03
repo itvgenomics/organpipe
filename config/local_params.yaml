@@ -7,7 +7,6 @@ keep-going: False
 printshellcmds: True
 rerun-incomplete: True
 
-
 set-threads:
   all: 1
   run_mitos2: 1
