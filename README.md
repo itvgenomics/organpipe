@@ -13,6 +13,7 @@ Moreira-Oliveira, R. R., Silva, B. M., Molina, M., Oliveira-Lima, M., Leão, T. 
 ### Prerequisites
 Before installing the required software, make sure you have the following:
 - A Linux-based operating system (e.g., Ubuntu, CentOS, Fedora)
+>⚠️ **Windows Users**: If you are using Windows, OrganPipe must be run in a WSL2 local folder (not on a Windows folder, e.g /mnt/c) to ensure proper file system and performance compatibility.
 - Python (version 3.5 or later) installed on your system
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed on your system
 
@@ -96,6 +97,8 @@ The fields to be edited are the following:
 | `run_nhmmer`        | `"No"`                | Run nhmmer to identify ncRNA and intergenic regions. **Note:** Enabling this can  slow down the pipeline.                                                                                                                               | Optional. Default is "No".                    |
 | `nhmmer_db`         | `"resources/rfam.hmm"`| Path to the HMM database for nhmmer. We are providing a simple database in the `resources` directory, but you can use any HMMER database compatible with HMMER version 3.4 for improved accuracy.                                                                                                                                                | Required if `run_nhmmer` is "Yes".            |
 | `run_images`        | `"Yes"`               | Generate visualizations like OGDraw diagrams and depth plots. **Note:** Enabling this can slow down the pipeline.                                                                                                                      | Optional. Default is "Yes".                   |
+
+>If search_ncbi is set to "Yes" and no matching sequences are found for the provided `search_term`, OrganPipe will raise an error and stop the pipeline. Make sure the term you are searching for has available sequences in NCBI before running the pipeline.
 
 2. **Run OrganPipe**:
     - Run the pipeline with default parameters:
