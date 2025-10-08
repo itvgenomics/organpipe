@@ -104,14 +104,15 @@ The fields to be edited are the following:
     - **Flags**:
         - **-d** </path/to/work/dir> (Required) = Path to your working directory where all the workflow file are
         - **-c** </path/to/config.yaml> (Required) = Overwrite the default configuration file with all needed parameters (e.g. config/config.yaml/csv)
-        - **-t** {int} (Required) = Number of threads to use
+        - **-t** {int} (Required) = Number of threads to use. If running in **SLURM** mode, this value determines how many jobs will be submitted to the queue.
         - **-np** (Optional) = Perform a dry run to see what jobs will be executed without actually running them.
         - **-unlock** (Optional) = Unlock the working directory if Snakemake has somehow locked it.
         - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with `-nbatch` (Default = 15)
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
         - **-rerun** (Optional) = Delete previous results and temporary files for the specified sample(s) to ensure a clean re-run with updated configurations. Use this when reprocessing samples with different parameters.
         - **-notemp** (Optional) = Instructs Snakemake to ignore all temp() declarations. This prevents deletion of temporary files that may still be needed by other steps in the workflow. Recommended when running only a portion of the pipeline or working with multiple samples, as it helps avoid accidentally removing shared intermediate files that other jobs depend on.
-        - **-slurm** (Optional) = Use the `config/slurm_params.yaml` file to run the workflow with SLURM job submission using Snakemake’s profile system. This enables use of SLURM-specific resource configuration, submission rules, and cluster-specific options. If you want to change any default SLURM settings, such as the partition: Edit `config/slurm_params.yaml` and set the appropriate value for the slurm_partition variable.
+        - **-slurm** (Optional) = Use the `config/slurm_params.yaml` file to run the workflow with SLURM job submission using Snakemake’s profile system. This enables use of SLURM-specific resource configuration, submission rules, and cluster-specific options. If you want to change any default SLURM settings, such as the partition: Edit `config/slurm_params.yaml` and set the appropriate value for the `slurm_partition` variable.
+        - **-partition** {string} (Required when **-slurm** is used) — Specifies the SLURM partition (queue) to which the jobs will be submitted.
 
     - If you want to change any default settings, such as the threads number and memory usage: Edit config/local_params.yaml. **DO NOT CHANGE THE `{WORKDIR}`, `{THREADS}` and `{PARTITION}` VARIABLES**. Change `{PARTITION}` only if you want to redirect specific rules to diffent partitions.
 
