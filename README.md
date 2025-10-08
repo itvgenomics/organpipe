@@ -134,3 +134,57 @@ The fields to be edited are the following:
 4. **Checking the Results**:
 
 All results will be compiled in the `workflow/reports` directory. If you want to check the raw output files from the software used in the pipeline, you can find them in the `workflow/results` directory.
+
+Each sample directory contains the following folders:
+
+| Folder | Description |
+|:--------|:-------------|
+| `fastas/` | Contains all assembly FASTA files. |
+| `files/` | Includes important files to assist with manual curation. |
+| `genbanks/` | Contains GenBank format output files. |
+| `genes/` | Holds all assembled genes for each seed/k-mer. |
+| `mitos2/` | Contains mitochondrial-specific results (mito only). |
+| `novoplasty/` | Results from NOVOPlasty (short reads only). |
+| `pilon/` | Polishing results from Pilon (short reads only). |
+| `mitohifi/` | Results from MitoHiFi (long reads only). |
+| `nhmmer/` | HMMER-based search results. |
+| `cpgavas2/` | Chloroplast-specific results (chloro only). |
+
+Each sample folder also includes the following key files:
+
+| File | Description |
+|:------|:-------------|
+| `summary.csv` | Summary of all runs and results. |
+| `mitos2.csv` | Mitochondrial assembly metrics (mito only). |
+| `novoplasty.csv` | NOVOPlasty results (short reads only). |
+| `pilon.csv` | Pilon results (short reads only). |
+| `mitohifi.csv` | MitoHiFi results (long reads only). |
+| `nhmmer_intergenes.csv` | HMMER intergenic region annotations. |
+| `nhmmer_ncRNA.csv` | HMMER ncRNA annotations. |
+| `cpgavas2_codon_usage.csv` | Codon usage statistics (chloro only). |
+| `cpgavas2_gene_composition.csv` | Gene composition summary (chloro only). |
+| `cpgavas2_intron_exon.csv` | Intron–exon structure data (chloro only). |
+| `cpgavas2_problems.csv` | Quality or annotation issues (chloro only). |
+
+Entries in the `summary.csv` file follow this format:
+
+```
+{CA/Option/Contig}_{sample}_{seed}_{TaxID}_{kmer}_1
+```
+
+- **CA** → Circularized Assembly (NOVOPlasty successfully assembled one complete genome)
+- **Option** → Multiple circularizations detected for the same sample
+- **Contig** → Non-circularized assembly (the genome could not be closed)
+- **sample** → Sample identifier (e.g., ITV00872)
+- **seed** → Seed number used in the assembly
+- **TaxID** → NCBI taxonomic identifier
+- **kmer** → K-mer size used
+
+For the entry: `CA_1_ITV00872_25_1-COI_941666_19_1`
+
+- **CA** → Circularized Assembly
+- **ITV00872_25** → Sample name
+- **1-COI** → Seed used in assembly
+- **941666** → TaxID from the seed`s organism
+- **19** → K-mer size used
+- **_1** → Assembly Number

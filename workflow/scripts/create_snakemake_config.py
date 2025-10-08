@@ -143,7 +143,7 @@ def prepare_seeds(
                     species=search_term,
                     email="ncbiapirunner@gmail.com",
                     outfolder=f"resources/{sample}/seeds/",
-                    min_length=14000,
+                    min_length=10000,
                     n=int(max_references),
                 )
 

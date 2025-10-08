@@ -1522,7 +1522,7 @@ if __name__ == "__main__":
                         and os.path.exists(f"workflow/reports/{sample}/mitos2.csv")
                     ):
 
-                        logging.info(f"Writting abstract.csv for sample: {sample}")
+                        logging.info(f"Writting summary.csv for sample: {sample}")
 
                         df_novoplasty = pd.read_csv(
                             f"workflow/reports/{sample}/novoplasty.csv"
@@ -1560,5 +1560,80 @@ if __name__ == "__main__":
                             right_on="assembly",
                         )
                         df_abstract.to_csv(
-                            f"workflow/reports/{sample}/abstract.csv", index=False
+                            f"workflow/reports/{sample}/summary.csv", index=False
                         )
+                elif config["samples"][sample]["organelle"].lower() == "chloro":
+                    base_dir = f"workflow/reports/{sample}/genbanks/"
+                    if (
+                        os.path.exists(f"workflow/reports/{sample}/novoplasty.csv")
+                        and os.path.exists(f"workflow/reports/{sample}/pilon.csv")
+                        and os.path.exists(base_dir)
+                    ):
+                        logging.info(f"Writing summary.csv for sample: {sample}")
+
+                        rows = []
+                        for root, dirs, files in os.walk(base_dir):
+                            seed = os.path.basename(root)
+                            for file in files:
+                                if file.endswith(("chloe.gb", "cpgavas2.gb")):
+                                    filepath = os.path.join(root, file)
+                                    assembly = os.path.splitext(file)[0]
+
+                                    # Robustly find kmer value
+                                    kmer_part = [part for part in assembly.split("_") if part.startswith("kmer")]
+                                    kmer = kmer_part[0].replace("kmer", "") if kmer_part else "N/A"
+
+
+                                    transporter_count = 0
+                                    ribosomal_count = 0
+                                    coding_count = 0
+                                    genome_size = 0
+
+                                    for record in SeqIO.parse(filepath, "genbank"):
+                                        genome_size += len(record.seq)
+                                        for feature in record.features:
+                                            if feature.type == "CDS":
+                                                coding_count += 1
+                                            elif feature.type == "rRNA":
+                                                ribosomal_count += 1
+                                            elif feature.type == "tRNA":
+                                                transporter_count += 1
+
+                                    rows.append({
+                                        "Sample": sample,
+                                        "Seed": seed,
+                                        "kmer": int(kmer),
+                                        "assembly": assembly,
+                                        "annotation_tool": "chloe" if "chloe" in file else "cpgavas2",
+                                        "transporter_count": transporter_count,
+                                        "ribosomal_count": ribosomal_count,
+                                        "coding_count": coding_count,
+                                        "genome_size_annot": genome_size
+                                    })
+
+                        if rows:
+                            df_annotation = pd.DataFrame(rows)
+
+                            df_novoplasty = pd.read_csv(f"workflow/reports/{sample}/novoplasty.csv")
+                            df_pilon = pd.read_csv(f"workflow/reports/{sample}/pilon.csv")
+
+                            # Merge with NOVOPlasty data
+                            df_abstract = pd.merge(
+                                df_novoplasty,
+                                df_annotation,
+                                on=["Sample", "Seed", "kmer"],
+                            )
+
+                            # Select, rename, and reorder pilon columns before merge
+                            df_pilon_sub = df_pilon[["assembly", "genome_size", "changes_number"]].copy()
+
+                            # Merge with Pilon data
+                            df_summary = pd.merge(
+                                df_abstract,
+                                df_pilon_sub,
+                                on="assembly"
+                            )
+
+                            df_summary.to_csv(f"workflow/reports/{sample}/summary.csv", index=False)
+                        else:
+                            logging.warning(f"No chloe.gb or cpgavas2.gb files found for sample {sample} to generate summary.")
