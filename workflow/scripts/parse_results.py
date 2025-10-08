@@ -1578,10 +1578,7 @@ if __name__ == "__main__":
                                 if file.endswith(("chloe.gb", "cpgavas2.gb")):
                                     filepath = os.path.join(root, file)
                                     assembly = os.path.splitext(file)[0]
-
-                                    # Robustly find kmer value
-                                    kmer_part = [part for part in assembly.split("_") if part.startswith("kmer")]
-                                    kmer = kmer_part[0].replace("kmer", "") if kmer_part else "N/A"
+                                    kmer = assembly.split("_")[-2]
 
 
                                     transporter_count = 0
@@ -1608,32 +1605,11 @@ if __name__ == "__main__":
                                         "transporter_count": transporter_count,
                                         "ribosomal_count": ribosomal_count,
                                         "coding_count": coding_count,
-                                        "genome_size_annot": genome_size
+                                        "genome_size": genome_size
                                     })
 
                         if rows:
-                            df_annotation = pd.DataFrame(rows)
-
-                            df_novoplasty = pd.read_csv(f"workflow/reports/{sample}/novoplasty.csv")
-                            df_pilon = pd.read_csv(f"workflow/reports/{sample}/pilon.csv")
-
-                            # Merge with NOVOPlasty data
-                            df_abstract = pd.merge(
-                                df_novoplasty,
-                                df_annotation,
-                                on=["Sample", "Seed", "kmer"],
-                            )
-
-                            # Select, rename, and reorder pilon columns before merge
-                            df_pilon_sub = df_pilon[["assembly", "genome_size", "changes_number"]].copy()
-
-                            # Merge with Pilon data
-                            df_summary = pd.merge(
-                                df_abstract,
-                                df_pilon_sub,
-                                on="assembly"
-                            )
-
+                            df_summary = pd.DataFrame(rows)
                             df_summary.to_csv(f"workflow/reports/{sample}/summary.csv", index=False)
                         else:
                             logging.warning(f"No chloe.gb or cpgavas2.gb files found for sample {sample} to generate summary.")

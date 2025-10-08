@@ -55,6 +55,9 @@ Before installing the required software, make sure you have the following:
 
 ## How to run OrganPipe
 
+>⚠️ **Warning about parallelization**:
+Snakemake uses the specified number of threads (CPUs) in local mode to check job availability. If the product of `-t` × `max_memory` exceeds your system's available RAM, it can cause the system to crash. Make sure your -t value and max_memory settings are compatible with your machine’s memory.
+
 1. **Configure the Pipeline**:
     - Before running the pipeline, you must edit the configuration file to provide information specific to your samples and variables. We provide this file in two formats: YAML and CSV at the `config` directory. **If you don't need to use a specific variable, leave the value blank rather than removing the key/column. (e. g. reference: '')**
 
