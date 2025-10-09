@@ -9,6 +9,35 @@ Moreira-Oliveira, R. R., Silva, B. M., Molina, M., Oliveira-Lima, M., Leão, T. 
  ```
 [https://doi.org/10.21203/RS.3.RS-5686696/V1](https://doi.org/10.21203/RS.3.RS-5686696/V1)
 
+We encourage the users to also cite the tools in this pipeline:
+
+```
+Nicolas Dierckxsens, Patrick Mardulyn, Guillaume Smits, NOVOPlasty: de novo assembly of organelle genomes from whole genome data, Nucleic Acids Research, Volume 45, Issue 4, 28 February 2017, Page e18, https://doi.org/10.1093/nar/gkw955
+```
+
+```
+Uliano-Silva, M., Ferreira, J.G.R.N., Krasheninnikova, K. et al. MitoHiFi: a python pipeline for mitochondrial genome assembly from PacBio high fidelity reads. BMC Bioinformatics 24, 288 (2023). https://doi.org/10.1186/s12859-023-05385-y
+```
+
+```
+Alexander Donath, Frank Jühling, Marwa Al-Arab, Stephan H Bernhart, Franziska Reinhardt, Peter F Stadler, Martin Middendorf, Matthias Bernt, Improved annotation of protein-coding genes boundaries in metazoan mitochondrial genomes, Nucleic Acids Research, Volume 47, Issue 20, 18 November 2019, Pages 10543–10552, https://doi.org/10.1093/nar/gkz833
+```
+
+```
+Walker BJ, Abeel T, Shea T, Priest M, Abouelliel A, Sakthikumar S, Cuomo CA, Zeng Q, Wortman J, Young SK, Earl AM. Pilon: an integrated tool for comprehensive microbial variant detection and genome assembly improvement. PLoS One. 2014 Nov 19;9(11):e112963. doi: 10.1371/journal.pone.0112963. PMID: 25409509; PMCID: PMC4237348.
+```
+
+```
+Linchun Shi, Haimei Chen, Mei Jiang, Liqiang Wang, Xi Wu, Linfang Huang, Chang Liu, CPGAVAS2, an integrated plastome sequence annotator and analyzer, Nucleic Acids Research, Volume 47, Issue W1, 02 July 2019, Pages W65–W73, https://doi.org/10.1093/nar/gkz345
+```
+
+```
+https://github.com/ian-small/Chloe.jl
+```
+
+```
+Stephan Greiner, Pascal Lehwark, Ralph Bock, OrganellarGenomeDRAW (OGDRAW) version 1.3.1: expanded toolkit for the graphical visualization of organellar genomes, Nucleic Acids Research, Volume 47, Issue W1, 02 July 2019, Pages W59–W64, https://doi.org/10.1093/nar/gkz238
+```
 
 ## How to Install OrganPipe Environment
 
