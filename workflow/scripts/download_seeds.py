@@ -7,6 +7,7 @@ import time
 from io import StringIO
 from Bio import Entrez
 from Bio import SeqIO
+from Bio.Seq import UndefinedSequenceError
 
 
 # Create a Function to read the kmers list
@@ -145,6 +146,13 @@ def find_seed(organism, gene, max_n, outpath, organelle):
 
             if not taxon_id:
                 logging.warning("Taxon ID not found for a record; skipping.")
+                continue
+
+            # Skip records with undefined sequences
+            try:
+                _ = str(record.seq)
+            except UndefinedSequenceError:
+                logging.warning(f"Sequence content is undefined for record {record.id}; skipping.")
                 continue
 
             if taxon_id not in organisms:

@@ -29,7 +29,6 @@ SIFDIR=""
 SETBATCH="false"
 NBATCH=15
 RERUN=false
-SETNOTEMP=""
 SETSLURM="false"
 PARTITION=""
 
@@ -52,9 +51,6 @@ while [ "$1" != "" ]; do
         ;;
     -unlock)
         SETUNLOCK="--unlock"
-        ;;
-    -notemp)
-        SETNOTEMP="--notemp"
         ;;
     -batch)
         SETBATCH=true
