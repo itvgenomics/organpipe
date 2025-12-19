@@ -224,3 +224,77 @@ For the entry: `CA_1_ITV00872_25_1-COI_941666_19_1`
 - **941666** → TaxID from the seed`s organism
 - **19** → K-mer size used
 - **_1** → Assembly Number
+
+# OrganPipe v1.1 — Change Log
+
+## Bug Fixes
+- Fixed several incorrect variable examples in configuration files.
+- Fixed `stderr` output handling for **bwa-mem2**.
+- Fixed how the reference FASTA is handled in **NOVOPlasty**.
+- Fixed `parse_results.py` when **CpGAVAS2** fails to annotate.
+- Fixed rule `all` inputs so Snakemake does not re-run finished samples when re-running with an updated config file.
+- Fixed issues when using `all` as the sample name.
+- Added proper help output when an invalid flag is passed to `OrganPipe.sh`.
+
+## Read Trimming Improvements
+- Added **fastp** as an alternative to AdapterRemoval:
+  - The config variable `adapterremoval` was renamed to `run_trimming`.
+  - fastp now **auto-detects adapters**, removing the need for an `adapters.txt` file.
+  - A custom adapters file can still be used if fastp fails to detect adapters automatically.
+
+## Re-run Support
+- Added `--rerun` flag:
+  - Deletes previous results and temporary files for selected sample(s).
+  - Ensures a clean re-run when changing parameters or configurations.
+  - Recommended when reprocessing samples with updated settings.
+
+## Long Reads Support
+- Improved handling of long-read sequencing data.
+- Added test data for long reads.
+- Added an example configuration file for long-read workflows.
+
+## Documentation & Config Improvements
+- Updated the **README** to document all new features.
+- Improved comments in `config/config.yaml` for better readability.
+- Added a **config check script** to verify that all required parameters are correctly set.
+
+## SLURM Support
+- OrganPipe now supports **SLURM**:
+  - Default SLURM parameters can be modified in `profiles/slurm/config.yaml`.
+  - Users must set their partition using the `slurm_partition` variable.
+
+## Output & Reporting Changes
+- Replaced **CIRCOS** with **OGDRAW** for generating circular mitogenome/plastome images.
+- Renamed `abstract.csv` to `summary.csv`.
+- Chloroplast short-read assemblies now include a summary.
+- Reports generation was reworked — see the *Results* section in the README for details.
+
+## Output Structure
+
+All outputs are located in: `workflow/reports/<sample_name>/`
+
+
+### Directories
+- `fastas` — All assembly FASTA files
+- `files` — Important files for manual curation
+- `genbanks`
+- `genes` — Gene assemblies for each seed/k-mer
+- `mitos2` — Mitochondrial assemblies only
+- `novoplasty` — Short reads only
+- `pilon` — Short reads only
+- `mitohifi` — Long reads only
+- `nhmmer`
+- `cpgavas2` — Chloroplast only
+
+### Output Files
+- `summary.csv`
+- `mitos2.csv` (mitochondria only)
+- `novoplasty.csv` (short reads only)
+- `pilon.csv` (short reads only)
+- `mitohifi.csv` (long reads only)
+- `nhmmer_intergenes.csv`
+- `nhmmer_ncRNA.csv`
+- `cpgavas2_codon_usage.csv` (chloroplast only)
+- `cpgavas2_gene_composition.csv` (chloroplast only)
+- `cpgavas2_intron_exon.csv` (chloroplast only)
+- `cpgavas2_problems.csv` (chloroplast only)
