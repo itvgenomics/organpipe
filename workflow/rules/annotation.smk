@@ -30,14 +30,13 @@ rule run_mitos2:
 
                 # Run MITOS2
                 mkdir -p "$mitos_outdir" && \
-                runmitos.py --code {params.genetic_code} \
+                runmitos --code {params.genetic_code} \
                     --input "$pilon_dir/temp.fasta" \
                     --outdir "$mitos_outdir" \
-                    --refdir {params.refseq_dir} --noplots --best \
+                    -r {params.refseq_dir} --noplots --best \
                     > "$mitos_outdir/mitos.log" 2>{log}
 
-                # Remove the temp.fasta file
-                rm "$pilon_dir/temp.fasta"
+                mv $pilon_dir/temp.fasta $mitos_outdir/mitos2.fasta
             fi
         done
 

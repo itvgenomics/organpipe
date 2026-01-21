@@ -279,7 +279,7 @@ if __name__ == "__main__":
                 if os.path.exists(bed_file):
                     positions, positions_list = get_positions(bed_file)
                     extract_intergenes_sequences(
-                        f"{annotations_path}/{annotation}/sequence.fas-0",
+                        f"{annotations_path}/{annotation}/mitos2.fasta",
                         positions,
                         f"{output_path}/intergenes.fasta",
                         positions_list,

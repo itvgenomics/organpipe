@@ -6,7 +6,7 @@
 # Use "all" if you want to use all samples in the reads_path
 # The reads must be delimited with _R1/_R2 or _pair1/_pair2
 # In the reads_path, make sure the files are fastq.gz or fasta.gz and only the reads are there
-sample: "hs1, hs2"
+sample: "hs1,hs2"
 
 # Reads path _R1 and _R2
 reads_path: "test_data/rawreads"

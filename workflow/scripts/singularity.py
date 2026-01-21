@@ -22,7 +22,7 @@ args = parser.parse_args()
 
 docker_images = [
     "itvdsbioinfo/chloe:1.0",
-    "nanozoo/mitos:2.0.3--9b425c9",
+    "itvdsbioinfo/mitos:2.1.10",
     "itvdsbioinfo/novoplasty:4.3.5",
     "ghcr.io/marcelauliano/mitohifi:master",
     "staphb/hmmer:3.4",
