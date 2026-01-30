@@ -95,7 +95,7 @@ rule parse_results:
     output:
         "workflow/reports/{sample_id}/parse_results.done"
     log:
-        "logs/{sample}.parse_results.log"
+        "logs/{sample_id}.parse_results.log"
     shell:
         """
         python workflow/scripts/parse_results.py --sample {wildcards.sample_id} >> {log} 2>&1 && \

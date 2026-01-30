@@ -81,13 +81,13 @@ rule check_adapters:
 rule check_nhmmer_db:
     output:
         "resources/nhmmer_db.hmm"
-    shell:
-        """
-        NHMMER_DB=$(grep 'nhmmer_db:' config/snakemake_config.yaml | grep -v "''" | sed -E 's/.*: *//; s/[[:space:]]*$//' | uniq) && \
-        if [[ ! -f "{output}" ]]; then \
-            cp "$NHMMER_DB" {output}
-        fi
-        """
+    run:
+        db_path = config.get("nhmmer_db")
+
+        if db_path:
+            shell(f"cp {db_path} {output}")
+        else:
+            shell(f"touch {output}")
 
 rule extract_table2asn:
     input:

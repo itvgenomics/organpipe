@@ -25,7 +25,7 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(
             """
-            This Python script is designed to search the NCBI database and download seed sequences to use in a PipePlasty run. It retrieves genetic information in the form of FASTA files based on specified taxon and gene list.
+            This Python script is designed to search the NCBI database and download seed sequences to use in a OrganPipe run. It retrieves genetic information in the form of FASTA files based on specified taxon and gene list.
 
             Command-line Arguments:
                 --taxon: Specify the taxon to search.
