@@ -69,8 +69,5 @@ for image in docker_images:
         command = f"singularity pull {output_file} docker://{image}"
 
         # Execute the command
-        try:
-            subprocess.run(command, shell=True, check=True)
-            logging.info(f"Successfully pulled {image} to {output_file}")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"ERROR: Error pulling {image}: {e}")
+        subprocess.run(command, shell=True, check=True)
+        logging.info(f"Successfully pulled {image} to {output_file}")
