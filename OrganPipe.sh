@@ -4,7 +4,9 @@ set -e
 cat << 'EOF'
 
 ### OrganPipe: An automated tool to facilitate the assembly, annotation, and curation of mitochondrial and chloroplast genomes
-#Authors: Renato R. Moreira-Oliveira, Bruno Marques Silva, Michele Molina, Marx Oliveira-Lima, Tiago Ferreira Leão, Santelmo Vasconcelos, Gisele Lopes Nunes. 2024
+#Version: 1.2.0
+#Authors: Moreira-Oliveira, R. R., Silva, B. M., Molina, M., Oliveira-Lima, M., Leão, T. F., Vasconcelos, S., & Nunes, G. L. (2025).
+#https://doi.org/10.21203/RS.3.RS-5686696/V1
 
 ###    Copyright (C) 2024  Renato Oliveira
 ###
