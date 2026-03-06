@@ -199,11 +199,11 @@ if __name__ == "__main__":
         fasta_output_file = f"results/{sample}/genbanks/{annotation}.fasta"
 
         if os.path.exists(
-            f"{annotations_path}/{annotation}/sequence.fas-0"
+            f"{annotations_path}/{annotation}/mitos2.fasta"
         ) and os.path.exists(f"{annotations_path}/{annotation}/result.gff"):
 
             create_genbank(
-                fasta_file=f"{annotations_path}/{annotation}/sequence.fas-0",
+                fasta_file=f"{annotations_path}/{annotation}/mitos2.fasta",
                 gff_file=f"{annotations_path}/{annotation}/result.gff",
                 output_file=gb_output_file,
                 code=code,
