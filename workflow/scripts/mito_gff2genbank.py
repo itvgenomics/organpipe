@@ -121,38 +121,41 @@ def create_genbank(fasta_file, gff_file, output_file, code):
                 # Add the SeqFeature to the SeqRecord
                 seq_record.features.append(seq_feature)
 
-            elif feature_type == "mRNA":
-                if int(start) > int(end):
-                    f1 = FeatureLocation(int(start) - 1, len(str(fasta_seq.seq)))
-                    f2 = FeatureLocation(0, int(end))
-                    seq_feature = SeqFeature(CompoundLocation([f1, f2]), type="CDS")
-                else:
-                    seq_feature = SeqFeature(
-                        FeatureLocation(
-                            int(start) - 1, int(end), strand=strand_dict[strand]
-                        ),
-                        type="CDS",
-                    )
-
-                # Parse the attributes and add relevant qualifiers to the SeqFeature
+            elif feature_type == "exon":
                 attr_parts = attributes.split(";")
-                for attr in attr_parts:
-                    attr = attr.strip()
-                    if "gene_id" in attr:
-                        key, value = attr.split("=")
-                        if strand == "+":
-                            seq_feature.qualifiers["translation"] = sequence[
-                                int(start) - 1 : int(end)
-                            ].translate(table=code)
-                            seq_feature.qualifiers["gene"] = value
+                gene = attr_parts[1].replace("Name=", "")
+                if gene in ["nad1", "nad2","cox1", "cox2", "atp8", "atp6", "cox3", "nad3", "nad4l", "nad4", "nad5", "nad6", "cob"]:
+                    if int(start) > int(end):
+                        f1 = FeatureLocation(int(start) - 1, len(str(fasta_seq.seq)))
+                        f2 = FeatureLocation(0, int(end))
+                        seq_feature = SeqFeature(CompoundLocation([f1, f2]), type="CDS")
+                    else:
+                        seq_feature = SeqFeature(
+                            FeatureLocation(
+                                int(start) - 1, int(end), strand=strand_dict[strand]
+                            ),
+                            type="CDS",
+                        )
 
-                        elif strand == "-":
-                            seq_feature.qualifiers["translation"] = (
-                                sequence[int(start) - 1 : int(end)]
-                                .reverse_complement()
-                                .translate(table=code)
-                            )
-                            seq_feature.qualifiers["gene"] = value
+                    # Parse the attributes and add relevant qualifiers to the SeqFeature
+                    attr_parts = attributes.split(";")
+                    for attr in attr_parts:
+                        attr = attr.strip()
+                        if "Name=" in attr:
+                            key, value = attr.split("=")
+                            if strand == "+":
+                                seq_feature.qualifiers["translation"] = sequence[
+                                    int(start) - 1 : int(end)
+                                ].translate(table=code)
+                                seq_feature.qualifiers["gene"] = value
+
+                            elif strand == "-":
+                                seq_feature.qualifiers["translation"] = (
+                                    sequence[int(start) - 1 : int(end)]
+                                    .reverse_complement()
+                                    .translate(table=code)
+                                )
+                                seq_feature.qualifiers["gene"] = value
 
                 # Add the SeqFeature to the SeqRecord
                 seq_record.features.append(seq_feature)
