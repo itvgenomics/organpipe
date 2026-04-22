@@ -156,6 +156,8 @@ def create_genbank(fasta_file, gff_file, output_file, code):
                                     .translate(table=code)
                                 )
                                 seq_feature.qualifiers["gene"] = value
+                else:
+                    continue
 
                 # Add the SeqFeature to the SeqRecord
                 seq_record.features.append(seq_feature)
