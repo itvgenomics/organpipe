@@ -61,6 +61,8 @@ set-threads:
   run_fastp: 4
   check_reference: 1
   check_fasta_longreads: 1
+  parse_results: 1
+
 
 set-resources:
   all:
@@ -304,6 +306,11 @@ set-resources:
     runtime: 4320
     node: 1
   check_fasta_longreads:
+    slurm_partition: {PARTITION}
+    mem_mb: 4000
+    runtime: 4320
+    node: 1
+  parse_results:
     slurm_partition: {PARTITION}
     mem_mb: 4000
     runtime: 4320
