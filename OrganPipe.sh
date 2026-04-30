@@ -34,6 +34,9 @@ RERUN=false
 SETSLURM="false"
 PARTITION=""
 
+USED_T=false
+USED_J=false
+
 while [ "$1" != "" ]; do
     case $1 in
     -c)
@@ -47,6 +50,12 @@ while [ "$1" != "" ]; do
     -t)
         shift
         THREADS=$1
+        USED_T=true
+        ;;
+    -j)
+        shift
+        THREADS=$1
+        USED_J=true
         ;;
     -np)
         SETNP="-np"
@@ -81,6 +90,17 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ "$SETSLURM" = true ]; then
+    if [ "$USED_J" = false ]; then
+        echo "ERROR: When using -slurm, you must use -j (not -t) to set the number of jobs submitted to the queue."
+        exit 1
+    fi
+    if [ "$USED_T" = true ]; then
+        echo "ERROR: -t is not allowed with -slurm. Use -j instead."
+        exit 1
+    fi
+fi
 
 if [ "$SETSLURM" = true ] && [ -z "$PARTITION" ]; then
     echo "ERROR: -partition flag is required when using -slurm."

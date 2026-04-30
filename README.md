@@ -225,9 +225,27 @@ For the entry: `CA_1_ITV00872_25_1-COI_941666_19_1`
 - **19** → K-mer size used
 - **_1** → Assembly Number
 
-# OrganPipe v1.1 — Change Log
+# Changelog
 
-## Bug Fixes
+## OrganPipe 1.2.0 – Changelog
+
+### New Features
+- Introduced a new `-j` flag in Slurm mode to control how many jobs are submitted to the queue.
+- Converted result parsing into a Snakemake rule:
+  - Parsing now runs automatically when each sample completes all jobs.
+  - Reports are generated incrementally during pipeline execution instead of only at the end.
+
+### Improvements
+- Updated `mitos` to version 2.1.10.
+- Improved robustness when handling `mitos` BLAST outputs with fewer than 12 columns.
+
+### Bug Fixes
+- Fixed parsing issues when `result.geneorder` is missing from `mitos2` output files.
+- Attempted to resolve failures during Singularity `.sif` image builds.
+
+## OrganPipe v1.1 — Change Log
+
+### Bug Fixes
 - Fixed several incorrect variable examples in configuration files.
 - Fixed `stderr` output handling for **bwa-mem2**.
 - Fixed how the reference FASTA is handled in **NOVOPlasty**.
@@ -236,45 +254,45 @@ For the entry: `CA_1_ITV00872_25_1-COI_941666_19_1`
 - Fixed issues when using `all` as the sample name.
 - Added proper help output when an invalid flag is passed to `OrganPipe.sh`.
 
-## Read Trimming Improvements
+### Read Trimming Improvements
 - Added **fastp** as an alternative to AdapterRemoval:
   - The config variable `adapterremoval` was renamed to `run_trimming`.
   - fastp now **auto-detects adapters**, removing the need for an `adapters.txt` file.
   - A custom adapters file can still be used if fastp fails to detect adapters automatically.
 
-## Re-run Support
+### Re-run Support
 - Added `--rerun` flag:
   - Deletes previous results and temporary files for selected sample(s).
   - Ensures a clean re-run when changing parameters or configurations.
   - Recommended when reprocessing samples with updated settings.
 
-## Long Reads Support
+### Long Reads Support
 - Improved handling of long-read sequencing data.
 - Added test data for long reads.
 - Added an example configuration file for long-read workflows.
 
-## Documentation & Config Improvements
+### Documentation & Config Improvements
 - Updated the **README** to document all new features.
 - Improved comments in `config/config.yaml` for better readability.
 - Added a **config check script** to verify that all required parameters are correctly set.
 
-## SLURM Support
+### SLURM Support
 - OrganPipe now supports **SLURM**:
   - Default SLURM parameters can be modified in `profiles/slurm/config.yaml`.
   - Users must set their partition using the `slurm_partition` variable.
 
-## Output & Reporting Changes
+### Output & Reporting Changes
 - Replaced **CIRCOS** with **OGDRAW** for generating circular mitogenome/plastome images.
 - Renamed `abstract.csv` to `summary.csv`.
 - Chloroplast short-read assemblies now include a summary.
 - Reports generation was reworked — see the *Results* section in the README for details.
 
-## Output Structure
+# Output Structure
 
 All outputs are located in: `workflow/reports/<sample_name>/`
 
 
-### Directories
+## Directories
 - `fastas` — All assembly FASTA files
 - `files` — Important files for manual curation
 - `genbanks`
@@ -286,7 +304,7 @@ All outputs are located in: `workflow/reports/<sample_name>/`
 - `nhmmer`
 - `cpgavas2` — Chloroplast only
 
-### Output Files
+## Output Files
 - `summary.csv`
 - `mitos2.csv` (mitochondria only)
 - `novoplasty.csv` (short reads only)
