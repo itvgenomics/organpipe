@@ -14,65 +14,76 @@ def get_output_files(wildcards):
             sample_output.extend(expand("resources/{sample_id}/rawreads/fastp.html", sample_id=sample_id))
             sample_output.extend(expand("resources/{sample_id}/rawreads/fastp.json", sample_id=sample_id))
 
-        sample_output.extend(expand("results/{sample_id}/novoplasty/{seed}/kmer{kmer}/log_{sample_id}.txt", sample_id=sample_id, seed=seeds, kmer=kmers))
-        sample_output.extend(expand("results/{sample_id}/assemblies/{seed}_kmer{kmer}.fasta", sample_id=sample_id, seed=seeds, kmer=kmers))
+        if config["samples"][sample_id].get("run_novoplasty", "").lower() == "yes":
+            sample_output.extend(expand("results/{sample_id}/novoplasty/{seed}/kmer{kmer}/log_{sample_id}.txt", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/assemblies/organpipe/{seed}_kmer{kmer}.fasta", sample_id=sample_id, seed=seeds, kmer=kmers))
 
-        sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-        sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-        sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.samtools_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-        sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.pilon.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.samtools_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.pilon.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+
+        if config["samples"][sample_id].get("run_getorganelle", "").lower() == "yes":
+            sample_output.extend(expand("results/{sample_id}/getorganelle/get_org.log.txt", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/getorganelle/sequences.fasta", sample_id=sample_id))
+
+            sample_output.extend(expand("results/{sample_id}/pilon/bwa_index.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/bwa_mem.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/samtools_index.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/pilon.check", sample_id=sample_id))
 
         if config["samples"][sample_id].get("annotation", "").lower() == "yes":
-            if config["samples"][sample_id].get("organelle", "").lower() == "mito":
-                sample_output.extend(expand("results/{sample_id}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-
-                if config["samples"][sample_id].get("run_images", "").lower() == "yes":
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.recruitment_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.depth_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{sample_id}.mito.ogdraw.check", sample_id=sample_id))
-
-            elif config["samples"][sample_id].get("organelle", "").lower() == "chloro":
-                sample_output.extend(expand("results/{sample_id}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-
-                sample_output.extend(expand("results/{sample_id}/chloe/{seed}_kmer{kmer}.chloe.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.chloe.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-
-                if config["samples"][sample_id].get("run_images", "").lower() == "yes":
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.recruitment_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.depth_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/images/{sample_id}.chloro.ogdraw.check", sample_id=sample_id))
-
-            if config["samples"][sample_id].get("run_nhmmer", "").lower() == "yes":
-                sample_output.extend(expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p']))
-
+            if config["samples"][sample_id].get("run_novoplasty", "").lower() == "yes":
                 if config["samples"][sample_id].get("organelle", "").lower() == "mito":
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+
+                    if config["samples"][sample_id].get("run_images", "").lower() == "yes":
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.recruitment_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.depth_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{sample_id}.mito.ogdraw.check", sample_id=sample_id))
 
                 elif config["samples"][sample_id].get("organelle", "").lower() == "chloro":
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+
+                    sample_output.extend(expand("results/{sample_id}/chloe/{seed}_kmer{kmer}.chloe.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.chloe.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+
+                    if config["samples"][sample_id].get("run_images", "").lower() == "yes":
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.recruitment_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.depth_plot.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/images/{sample_id}.chloro.ogdraw.check", sample_id=sample_id))
+
+                if config["samples"][sample_id].get("run_nhmmer", "").lower() == "yes":
+                    sample_output.extend(expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p']))
+
+                    if config["samples"][sample_id].get("organelle", "").lower() == "mito":
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+
+                    elif config["samples"][sample_id].get("organelle", "").lower() == "chloro":
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
     elif config["samples"][sample_id].get("sequencing_type", "").lower() == "long":
 

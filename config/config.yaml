@@ -19,93 +19,17 @@ organelle:
 # Define the genetic code to be used for mitochondrial genome annotation (e.g., 1 for Standard Code).
 genetic_code:
 
-# If a reference genome is available, specify its path as a fasta file. Leave blank if no reference is available.
-# This is used by NOVOPlasty as a guide to resolve duplicated regions in the plant mitochondria or the inverted repeat in the chloroplast.
-# This is not supported for long reads.
-reference:
-
-################################
-########## INPUT INFO ##########
-################################
-
 # Indicate the type of sequencing data: "Short" for Illumina short reads or "Long" for PacBio/ONT reads.
 sequencing_type:
 
-# Specify the expected genome size range in kilobases (e.g., "15000-18000" for mitochondria).
-genome_range:
-
-################################
-####### QUALITY CONTROL ########
-################################
+##################################
+######## OrganPipe Steps #########
+##################################
 
 # Choose whether to run the Fastp software for adapter trimming and quality control.
 # For long reads, only .fastq.gz files are supported.
 # Options: "Yes" to perform trimming, "No" to skip this step.
 run_trimming:
-
-# Provide the path to a text file listing adapter sequences to be removed by Fastp. You can leave this blank if Fastp can identify your adapters automatically.
-adapters:
-
-# Set the minimum read length to retain after trimming. Reads shorter than this length will be discarded.
-# This is not supported for long reads.
-minlength:
-
-# Set the minimum base quality score threshold for trimming low-quality bases from reads.
-# This is not supported for long reads.
-minquality:
-
-# If you are using PacBio reads and want to trim them, make sure your files are in fastq.gz format.
-# Change the following variables you want to customize cutadapt settings.
-pacbio_adapters: '-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT'
-
-################################
-########## SEED INFO ###########
-################################
-
-# Specify the path to a seed file to initialize assembly. Supported formats: "fasta" or "genbank".
-# For long-read sequencing, leave seed_format and feature blank.
-# This is not supported for long reads.
-seed_format:
-seed_file:
-
-# If a GenBank file is provided as the seed file, specify the feature type to use for assembly: "CDS", "rRNA", or "tRNA".
-# This is not supported for long reads.
-feature:
-
-# If no seed file is provided, indicate whether to search NCBI for reference sequences.
-# Options: "Yes" to search NCBI, "No" to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
-search_ncbi:
-
-# List the specific genes (e.g., "COI,16S,ATP6") to search for on NCBI if NCBI search is enabled.
-# This is not supported for long reads.
-search_genes:
-
-# Specify the taxon name to use as a query when searching NCBI (e.g., "Amphisbaena").
-search_term:
-
-# Set the maximum number of reference sequences to download per gene during the NCBI search.
-max_references:
-
-################################
-######## ILLUMINA STEP #########
-################################
-
-# Specify the list of k-mer sizes to be used in genome assembly (e.g., "19,23,28,33,39").
-# This is not supported for long reads.
-kmers:
-
-# Set the maximum amount of memory (in GB) that can be used during assembly.
-# This is not supported for long reads.
-max_memory:
-
-# Provide the read length (in base pairs) and average insert size (in base pairs) of the sequencing data.
-# This is not supported for long reads.
-reads_length:
-insert_size:
-
-##################################
-######## OrganPipe Steps #########
-##################################
 
 # Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
 # This is not supported for long reads.
@@ -122,3 +46,126 @@ nhmmer_db: "resources/rfam.hmm"
 # Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: "Yes" or "No".
 # This is not supported for long reads.
 run_images: "No"
+
+################################
+####### QUALITY CONTROL ########
+################################
+
+# The following 3 parameters are only applicable if run_trimming is set to "Yes" for short-reads.
+
+# Provide the path to a text file listing adapter sequences to be removed by Fastp.
+# You can leave this blank if Fastp can identify your adapters automatically.
+# This is not supported for long reads.
+adapters:
+
+# Set the minimum read length to retain after trimming. Reads shorter than this length will be discarded.
+# This is not supported for long reads.
+minlength:
+
+# Set the minimum base quality score threshold for trimming low-quality bases from reads.
+# This is not supported for long reads.
+minquality:
+
+# If you are using PacBio reads and want to trim them, make sure your files are in fastq.gz format.
+# Change the following variables you want to customize cutadapt settings.
+pacbio_adapters: '-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT'
+
+################################
+####### NOVOPlasty INFO ########
+################################
+
+# Indicate whether to run NOVOPlasty for genome assembly. Options: "Yes" to run NOVOPlasty, "No" to skip this step.
+run_novoplasty: "Yes"
+
+# Specify the expected genome size range in kilobases (e.g., "15000-18000" for mitochondria).
+genome_range:
+
+# If a reference genome is available, specify its path as a fasta file. Leave blank if no reference is available.
+# This is used by NOVOPlasty as a guide to resolve duplicated regions in the plant mitochondria or the inverted repeat in the chloroplast.
+reference:
+
+# Specify the path to a seed file to initialize assembly. Supported formats: "fasta" or "genbank".
+# For long-read sequencing, leave seed_format and feature blank.
+seed_format:
+seed_file:
+
+# If a GenBank file is provided as the seed file, specify the feature type to use for assembly: "CDS", "rRNA", or "tRNA".
+feature:
+
+# If no seed file is provided, indicate whether to search NCBI for reference sequences.
+# Options: "Yes" to search NCBI, "No" to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
+search_ncbi:
+
+# List the specific genes (e.g., "COI,16S,ATP6") to search for on NCBI if NCBI search is enabled.
+search_genes:
+
+# Specify the taxon name to use as a query when searching NCBI (e.g., "Amphisbaena").
+search_term:
+
+# Set the maximum number of reference sequences to download per gene during the NCBI search.
+max_references:
+
+# Specify the list of k-mer sizes to be used in genome assembly (e.g., "19,23,28,33,39").
+kmers:
+
+# Set the maximum amount of memory (in GB) that can be used during assembly.
+max_memory:
+
+# Provide the read length (in base pairs) and average insert size (in base pairs) of the sequencing data.
+reads_length:
+insert_size:
+
+################################
+###### GetOrganelle INFO #######
+################################
+
+# Indicate whether to run GetOrganelle for genome assembly. Options: "Yes" to run GetOrganelle, "No" to skip this step.
+run_getorganelle: "No"
+
+# This flag should be followed with:
+# "embplant_pt" (embryophyta plant plastome),
+# "other_pt" (non-embryophyta plant plastome), "embplant_mt" (plant mitogenome),
+# "embplant_nr" (plant nuclear ribosomal RNA), "animal_mt" (animal mitogenome),
+# "fungus_mt" (fungus mitogenome), "fungus_nr" (fungus nuclear ribosomal RNA)
+# or "embplant_mt,other_pt,fungus_mt" (the combination of any of above organelle genomes split by comma(s),
+# which might be computationally more intensive than separate runs).
+database:
+
+# Maximum number of extending rounds (suggested: >=2).
+# Default:
+# 15 (embplant_pt),
+# 30 (embplant_mt/other_pt),
+# 10 (embplant_nr/animal_mt/fungus_mt/fungus_nr)
+n_rounds:
+
+# Hypothetical value(s) of target genome size.
+# This is only used for estimating word size.
+# Should be a list of INTEGER numbers split by comma(s) on a multi-organelle mode,
+# with the same list length to organelle_type (followed by '-F').
+# Default:
+# 130000 (embplant_pt)
+# 390000 (embplant_mt)
+# 13000 (embplant_nr)
+# 39000 (other_pt)
+# 13000 (animal_mt)
+# 65000 (fungus_mt)
+# 13000 (fungus_nr)
+# 39000,390000,65000 (other_pt,embplant_mt,fungus_mt)
+target_size:
+
+# SPAdes kmer settings. Use the same format as in SPAdes.
+# e.g: 21,55,85,115
+spades_kmers:
+
+# Add any additional flags to be passed to the GetOrganelle command line.
+extra_flags:
+
+################################
+######## MitoHifi INFO #########
+################################
+
+# Specify the taxon name to use as a query when searching NCBI (e.g., "Amphisbaena") for complete mitogenome references.
+search_species:
+
+# Set the maximum number of reference sequences to download during the NCBI search (e.g., 5).
+n_references:

@@ -35,6 +35,7 @@ docker_images = [
     "nanozoo/seqtk:1.3--dc0d16b",
     "pipecraft/cutadapt:4.4",
     "cpgavas2",
+    "wangjiaqi1/getorganelle:1.7.7.1"
 ]
 
 sif_dir = args.sifdir
@@ -66,7 +67,7 @@ for image in docker_images:
 
     else:
 
-        command = f"singularity pull {output_file} docker://{image}"
+        command = f"singularity pull --disable-cache {output_file} docker://{image}"
 
         # Execute the command
         subprocess.run(command, shell=True, check=True)

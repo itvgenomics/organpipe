@@ -9,23 +9,30 @@ rerun-incomplete: True
 
 set-threads:
   all: 1
+  download_getorganelle_db: 1
   run_mitos2: 1
   run_cpgavas2: 1
   run_chloe: 1
   create_hash: 1
   run_novoplasty: 1
+  run_getorganelle: 8
   run_mitohifi: 8
-  get_assemblies: 1
+  get_novoplasty_assemblies: 1
+  get_getorganelle_assemblies: 1
   check_shortreads_files: 1
   check_longreads_files: 1
   check_adapters: 1
   check_nhmmer_db: 1
   extract_table2asn: 1
   index_hmmer_db: 1
-  run_bwa_index: 1
-  run_bwa_mem: 4
-  run_samtools_index: 1
-  run_pilon: 2
+  run_novoplasty_bwa_index: 1
+  run_novoplasty_bwa_mem: 4
+  run_novoplasty_samtools_index: 1
+  run_novoplasty_pilon: 2
+  run_getorganelle_bwa_index: 1
+  run_getorganelle_bwa_mem: 4
+  run_getorganelle_samtools_index: 1
+  run_getorganelle_pilon: 2
   write_genbank_mitos2: 1
   write_genbank_chloe: 1
   write_genbank_cpgavas2: 1

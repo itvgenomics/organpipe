@@ -133,7 +133,7 @@ rule run_samtools_depth:
         f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
                 samtools depth results/{wildcards.sample}/pilon/$fasta_header/"$fasta_header"_mapping.bam \

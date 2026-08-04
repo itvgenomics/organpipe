@@ -14,7 +14,7 @@ rule run_mitos2:
         refseq_dir="resources/refseq89m"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             original_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$original_header" != "INVALIDSEED_1" ]; then
                 pilon_dir=results/{wildcards.sample}/pilon/$original_header
@@ -58,7 +58,7 @@ rule run_cpgavas2:
     shell:
         """
         sed -i '/maker/s/-quiet/--ignore_nfs_tmp -quiet/' /apps/cpgavas2C/modules/plasAnno/bin/Annotation_Chloroplast_King.py && \
-        for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
                 random_pid=$(( (RANDOM + RANDOM * 32768 + RANDOM * 32768 * 32768) % 999999999 + 1 )) && \
@@ -87,7 +87,7 @@ rule run_chloe:
     shell:
         """
         mkdir -p results/{wildcards.sample}/chloe && \
-        for fasta_file in results/{wildcards.sample}/assemblies/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
                 awk '/^>/{{sub(/_pilon$/,"",$0)}}1' results/{wildcards.sample}/pilon/$fasta_header/$fasta_header.fasta > results/{wildcards.sample}/pilon/$fasta_header/temp.fasta && \

@@ -36,7 +36,7 @@ def get_output():
                 out.append(expand("resources/{sample}/rawreads/fastp.json", sample=sample))
 
             out.append(expand("results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt", sample=sample, seed=seeds, kmer=kmers))
-            out.append(expand("results/{sample}/assemblies/{seed}_kmer{kmer}.fasta", sample=sample, seed=seeds, kmer=kmers))
+            out.append(expand("results/{sample}/assemblies/organpipe/{seed}_kmer{kmer}.fasta", sample=sample, seed=seeds, kmer=kmers))
 
             out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.bwa_index.check", sample=sample, seed=seeds, kmer=kmers))
             out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.bwa_mem.check", sample=sample, seed=seeds, kmer=kmers))

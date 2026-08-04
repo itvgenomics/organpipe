@@ -124,3 +124,17 @@ rule check_reference:
             touch {output}
         fi
         """
+
+rule download_getorganelle_db:
+    output:
+        "resources/getorganelle_db/getorganelle_db.check"
+    log:
+        "logs/getorganelle/download_getorganelle_db.log"
+    singularity:
+        f"{config["sif_dir"]}/getorganelle.sif"
+    shell:
+        """
+        export PATH=/opt/conda/bin:$PATH && \
+        get_organelle_config.py -a all --config-dir resources/getorganelle_db/ >> {log} 2>&1 && \
+        touch {output}
+        """

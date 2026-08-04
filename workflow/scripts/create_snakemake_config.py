@@ -58,6 +58,8 @@ def prepare_seeds(
     organelle,
     feature,
     sequencing_type,
+    search_species,
+    n_references
 ):
     if str(seed_format).lower() == "genbank":
 
@@ -131,7 +133,8 @@ def prepare_seeds(
                 fasta_file=f"resources/{sample}/seeds/seeds.fasta"
             )
             return seeds
-        else:
+
+    elif str(sequencing_type).lower() == "long":
             seeds = [
                 f.split(".fasta")[0]
                 for f in os.listdir(f"resources/{sample}/seeds/")
@@ -140,11 +143,11 @@ def prepare_seeds(
 
             if len(seeds) == 0:
                 download_references.main(
-                    species=search_term,
+                    species=search_species,
                     email="ncbiapirunner@gmail.com",
                     outfolder=f"resources/{sample}/seeds/",
                     min_length=10000,
-                    n=int(max_references),
+                    n=int(n_references),
                 )
 
             seeds = [
@@ -251,9 +254,12 @@ if __name__ == "__main__":
                 max_references=data["max_references"],
                 feature=data["feature"],
                 sequencing_type=data["sequencing_type"],
+                search_species=data["search_species"],
+                n_references=data["n_references"],
             )
 
             samples_dict["samples"][sample] = {
+                "run_novoplasty": data["run_novoplasty"],
                 "seeds": seeds,
                 "kmers": kmers,
                 "reads_path": data["reads_path"],
@@ -300,6 +306,14 @@ if __name__ == "__main__":
                 "run_nhmmer": data["run_nhmmer"],
                 "nhmmer_db": data["nhmmer_db"],
                 "run_images": data["run_images"],
+                "search_species": data["search_species"],
+                "n_references": int(data["n_references"]) if data["n_references"] != None else "",
+                "run_getorganelle": data["run_getorganelle"],
+                "database": data["database"],
+                "n_rounds": int(data["n_rounds"]) if data["n_rounds"] != None else "",
+                "target_size": data["target_size"],
+                "extra_flags": data["extra_flags"],
+                "spades_kmers": data["spades_kmers"]
             }
 
         replace_none_with_empty_string(samples_dict)
@@ -337,9 +351,12 @@ if __name__ == "__main__":
                 max_references=row["max_references"],
                 feature=row["feature"],
                 sequencing_type=row["sequencing_type"],
+                search_species=row["search_species"],
+                n_references=row["n_references"]
             )
 
             samples_dict["samples"][sample] = {
+                "run_novoplasty": row["run_novoplasty"],
                 "seeds": seeds,
                 "kmers": kmers,
                 "reads_path": row["reads_path"],
@@ -396,6 +413,14 @@ if __name__ == "__main__":
                 "run_nhmmer": row["run_nhmmer"],
                 "nhmmer_db": row["nhmmer_db"],
                 "run_images": row["run_images"],
+                "search_species": row["search_species"],
+                "n_references": int(row["n_references"]) if row["n_references"] != "" else str(row["n_references"]),
+                "run_getorganelle": row["run_getorganelle"],
+                "database": row["database"],
+                "n_rounds": int(row["n_rounds"]) if row["n_rounds"] != "" else str(row["n_rounds"]),
+                "target_size": row["target_size"],
+                "extra_flags": row["extra_flags"],
+                "spades_kmers": row["spades_kmers"]
             }
 
         with open("config/snakemake_config.yaml", "w") as file:
