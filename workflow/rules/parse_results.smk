@@ -16,28 +16,28 @@ def get_output_files(wildcards):
 
         if config["samples"][sample_id].get("run_novoplasty", "").lower() == "yes":
             sample_output.extend(expand("results/{sample_id}/novoplasty/{seed}/kmer{kmer}/log_{sample_id}.txt", sample_id=sample_id, seed=seeds, kmer=kmers))
-            sample_output.extend(expand("results/{sample_id}/assemblies/organpipe/{seed}_kmer{kmer}.fasta", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta", sample_id=sample_id, seed=seeds, kmer=kmers))
 
-            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.samtools_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-            sample_output.extend(expand("results/{sample_id}/pilon/{seed}_kmer{kmer}.pilon.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/novoplasty/{seed}_kmer{kmer}.bwa_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/novoplasty/{seed}_kmer{kmer}.bwa_mem.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/novoplasty/{seed}_kmer{kmer}.samtools_index.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+            sample_output.extend(expand("results/{sample_id}/pilon/novoplasty/{seed}_kmer{kmer}.pilon.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
         if config["samples"][sample_id].get("run_getorganelle", "").lower() == "yes":
             sample_output.extend(expand("results/{sample_id}/getorganelle/get_org.log.txt", sample_id=sample_id))
             sample_output.extend(expand("results/{sample_id}/getorganelle/sequences.fasta", sample_id=sample_id))
 
-            sample_output.extend(expand("results/{sample_id}/pilon/bwa_index.check", sample_id=sample_id))
-            sample_output.extend(expand("results/{sample_id}/pilon/bwa_mem.check", sample_id=sample_id))
-            sample_output.extend(expand("results/{sample_id}/pilon/samtools_index.check", sample_id=sample_id))
-            sample_output.extend(expand("results/{sample_id}/pilon/pilon.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/getorganelle/getorganelle_bwa_index.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/getorganelle/getorganelle_bwa_mem.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/getorganelle/getorganelle_samtools_index.check", sample_id=sample_id))
+            sample_output.extend(expand("results/{sample_id}/pilon/getorganelle/getorganelle_pilon.check", sample_id=sample_id))
 
         if config["samples"][sample_id].get("annotation", "").lower() == "yes":
             if config["samples"][sample_id].get("run_novoplasty", "").lower() == "yes":
                 if config["samples"][sample_id].get("organelle", "").lower() == "mito":
-                    sample_output.extend(expand("results/{sample_id}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/mitos2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/novoplasty/{seed}_kmer{kmer}.mitos2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/novoplasty/{seed}_kmer{kmer}.mitos2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
                     if config["samples"][sample_id].get("run_images", "").lower() == "yes":
                         sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check", sample_id=sample_id, seed=seeds, kmer=kmers))
@@ -51,13 +51,13 @@ def get_output_files(wildcards):
                         sample_output.extend(expand("results/{sample_id}/images/{sample_id}.mito.ogdraw.check", sample_id=sample_id))
 
                 elif config["samples"][sample_id].get("organelle", "").lower() == "chloro":
-                    sample_output.extend(expand("results/{sample_id}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/cpgavas2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/novoplasty/{seed}_kmer{kmer}.cpgavas2.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/novoplasty/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
-                    sample_output.extend(expand("results/{sample_id}/chloe/{seed}_kmer{kmer}.chloe.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                    sample_output.extend(expand("results/{sample_id}/genbanks/{seed}_kmer{kmer}.chloe.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/chloe/novoplasty/{seed}_kmer{kmer}.chloe.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/novoplasty/{seed}_kmer{kmer}.chloe.genbank.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/novoplasty/{seed}_kmer{kmer}.chloe.genbank.rotated.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
                     if config["samples"][sample_id].get("run_images", "").lower() == "yes":
                         sample_output.extend(expand("results/{sample_id}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas.check", sample_id=sample_id, seed=seeds, kmer=kmers))
@@ -84,6 +84,20 @@ def get_output_files(wildcards):
                         sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
                         sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
                         sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+
+            if config["samples"][sample_id].get("run_novoplasty", "").lower() == "yes":
+                if config["samples"][sample_id].get("organelle", "").lower() == "mito":
+                    sample_output.extend(expand("results/{sample_id}/mitos2/getorganelle/getorganelle_mitos2.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/getorganelle/mitos2.genbank.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/getorganelle/mitos2.genbank.rotated.check", sample_id=sample_id))
+
+                if config["samples"][sample_id].get("organelle", "").lower() == "chloro":
+                    sample_output.extend(expand("results/{sample_id}/cpgavas2/getorganelle/getorganelle_cpgavas2.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/chloe/getorganelle/getorganelle_chloe.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/getorganelle/chloe.genbank.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/getorganelle/cpgavas2.genbank.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/getorganelle/cpgavas2.genbank.rotated.check", sample_id=sample_id))
+                    sample_output.extend(expand("results/{sample_id}/genbanks/getorganelle/chloe.genbank.rotated.check", sample_id=sample_id))
 
     elif config["samples"][sample_id].get("sequencing_type", "").lower() == "long":
 

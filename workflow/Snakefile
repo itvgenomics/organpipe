@@ -36,17 +36,17 @@ def get_output():
                 out.append(expand("resources/{sample}/rawreads/fastp.json", sample=sample))
 
             out.append(expand("results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt", sample=sample, seed=seeds, kmer=kmers))
-            out.append(expand("results/{sample}/assemblies/organpipe/{seed}_kmer{kmer}.fasta", sample=sample, seed=seeds, kmer=kmers))
+            out.append(expand("results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta", sample=sample, seed=seeds, kmer=kmers))
 
-            out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.bwa_index.check", sample=sample, seed=seeds, kmer=kmers))
-            out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.bwa_mem.check", sample=sample, seed=seeds, kmer=kmers))
-            out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.samtools_index.check", sample=sample, seed=seeds, kmer=kmers))
-            out.append(expand("results/{sample}/pilon/{seed}_kmer{kmer}.pilon.check", sample=sample, seed=seeds, kmer=kmers))
+            out.append(expand("results/{sample}/pilon/novoplasty/{seed}_kmer{kmer}.bwa_index.check", sample=sample, seed=seeds, kmer=kmers))
+            out.append(expand("results/{sample}/pilon/novoplasty/{seed}_kmer{kmer}.bwa_mem.check", sample=sample, seed=seeds, kmer=kmers))
+            out.append(expand("results/{sample}/pilon/novoplasty/{seed}_kmer{kmer}.samtools_index.check", sample=sample, seed=seeds, kmer=kmers))
+            out.append(expand("results/{sample}/pilon/novoplasty/{seed}_kmer{kmer}.pilon.check", sample=sample, seed=seeds, kmer=kmers))
 
             if config["samples"][sample].get("annotation", "").lower() == "yes":
                 if config["samples"][sample].get("organelle", "").lower() == "mito":
-                    out.append(expand("results/{sample}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check", sample=sample, seed=seeds, kmer=kmers))
-                    out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.check", sample=sample, seed=seeds, kmer=kmers))
+                    out.append(expand("results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check", sample=sample, seed=seeds, kmer=kmers))
+                    out.append(expand("results/{sample}/genbanks/novoplasty/{seed}_kmer{kmer}.mitos2.genbank.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.mitos2.genbank.rotated.check", sample=sample, seed=seeds, kmer=kmers))
 
                     if config["samples"][sample].get("run_images", "").lower() == "yes":
@@ -62,11 +62,11 @@ def get_output():
 
                 elif config["samples"][sample].get("organelle", "").lower() == "chloro":
                     out.append("resources/table2asn.linux64")
-                    out.append(expand("results/{sample}/cpgavas2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample=sample, seed=seeds, kmer=kmers))
+                    out.append(expand("results/{sample}/cpgavas2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.cpgavas2.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check", sample=sample, seed=seeds, kmer=kmers))
 
-                    out.append(expand("results/{sample}/chloe/{seed}_kmer{kmer}.chloe.check", sample=sample, seed=seeds, kmer=kmers))
+                    out.append(expand("results/{sample}/chloe/novoplasty/{seed}_kmer{kmer}.chloe.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.check", sample=sample, seed=seeds, kmer=kmers))
                     out.append(expand("results/{sample}/genbanks/{seed}_kmer{kmer}.chloe.genbank.rotated.check", sample=sample, seed=seeds, kmer=kmers))
 

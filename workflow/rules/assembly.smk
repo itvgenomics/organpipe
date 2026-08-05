@@ -139,7 +139,7 @@ rule get_novoplasty_assemblies:
     input:
         "results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt"
     output:
-        "results/{sample}/assemblies/organpipe/{seed}_kmer{kmer}.fasta"
+        "results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta"
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_{seed}_get_assemblies.log"
     params:

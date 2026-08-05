@@ -31,6 +31,7 @@ def parse_arguments():
         type=str,
         nargs="?"
     )
+    parser.add_argument("--assembler", help="Assembler used to assemble the mitogenome", required=True)
 
 
     args = parser.parse_args()
@@ -383,42 +384,84 @@ if __name__ == "__main__":
     code = args.code
     gene2product = args.gene2product
 
-    if not os.path.exists(f"results/{sample}/genbanks"):
-        os.makedirs(f"results/{sample}/genbanks")
+    if args.assembler == "novoplasty":
+        if not os.path.exists(f"results/{sample}/genbanks/novoplasty"):
+            os.makedirs(f"results/{sample}/genbanks/novoplasty")
 
-    # Create GB from chloe files
-    annotations_path = f"results/{sample}/chloe/"
-    if args.software == "chloe":
-        for file in os.listdir(annotations_path):
-            if sample in file and seed in file and file.endswith(".fa"):
-                    create_features_table(fasta=f"results/{sample}/chloe/{file}",
-                                gff_file=f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.gff")}",
-                                gene2product=gene2product,
-                                features_file=f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.tbl")}")
+        # Create GB from chloe files
+        annotations_path = f"results/{sample}/chloe/novoplasty/"
+        if args.software == "chloe":
+            for file in os.listdir(annotations_path):
+                if sample in file and seed in file and file.endswith(".fa"):
+                        create_features_table(fasta=f"results/{sample}/chloe/novoplasty/{file}",
+                                    gff_file=f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.gff")}",
+                                    gene2product=gene2product,
+                                    features_file=f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.tbl")}")
 
-                    edit_fasta_header(fasta_file=f"results/{sample}/chloe/{file}",
-                                      new_header="Asm_Contig")
+                        edit_fasta_header(fasta_file=f"results/{sample}/chloe/novoplasty/{file}",
+                                        new_header="Asm_Contig")
 
-                    command = [
-                        './resources/table2asn.linux64',
-                        '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
-                        '-a', 's',
-                        '-i', f"results/{sample}/chloe/{file}",
-                        '-f', f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.tbl")}",
-                        '-V', 'vb'
-                    ]
-                    subprocess.run(command, check=True)
+                        command = [
+                            './resources/table2asn.linux64',
+                            '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
+                            '-a', 's',
+                            '-i', f"results/{sample}/chloe/novoplasty/{file}",
+                            '-f', f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.tbl")}",
+                            '-V', 'vb'
+                        ]
+                        subprocess.run(command, check=True)
 
-                    shutil.copy(f"results/{sample}/chloe/{file.replace(".chloe.fa", ".chloe.gbf")}",
-                                f"results/{sample}/genbanks/{file.replace(".chloe.fa", ".chloe.gb")}")
+                        shutil.copy(f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.gbf")}",
+                                    f"results/{sample}/genbanks/{file.replace(".chloe.fa", ".chloe.gb")}")
 
-    # Copy cpgavas2 files
-    elif args.software == "cpgavas2":
-        annotations_path = f"results/{sample}/cpgavas2/{seed}_kmer{kmer}"
-        annotations_dir = list_directories(annotations_path)
+        # Copy cpgavas2 files
+        elif args.software == "cpgavas2":
+            annotations_path = f"results/{sample}/cpgavas2/novoplasty/{seed}_kmer{kmer}"
+            annotations_dir = list_directories(annotations_path)
 
-        for annotation in annotations_dir:
-            for file in os.listdir(os.path.join(annotations_path, annotation)):
-                if file.endswith(".maker.gbf"):
-                    pid = file.split(".maker.gbf")[0]
-                    shutil.copy(f"{annotations_path}/{annotation}/{pid}.gbf", f"results/{sample}/genbanks/{annotation}.cpgavas2.gb")
+            for annotation in annotations_dir:
+                for file in os.listdir(os.path.join(annotations_path, annotation)):
+                    if file.endswith(".maker.gbf"):
+                        pid = file.split(".maker.gbf")[0]
+                        shutil.copy(f"{annotations_path}/{annotation}/{pid}.gbf", f"results/{sample}/genbanks/novoplasty/{annotation}.cpgavas2.gb")
+
+    elif args.assembler == "getorganelle":
+        if not os.path.exists(f"results/{sample}/genbanks/getorganelle"):
+            os.makedirs(f"results/{sample}/genbanks/getorganelle")
+
+        # Create GB from chloe files
+        annotations_path = f"results/{sample}/chloe/getorganelle/"
+        if args.software == "chloe":
+            for file in os.listdir(annotations_path):
+                if sample in file and seed in file and file.endswith(".fa"):
+                        create_features_table(fasta=f"results/{sample}/chloe/getorganelle/{file}",
+                                    gff_file=f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.gff")}",
+                                    gene2product=gene2product,
+                                    features_file=f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.tbl")}")
+
+                        edit_fasta_header(fasta_file=f"results/{sample}/chloe/getorganelle/{file}",
+                                        new_header="Asm_Contig")
+
+                        command = [
+                            './resources/table2asn.linux64',
+                            '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
+                            '-a', 's',
+                            '-i', f"results/{sample}/chloe/getorganelle/{file}",
+                            '-f', f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.tbl")}",
+                            '-V', 'vb'
+                        ]
+                        subprocess.run(command, check=True)
+
+                        shutil.copy(f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.gbf")}",
+                                    f"results/{sample}/genbanks/{file.replace(".chloe.fa", ".chloe.gb")}")
+
+        # Copy cpgavas2 files
+        elif args.software == "cpgavas2":
+            annotations_path = f"results/{sample}/cpgavas2/getorganelle"
+            annotations_dir = list_directories(annotations_path)
+
+            for annotation in annotations_dir:
+                for file in os.listdir(os.path.join(annotations_path, annotation)):
+                    if file.endswith(".maker.gbf"):
+                        pid = file.split(".maker.gbf")[0]
+                        shutil.copy(f"{annotations_path}/{annotation}/{pid}.gbf", f"results/{sample}/genbanks/getorganelle/{annotation}.cpgavas2.gb")

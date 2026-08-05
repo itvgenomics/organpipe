@@ -892,47 +892,47 @@ def get_mitos2_files(logfile):
         os.makedirs(mitos2_outdir)
 
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/ignored.mitos",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/ignored.mitos",
         f"{mitos2_outdir}/{assembly}.ignored.mitos",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.bed",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.bed",
         f"{mitos2_outdir}/{assembly}.result.bed",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.faa",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.faa",
         f"{mitos2_outdir}/{assembly}.result.faa",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.fas",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.fas",
         f"{mitos2_outdir}/{assembly}.result.fas",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.geneorder",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.geneorder",
         f"{mitos2_outdir}/{assembly}.result.geneorder",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.gff",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.gff",
         f"{mitos2_outdir}/{assembly}.result.gff",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.mitos",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.mitos",
         f"{mitos2_outdir}/{assembly}.result.mitos",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/result.seq",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.seq",
         f"{mitos2_outdir}/{assembly}.result.seq",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/stst.dat",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/stst.dat",
         f"{mitos2_outdir}/{assembly}.stst.dat",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_tRNAout.nc",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_tRNAout.nc",
         f"{mitos2_outdir}/{assembly}_tRNAout.nc",
     )
     shutil.copy(
-        f"results/{sample}/mitos2/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_rRNAout.nc",
+        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_rRNAout.nc",
         f"{mitos2_outdir}/{assembly}_rRNAout.nc",
     )
 
@@ -1278,7 +1278,7 @@ if __name__ == "__main__":
                     seeds = [seed for seed in config["samples"][sample]["seeds"]]
 
                     gb_files = []
-                    for root, dirs, files in os.walk(f"results/{sample}/genbanks"):
+                    for root, dirs, files in os.walk(f"results/{sample}/genbanks/novoplasty"):
                         for file in files:
                             if file.endswith(".gb"):
                                 gb_files.append(file)

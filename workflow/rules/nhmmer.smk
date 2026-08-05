@@ -1,6 +1,6 @@
 rule get_mito_ncRNA_sequences_short:
     input:
-        "results/{sample}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
+        "results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check"
     log:
@@ -22,7 +22,7 @@ rule run_ncRNA_nhmmer_short:
     input:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check",
         "resources/nhmmer_db.hmm",
-        "results/{sample}/assemblies/organpipe/{seed}_kmer{kmer}.fasta",
+        "results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta",
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check"
@@ -34,7 +34,7 @@ rule run_ncRNA_nhmmer_short:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ -e "results/{wildcards.sample}/nhmmer/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
@@ -52,7 +52,7 @@ rule run_ncRNA_nhmmer_short:
 
 rule get_mito_intergenes_sequences_short:
     input:
-        "results/{sample}/mitos2/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
+        "results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check"
     log:
@@ -74,7 +74,7 @@ rule run_intergenes_nhmmer_short:
     input:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check",
         "resources/nhmmer_db.hmm",
-        "results/{sample}/assemblies/organpipe/{seed}_kmer{kmer}.fasta",
+        "results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta",
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
         "results/{sample}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check"
@@ -86,7 +86,7 @@ rule run_intergenes_nhmmer_short:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ -e "results/{wildcards.sample}/nhmmer/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
@@ -233,7 +233,7 @@ rule run_intergenes_nhmmer_chloro:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ -e "results/{wildcards.sample}/nhmmer/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
@@ -284,7 +284,7 @@ rule run_ncRNA_nhmmer_chloro:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ -e "results/{wildcards.sample}/nhmmer/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
                 hmmscan --cpu {threads} --noali \

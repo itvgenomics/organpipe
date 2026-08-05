@@ -35,6 +35,7 @@ def parse_arguments():
         help="Software used (e.g cpgavas2 or chloe)",
         nargs="?",
     )
+    parser.add_argument("--assembler", help="Assembler used", nargs="?")
 
     return parser.parse_args()
 
@@ -138,38 +139,74 @@ if __name__ == "__main__":
     seed = args.seed
     kmer = args.kmer
     software = args.software
+    assembler = args.assembler
 
-    gb_dir = f"results/{sample}/genbanks"
+    if assembler == "novoplasty":
+        gb_dir = f"results/{sample}/genbanks/novoplasty"
 
-    if organelle == "mito":
-        for file in os.listdir(gb_dir):
-            if seed in str(file) and kmer in str(file) and ".rotated." not in str(file):
-                output_file = str(file).replace(".gb", ".rotated.gb")
-                try:
-                    rotate_genbank(
-                        input_file=os.path.join(gb_dir, file),
-                        output_file=os.path.join(gb_dir, output_file),
-                        start_gene=start_gene,
-                        organelle=organelle,
-                    )
-                except:
-                    pass
+        if organelle == "mito":
+            for file in os.listdir(gb_dir):
+                if seed in str(file) and kmer in str(file) and ".rotated." not in str(file):
+                    output_file = str(file).replace(".gb", ".rotated.gb")
+                    try:
+                        rotate_genbank(
+                            input_file=os.path.join(gb_dir, file),
+                            output_file=os.path.join(gb_dir, output_file),
+                            start_gene=start_gene,
+                            organelle=organelle,
+                        )
+                    except:
+                        pass
 
-    elif organelle == "chloro":
-        for file in os.listdir(gb_dir):
-            if (
-                seed in str(file)
-                and kmer in str(file)
-                and software in str(file)
-                and ".rotated." not in str(file)
-            ):
-                output_file = str(file).replace(".gb", ".rotated.gb")
-                try:
-                    rotate_genbank(
-                        input_file=os.path.join(gb_dir, file),
-                        output_file=os.path.join(gb_dir, output_file),
-                        start_gene=start_gene,
-                        organelle=organelle,
-                    )
-                except:
-                    pass
+        elif organelle == "chloro":
+            for file in os.listdir(gb_dir):
+                if (
+                    seed in str(file)
+                    and kmer in str(file)
+                    and software in str(file)
+                    and ".rotated." not in str(file)
+                ):
+                    output_file = str(file).replace(".gb", ".rotated.gb")
+                    try:
+                        rotate_genbank(
+                            input_file=os.path.join(gb_dir, file),
+                            output_file=os.path.join(gb_dir, output_file),
+                            start_gene=start_gene,
+                            organelle=organelle,
+                        )
+                    except:
+                        pass
+
+    elif assembler == "getorganelle":
+        gb_dir = f"results/{sample}/genbanks/getorganelle"
+
+        if organelle == "mito":
+            for file in os.listdir(gb_dir):
+                if ".rotated." not in str(file):
+                    output_file = str(file).replace(".gb", ".rotated.gb")
+                    try:
+                        rotate_genbank(
+                            input_file=os.path.join(gb_dir, file),
+                            output_file=os.path.join(gb_dir, output_file),
+                            start_gene=start_gene,
+                            organelle=organelle,
+                        )
+                    except:
+                        pass
+
+        elif organelle == "chloro":
+            for file in os.listdir(gb_dir):
+                if (
+                    software in str(file)
+                    and ".rotated." not in str(file)
+                ):
+                    output_file = str(file).replace(".gb", ".rotated.gb")
+                    try:
+                        rotate_genbank(
+                            input_file=os.path.join(gb_dir, file),
+                            output_file=os.path.join(gb_dir, output_file),
+                            start_gene=start_gene,
+                            organelle=organelle,
+                        )
+                    except:
+                        pass

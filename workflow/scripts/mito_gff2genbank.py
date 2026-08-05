@@ -17,10 +17,13 @@ def parse_arguments():
     parser.add_argument("--code", help="Genetic code", required=True)
     parser.add_argument("--sample", help="Sample code", required=True)
     parser.add_argument(
-        "--seed", help="Seed used to assemble the mitogenome", required=True
+        "--seed", help="Seed used to assemble the mitogenome", required=False, nargs="?"
     )
     parser.add_argument(
-        "--kmer", help="kmer used to assemble the mitogenome", required=True
+        "--kmer", help="kmer used to assemble the mitogenome", required=False, nargs="?"
+    )
+    parser.add_argument(
+        "--assembler", help="Assembler used to assemble the mitogenome", required=True
     )
 
     args = parser.parse_args()
@@ -193,23 +196,47 @@ if __name__ == "__main__":
     seed = args.seed
     kmer = args.kmer
     code = args.code
-    annotations_path = f"results/{sample}/mitos2/{seed}_kmer{kmer}"
 
-    if not os.path.exists(f"results/{sample}/genbanks"):
-        os.makedirs(f"results/{sample}/genbanks")
+    if args.assembler == "novoplasty":
+        annotations_path = f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}"
 
-    annotations_dir = list_directories(annotations_path)
-    for annotation in annotations_dir:
-        gb_output_file = f"results/{sample}/genbanks/{annotation}.gb"
-        fasta_output_file = f"results/{sample}/genbanks/{annotation}.fasta"
+        if not os.path.exists(f"results/{sample}/genbanks/novoplasty"):
+            os.makedirs(f"results/{sample}/genbanks/novoplasty")
 
-        if os.path.exists(
-            f"{annotations_path}/{annotation}/mitos2.fasta"
-        ) and os.path.exists(f"{annotations_path}/{annotation}/result.gff"):
+        annotations_dir = list_directories(annotations_path)
+        for annotation in annotations_dir:
+            gb_output_file = f"results/{sample}/genbanks/novoplasty/{annotation}.gb"
+            fasta_output_file = f"results/{sample}/genbanks/novoplasty/{annotation}.fasta"
 
-            create_genbank(
-                fasta_file=f"{annotations_path}/{annotation}/mitos2.fasta",
-                gff_file=f"{annotations_path}/{annotation}/result.gff",
-                output_file=gb_output_file,
-                code=code,
-            )
+            if os.path.exists(
+                f"{annotations_path}/{annotation}/mitos2.fasta"
+            ) and os.path.exists(f"{annotations_path}/{annotation}/result.gff"):
+
+                create_genbank(
+                    fasta_file=f"{annotations_path}/{annotation}/mitos2.fasta",
+                    gff_file=f"{annotations_path}/{annotation}/result.gff",
+                    output_file=gb_output_file,
+                    code=code,
+                )
+
+    elif args.assembler == "getorganelle":
+        annotations_path = f"results/{sample}/mitos2/getorganelle"
+
+        if not os.path.exists(f"results/{sample}/genbanks/getorganelle"):
+            os.makedirs(f"results/{sample}/genbanks/getorganelle")
+
+        annotations_dir = list_directories(annotations_path)
+        for annotation in annotations_dir:
+            gb_output_file = f"results/{sample}/genbanks/getorganelle/{annotation}.gb"
+            fasta_output_file = f"results/{sample}/genbanks/getorganelle/{annotation}.fasta"
+
+            if os.path.exists(
+                f"{annotations_path}/{annotation}/mitos2.fasta"
+            ) and os.path.exists(f"{annotations_path}/{annotation}/result.gff"):
+
+                create_genbank(
+                    fasta_file=f"{annotations_path}/{annotation}/mitos2.fasta",
+                    gff_file=f"{annotations_path}/{annotation}/result.gff",
+                    output_file=gb_output_file,
+                    code=code,
+                )

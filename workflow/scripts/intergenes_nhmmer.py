@@ -265,12 +265,12 @@ if __name__ == "__main__":
 
         if args.sequencing_type == "short":
             annotations_path = (
-                f"results/{args.sample}/mitos2/{args.seed}_kmer{args.kmer}"
+                f"results/{args.sample}/mitos2/novoplasty/{args.seed}_kmer{args.kmer}"
             )
             annotations_dir = list_directories(annotations_path)
 
             for annotation in annotations_dir:
-                output_path = f"results/{args.sample}/nhmmer/{args.seed}_kmer{args.kmer}/{annotation}"
+                output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation}"
 
                 if not os.path.exists(output_path):
                     os.makedirs(output_path)
@@ -313,10 +313,10 @@ if __name__ == "__main__":
         create_dirs(f"results/{args.sample}")
 
         if args.sequencing_type == "short":
-            annotations_path = f"results/{args.sample}/genbanks"
+            annotations_path = f"results/{args.sample}/genbanks/novoplasty"
 
             for annotation in os.listdir(annotations_path):
-                output_path = f"results/{args.sample}/nhmmer/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
+                output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
 
                 if annotation.endswith(".cpgavas2.gb") and (
                     "Circularized_assembly_1" in annotation or "Option_1" in annotation

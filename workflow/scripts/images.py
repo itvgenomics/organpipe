@@ -247,7 +247,7 @@ if __name__ == "__main__":
     depth_bam = args.depth_bam
 
     if args.parse_gb:
-        genbank_dir = f"results/{sample}/genbanks"
+        genbank_dir = f"results/{sample}/genbanks/novoplasty"
         output_dir = f"results/{sample}/images"
 
         if not os.path.exists(output_dir):

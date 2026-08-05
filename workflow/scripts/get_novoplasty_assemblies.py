@@ -57,7 +57,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/{sample}/assemblies/", exist_ok=True)
 
     asm_dir = f"results/{sample}/novoplasty/{seed}/kmer{kmer}/"
-    fasta_file = f"results/{sample}/assemblies/organpipe/{seed}_kmer{kmer}.fasta"
+    fasta_file = f"results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta"
 
     all_sequences = []
     circularized = False

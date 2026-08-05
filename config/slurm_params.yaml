@@ -14,9 +14,12 @@ jobs: {THREADS}
 set-threads:
   all: 1
   download_getorganelle_db: 1
-  run_mitos2: 1
-  run_cpgavas2: 1
-  run_chloe: 1
+  run_novoplasty_mitos2: 1
+  run_getorganelle_mitos2: 1
+  run_novoplasty_cpgavas2: 1
+  run_getorganelle_cpgavas2: 1
+  run_novoplasty_chloe: 1
+  run_getorganelle_chloe: 1
   create_hash: 1
   run_novoplasty: 1
   run_getorganelle: 8
@@ -37,12 +40,18 @@ set-threads:
   run_getorganelle_bwa_mem: 4
   run_getorganelle_samtools_index: 1
   run_getorganelle_pilon: 2
-  write_genbank_mitos2: 1
-  write_genbank_chloe: 1
-  write_genbank_cpgavas2: 1
-  rotate_mito_genbanks: 1
-  rotate_cpgavas_genbanks: 1
-  rotate_chloe_genbanks: 1
+  write_gb_novoplasty_mitos2: 1
+  write_gb_novoplasty_chloe: 1
+  write_gb_novoplasty_cpgavas2: 1
+  write_gb_getorganelle_mitos2: 1
+  write_gb_getorganelle_chloe: 1
+  write_gb_getorganelle_cpgavas2: 1
+  rotate_mito_gb_novoplasty: 1
+  rotate_cpgavas_gb_novoplasty: 1
+  rotate_chloe_gb_novoplasty: 1
+  rotate_mito_gb_getorganelle: 1
+  rotate_cpgavas_gb_getorganelle: 1
+  rotate_chloe_gb_getorganelle: 1
   get_genbank_fastas: 1
   run_blastn: 1
   run_recruitment_plot: 1
@@ -82,17 +91,32 @@ set-resources:
     mem_mb: 1000
     runtime: 4320
     node: 1
-  run_mitos2:
+  run_novoplasty_mitos2:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320
     node: 1
-  run_cpgavas2:
+  run_getorganelle_mitos2:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320
     node: 1
-  run_chloe:
+  run_novoplasty_cpgavas2:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  run_getorganelle_cpgavas2:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  run_novoplasty_chloe:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  run_getorganelle_chloe:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320
@@ -202,32 +226,62 @@ set-resources:
     mem_mb: 80000
     runtime: 4320
     node: 1
-  write_genbank_mitos2:
+  write_gb_novoplasty_mitos2:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  write_genbank_chloe:
+  write_gb_novoplasty_chloe:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  write_genbank_cpgavas2:
+  write_gb_novoplasty_cpgavas2:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  rotate_mito_genbanks:
+  rotate_mito_gb_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  rotate_cpgavas_genbanks:
+  rotate_cpgavas_gb_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  rotate_chloe_genbanks:
+  rotate_chloe_gb_novoplasty:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  write_gb_getorganelle_mitos2:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  write_gb_getorganelle_chloe:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  write_gb_getorganelle_cpgavas2:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  rotate_mito_gb_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  rotate_cpgavas_gb_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  rotate_chloe_gb_getorganelle:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320

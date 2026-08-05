@@ -122,7 +122,7 @@ rule run_bwa_mem_rotated:
 
 rule run_samtools_depth:
     input:
-        "results/{sample}/pilon/{seed}_kmer{kmer}.bwa_mem.check"
+        "results/{sample}/pilon/novoplasty/{seed}_kmer{kmer}.bwa_mem.check"
     output:
         "results/{sample}/images/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check"
     log:
@@ -133,10 +133,10 @@ rule run_samtools_depth:
         f"{config["sif_dir"]}/hic_mapping.sif"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/assemblies/organpipe/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
+        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
-                samtools depth results/{wildcards.sample}/pilon/$fasta_header/"$fasta_header"_mapping.bam \
+                samtools depth results/{wildcards.sample}/pilon/novoplasty/$fasta_header/"$fasta_header"_mapping.bam \
                 > results/{wildcards.sample}/images/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header".depth 2>{log}
             fi
         done
