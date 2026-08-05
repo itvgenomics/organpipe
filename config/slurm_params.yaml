@@ -72,18 +72,26 @@ set-threads:
   run_depth_plot_getorganelle: 1
   run_ogdraw_mito_getorganelle: 1
   run_ogdraw_chloro_getorganelle: 1
-  get_mito_ncRNA_sequences_short: 1
-  run_ncRNA_nhmmer_short: 4
-  get_mito_intergenes_sequences_short: 1
-  run_intergenes_nhmmer_short: 4
+  get_mito_ncRNA_sequences_novoplasty: 1
+  run_ncRNA_nhmmer_novoplasty: 4
+  get_mito_intergenes_sequences_novoplasty: 1
+  run_intergenes_nhmmer_novoplasty: 4
+  get_mito_ncRNA_sequences_getorganelle: 1
+  run_ncRNA_nhmmer_getorganelle: 4
+  get_mito_intergenes_sequences_getorganelle: 1
+  run_intergenes_nhmmer_getorganelle: 4
   get_mito_ncRNA_sequences_long: 1
   run_ncRNA_nhmmer_long: 4
   get_mito_intergenes_sequences_long: 1
   run_intergenes_nhmmer_long: 4
-  get_chloro_intergenes_sequences: 1
-  run_intergenes_nhmmer_chloro: 4
-  get_chloro_ncRNA_sequences: 1
-  run_ncRNA_nhmmer_chloro: 4
+  get_chloro_intergenes_sequences_novoplasty: 1
+  run_intergenes_nhmmer_chloro_novoplasty: 4
+  get_chloro_ncRNA_sequences_novoplasty: 1
+  run_ncRNA_nhmmer_chloro_novoplasty: 4
+  get_chloro_intergenes_sequences_getorganelle: 1
+  run_intergenes_nhmmer_chloro_getorganelle: 4
+  get_chloro_ncRNA_sequences_getorganelle: 1
+  run_ncRNA_nhmmer_chloro_getorganelle: 4
   run_fastp: 4
   check_reference: 1
   check_fasta_longreads: 1
@@ -396,22 +404,42 @@ set-resources:
     mem_mb: 1000
     runtime: 4320
     node: 1
-  get_mito_ncRNA_sequences_short:
+  get_mito_ncRNA_sequences_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  run_ncRNA_nhmmer_short:
+  run_ncRNA_nhmmer_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320
     node: 1
-  get_mito_intergenes_sequences_short:
+  get_mito_intergenes_sequences_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  run_intergenes_nhmmer_short:
+  run_intergenes_nhmmer_novoplasty:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_mito_ncRNA_sequences_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_ncRNA_nhmmer_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_mito_intergenes_sequences_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_intergenes_nhmmer_getorganelle:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320
@@ -436,22 +464,42 @@ set-resources:
     mem_mb: 8000
     runtime: 4320
     node: 1
-  get_chloro_intergenes_sequences:
+  get_chloro_intergenes_sequences_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  run_intergenes_nhmmer_chloro:
+  run_intergenes_nhmmer_chloro_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320
     node: 1
-  get_chloro_ncRNA_sequences:
+  get_chloro_ncRNA_sequences_novoplasty:
     slurm_partition: {PARTITION}
     mem_mb: 1000
     runtime: 4320
     node: 1
-  run_ncRNA_nhmmer_chloro:
+  run_ncRNA_nhmmer_chloro_novoplasty:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_chloro_intergenes_sequences_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_intergenes_nhmmer_chloro_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 8000
+    runtime: 4320
+    node: 1
+  get_chloro_ncRNA_sequences_getorganelle:
+    slurm_partition: {PARTITION}
+    mem_mb: 1000
+    runtime: 4320
+    node: 1
+  run_ncRNA_nhmmer_chloro_getorganelle:
     slurm_partition: {PARTITION}
     mem_mb: 8000
     runtime: 4320

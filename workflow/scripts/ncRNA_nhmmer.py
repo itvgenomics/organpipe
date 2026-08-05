@@ -45,6 +45,7 @@ def parse_arguments():
         help="Software used (e.g cpgavas2 or chloe)",
         nargs="?",
     )
+    parser.add_argument("--assembler", help="Assembler used (e.g. getorganelle or novoplasty)", nargs="?")
 
     args = parser.parse_args()
 
@@ -161,32 +162,55 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     if args.organelle == "mito":
-        create_dirs(f"results/{args.sample}")
-
         if args.sequencing_type == "short":
-            annotations_path = (
-                f"results/{args.sample}/mitos2/novoplasty/{args.seed}_kmer{args.kmer}"
-            )
-            annotations_dir = list_directories(annotations_path)
+            if args.assembler == "novoplasty":
+                annotations_path = (
+                    f"results/{args.sample}/mitos2/novoplasty/{args.seed}_kmer{args.kmer}"
+                )
+                annotations_dir = list_directories(annotations_path)
 
-            for annotation in annotations_dir:
-                output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation}"
+                for annotation in annotations_dir:
+                    output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation}"
 
-                if not os.path.exists(output_path):
-                    os.makedirs(output_path)
+                    if not os.path.exists(output_path):
+                        os.makedirs(output_path)
 
-                if os.path.exists(f"{annotations_path}/{annotation}/result.fas"):
-                    edit_header(
-                        f"{annotations_path}/{annotation}/result.fas",
-                        f"{output_path}/mitos2_annotation_edited.fas",
-                    )
+                    if os.path.exists(f"{annotations_path}/{annotation}/result.fas"):
+                        edit_header(
+                            f"{annotations_path}/{annotation}/result.fas",
+                            f"{output_path}/mitos2_annotation_edited.fas",
+                        )
 
-                    search_list = ["trn", "rrn"]
-                    select_sequences(
-                        f"{output_path}/mitos2_annotation_edited.fas",
-                        f"{output_path}/rRNA-tRNA.fasta",
-                        search_list,
-                    )
+                        search_list = ["trn", "rrn"]
+                        select_sequences(
+                            f"{output_path}/mitos2_annotation_edited.fas",
+                            f"{output_path}/rRNA-tRNA.fasta",
+                            search_list,
+                        )
+            elif args.assembler == "getorganelle":
+                annotations_path = (
+                    f"results/{args.sample}/mitos2/getorganelle"
+                )
+                annotations_dir = list_directories(annotations_path)
+
+                for annotation in annotations_dir:
+                    output_path = f"results/{args.sample}/nhmmer/getorganelle/{annotation}"
+
+                    if not os.path.exists(output_path):
+                        os.makedirs(output_path)
+
+                    if os.path.exists(f"{annotations_path}/{annotation}/result.fas"):
+                        edit_header(
+                            f"{annotations_path}/{annotation}/result.fas",
+                            f"{output_path}/mitos2_annotation_edited.fas",
+                        )
+
+                        search_list = ["trn", "rrn"]
+                        select_sequences(
+                            f"{output_path}/mitos2_annotation_edited.fas",
+                            f"{output_path}/rRNA-tRNA.fasta",
+                            search_list,
+                        )
 
         else:
             annotations_path = f"results/{args.sample}/mitohifi/"
@@ -207,22 +231,38 @@ if __name__ == "__main__":
                     )
 
     if args.organelle == "chloro":
-        create_dirs(f"results/{args.sample}")
-
         if args.sequencing_type == "short":
-            annotations_path = f"results/{args.sample}/genbanks/novoplasty"
 
-            for annotation in os.listdir(annotations_path):
-                output_path = f"results/{args.sample}/nhmmer/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
+            if args.assembler == "novoplasty":
+                annotations_path = f"results/{args.sample}/genbanks/novoplasty"
 
-                if annotation.endswith(".cpgavas2.gb") and (
-                    "Circularized_assembly_1" in annotation or "Option_1" in annotation
-                ) and args.kmer in annotation and args.seed in annotation:
+                for annotation in os.listdir(annotations_path):
+                    output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
 
-                    if not os.path.exists(output_path):
-                        os.makedirs(output_path)
+                    if annotation.endswith(".cpgavas2.gb") and (
+                        "Circularized_assembly_1" in annotation or "Option_1" in annotation
+                    ) and args.kmer in annotation and args.seed in annotation:
 
-                    extract_ncRNA_to_fasta(
-                        os.path.join(annotations_path, annotation),
-                        f"{output_path}/rRNA-tRNA.fasta",
-                    )
+                        if not os.path.exists(output_path):
+                            os.makedirs(output_path)
+
+                        extract_ncRNA_to_fasta(
+                            os.path.join(annotations_path, annotation),
+                            f"{output_path}/rRNA-tRNA.fasta",
+                        )
+
+            elif args.assembler == "getorganelle":
+                annotations_path = f"results/{args.sample}/genbanks/getorganelle"
+
+                for annotation in os.listdir(annotations_path):
+                    output_path = f"results/{args.sample}/nhmmer/getorganelle/{annotation.replace(".cpgavas2.gb", "")}"
+
+                    if annotation.endswith(".cpgavas2.gb"):
+
+                        if not os.path.exists(output_path):
+                            os.makedirs(output_path)
+
+                        extract_ncRNA_to_fasta(
+                            os.path.join(annotations_path, annotation),
+                            f"{output_path}/rRNA-tRNA.fasta",
+                        )

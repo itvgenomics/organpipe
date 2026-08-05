@@ -87,7 +87,7 @@ rule check_nhmmer_db:
         if db_path:
             shell(f"cp {db_path} {output}")
         else:
-            shell(f"touch {output}")
+            raise ValueError("The 'nhmmer_db' path is not specified in the configuration file.")
 
 rule extract_table2asn:
     input:

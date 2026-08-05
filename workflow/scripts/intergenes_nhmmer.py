@@ -41,6 +41,7 @@ def parse_arguments():
         help="Seed used",
         nargs="?",
     )
+    parser.add_argument("--assembler", help="Assembler used (e.g. getorganelle or novoplasty)", nargs="?")
 
     args = parser.parse_args()
 
@@ -261,34 +262,60 @@ def extract_unannotated_regions_gb(genbank_file, padding=10):
 if __name__ == "__main__":
     args = parse_arguments()
     if args.organelle == "mito":
-        create_dirs(f"results/{args.sample}")
-
         if args.sequencing_type == "short":
-            annotations_path = (
-                f"results/{args.sample}/mitos2/novoplasty/{args.seed}_kmer{args.kmer}"
-            )
-            annotations_dir = list_directories(annotations_path)
+            if args.assembler == "novoplasty":
+                annotations_path = (
+                    f"results/{args.sample}/mitos2/novoplasty/{args.seed}_kmer{args.kmer}"
+                )
+                annotations_dir = list_directories(annotations_path)
 
-            for annotation in annotations_dir:
-                output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation}"
+                for annotation in annotations_dir:
+                    output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation}"
 
-                if not os.path.exists(output_path):
-                    os.makedirs(output_path)
+                    if not os.path.exists(output_path):
+                        os.makedirs(output_path)
 
-                bed_file = f"{annotations_path}/{annotation}/result.bed"
-                if os.path.exists(bed_file):
-                    positions, positions_list = get_positions(bed_file)
-                    extract_intergenes_sequences(
-                        f"{annotations_path}/{annotation}/mitos2.fasta",
-                        positions,
-                        f"{output_path}/intergenes.fasta",
-                        positions_list,
-                    )
-                    filter_fasta_by_size(
-                        f"{output_path}/intergenes.fasta",
-                        f"{output_path}/intergenes_filter.fasta",
-                        30,
-                    )
+                    bed_file = f"{annotations_path}/{annotation}/result.bed"
+                    if os.path.exists(bed_file):
+                        positions, positions_list = get_positions(bed_file)
+                        extract_intergenes_sequences(
+                            f"{annotations_path}/{annotation}/mitos2.fasta",
+                            positions,
+                            f"{output_path}/intergenes.fasta",
+                            positions_list,
+                        )
+                        filter_fasta_by_size(
+                            f"{output_path}/intergenes.fasta",
+                            f"{output_path}/intergenes_filter.fasta",
+                            30,
+                        )
+            elif args.assembler == "getorganelle":
+                annotations_path = (
+                    f"results/{args.sample}/mitos2/getorganelle"
+                )
+                annotations_dir = list_directories(annotations_path)
+
+                for annotation in annotations_dir:
+                    output_path = f"results/{args.sample}/nhmmer/getorganelle/{annotation}"
+
+                    if not os.path.exists(output_path):
+                        os.makedirs(output_path)
+
+                    bed_file = f"{annotations_path}/{annotation}/result.bed"
+                    if os.path.exists(bed_file):
+                        positions, positions_list = get_positions(bed_file)
+                        extract_intergenes_sequences(
+                            f"{annotations_path}/{annotation}/mitos2.fasta",
+                            positions,
+                            f"{output_path}/intergenes.fasta",
+                            positions_list,
+                        )
+                        filter_fasta_by_size(
+                            f"{output_path}/intergenes.fasta",
+                            f"{output_path}/intergenes_filter.fasta",
+                            30,
+                        )
+
         else:
             output_path = f"results/{args.sample}/nhmmer/{args.seed}"
 
@@ -310,31 +337,52 @@ if __name__ == "__main__":
                 )
 
     elif args.organelle == "chloro":
-        create_dirs(f"results/{args.sample}")
-
         if args.sequencing_type == "short":
-            annotations_path = f"results/{args.sample}/genbanks/novoplasty"
+            if args.assembler == "novoplasty":
+                annotations_path = f"results/{args.sample}/genbanks/novoplasty"
 
-            for annotation in os.listdir(annotations_path):
-                output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
+                for annotation in os.listdir(annotations_path):
+                    output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
 
-                if annotation.endswith(".cpgavas2.gb") and (
-                    "Circularized_assembly_1" in annotation or "Option_1" in annotation
-                ) and args.kmer in annotation and args.seed in annotation:
+                    if annotation.endswith(".cpgavas2.gb") and (
+                        "Circularized_assembly_1" in annotation or "Option_1" in annotation
+                    ) and args.kmer in annotation and args.seed in annotation:
 
-                    if not os.path.exists(output_path):
-                        os.makedirs(output_path)
+                        os.makedirs(output_path, exist_ok=True)
 
-                    unannotated_regions = extract_unannotated_regions_gb(
-                        os.path.join(annotations_path, annotation)
-                    )
+                        unannotated_regions = extract_unannotated_regions_gb(
+                            os.path.join(annotations_path, annotation)
+                        )
 
-                    with open(f"{output_path}/intergenes.fasta", "w") as output:
-                        for left_gene, right_gene, seq in unannotated_regions:
-                            output.write(f">{left_gene}-{right_gene}\n{seq}\n")
+                        with open(f"{output_path}/intergenes.fasta", "w") as output:
+                            for left_gene, right_gene, seq in unannotated_regions:
+                                output.write(f">{left_gene}-{right_gene}\n{seq}\n")
 
-                    filter_fasta_by_size(
-                        f"{output_path}/intergenes.fasta",
-                        f"{output_path}/intergenes_filter.fasta",
-                        30,
-                    )
+                        filter_fasta_by_size(
+                            f"{output_path}/intergenes.fasta",
+                            f"{output_path}/intergenes_filter.fasta",
+                            30,
+                        )
+            elif args.assembler == "getorganelle":
+                annotations_path = f"results/{args.sample}/genbanks/getorganelle"
+
+                for annotation in os.listdir(annotations_path):
+                    output_path = f"results/{args.sample}/nhmmer/getorganelle/{annotation.replace(".cpgavas2.gb", "")}"
+
+                    if annotation.endswith(".cpgavas2.gb"):
+
+                        os.makedirs(output_path, exist_ok=True)
+
+                        unannotated_regions = extract_unannotated_regions_gb(
+                            os.path.join(annotations_path, annotation)
+                        )
+
+                        with open(f"{output_path}/intergenes.fasta", "w") as output:
+                            for left_gene, right_gene, seq in unannotated_regions:
+                                output.write(f">{left_gene}-{right_gene}\n{seq}\n")
+
+                        filter_fasta_by_size(
+                            f"{output_path}/intergenes.fasta",
+                            f"{output_path}/intergenes_filter.fasta",
+                            30,
+                        )

@@ -74,16 +74,16 @@ def get_output_files(wildcards):
                     sample_output.extend(expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p']))
 
                     if config["samples"][sample_id].get("organelle", "").lower() == "mito":
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
                     elif config["samples"][sample_id].get("organelle", "").lower() == "chloro":
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
-                        sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check", sample_id=sample_id, seed=seeds, kmer=kmers))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds, kmer=kmers))
 
             if config["samples"][sample_id].get("run_getorganelle", "").lower() == "yes":
                 if config["samples"][sample_id].get("organelle", "").lower() == "mito":
@@ -121,6 +121,22 @@ def get_output_files(wildcards):
                         sample_output.extend(expand("results/{sample_id}/images/getorganelle/depth_plot.check", sample_id=sample_id))
                         sample_output.extend(expand("results/{sample_id}/images/getorganelle/chloro.ogdraw.check", sample_id=sample_id))
 
+                if config["samples"][sample_id].get("run_nhmmer", "").lower() == "yes":
+                    sample_output.extend(expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p']))
+
+                    if config["samples"][sample_id].get("organelle", "").lower() == "mito":
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/ncRNA_sequences.check", sample_id=sample_id))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/ncRNA_nhmmer.check", sample_id=sample_id))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/intergenes_sequences.check", sample_id=sample_id))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/intergenes_nhmmer.check", sample_id=sample_id))
+
+
+                    if config["samples"][sample_id].get("organelle", "").lower() == "chloro":
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/chloro.ncRNA_sequences.check", sample_id=sample_id))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/chloro.ncRNA_nhmmer.check", sample_id=sample_id))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/chloro.intergenes_sequences.check", sample_id=sample_id))
+                        sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/chloro.intergenes_nhmmer.check", sample_id=sample_id))
+
     elif config["samples"][sample_id].get("sequencing_type", "").lower() == "long":
 
         if config["samples"][sample_id].get("run_trimming", "").lower() == "yes":
@@ -129,10 +145,11 @@ def get_output_files(wildcards):
         sample_output.extend(expand("results/{sample_id}/mitohifi/{seed}/contigs_stats.tsv", sample_id=sample_id, seed=seeds))
 
         if config["samples"][sample_id].get("run_nhmmer", "").lower() == "yes":
-            sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}/intergenes_sequences.check", sample_id=sample_id, seed=seeds))
-            sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}/intergenes_nhmmer.check", sample_id=sample_id, seed=seeds))
-            sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}/ncRNA_sequences.check", sample_id=sample_id, seed=seeds))
-            sample_output.extend(expand("results/{sample_id}/nhmmer/{seed}/ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds))
+            sample_output.extend(expand("results/{sample_id}/nhmmer/mitohifi/{seed}/intergenes_sequences.check", sample_id=sample_id, seed=seeds))
+            sample_output.extend(expand("results/{sample_id}/nhmmer/mitohifi/{seed}/intergenes_nhmmer.check", sample_id=sample_id, seed=seeds))
+            sample_output.extend(expand("results/{sample_id}/nhmmer/mitohifi/{seed}/ncRNA_sequences.check", sample_id=sample_id, seed=seeds))
+            sample_output.extend(expand("results/{sample_id}/nhmmer/mitohifi/{seed}/ncRNA_nhmmer.check", sample_id=sample_id, seed=seeds))
+
 
     return sample_output
 

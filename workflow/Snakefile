@@ -23,6 +23,4 @@ wildcard_constraints:
 
 rule all:
     input:
-        "resources/table2asn.linux64",
-        "resources/nhmmer_db.hmm",
         expand("workflow/reports/{sample_id}/parse_results.done", sample_id=SAMPLES)

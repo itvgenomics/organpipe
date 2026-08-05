@@ -38,11 +38,6 @@ annotation: "Yes"
 # Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: "Yes" or "No".
 run_nhmmer: "No"
 
-# Provide the path to the HMM database file to be used with nhmmer.
-# We are currently working on a better database for improved accuracy.
-# A parsing step will be implemented to enhance this process.
-nhmmer_db: "resources/rfam.hmm"
-
 # Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: "Yes" or "No".
 # This is not supported for long reads.
 run_images: "No"

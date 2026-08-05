@@ -80,6 +80,10 @@ while [ "$1" != "" ]; do
         shift
         SIFDIR=$1
         ;;
+    -nhmmer_db)
+        shift
+        NHMMER_DB=$1
+        ;;
     -nbatch)
         shift
         NBATCH=$1
@@ -140,6 +144,14 @@ if [ -n "$SIFDIR" ]; then
 else
     python $WORKDIR/workflow/scripts/singularity.py --sifdir $WORKDIR/resources/sif_dir
     grep -qxF "sif_dir: 'resources/sif_dir'" config/snakemake_config.yaml || echo "sif_dir: 'resources/sif_dir'" >> config/snakemake_config.yaml
+fi
+
+if [ -n "$NHMMER_DB" ]; then
+    NHMMER_DB=$(realpath "$NHMMER_DB")
+    grep -qxF "nhmmer_db: '$NHMMER_DB'" config/snakemake_config.yaml || echo "nhmmer_db: '$NHMMER_DB'" >> config/snakemake_config.yaml
+
+else
+    grep -qxF "nhmmer_db: 'resources/rfam.hmm'" config/snakemake_config.yaml || echo "nhmmer_db: 'resources/rfam.hmm'" >> config/snakemake_config.yaml
 fi
 
 mkdir -p $WORKDIR/tmp $WORKDIR/singularity
