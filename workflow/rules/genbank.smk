@@ -191,6 +191,6 @@ rule rotate_chloe_gb_getorganelle:
     shell:
         """
         python workflow/scripts/rotate_genbank.py --assembler 'getorganelle' --organelle {params.organelle} \
-            --start_gene psbA --seed {wildcards.seed} --software chloe >> {log} 2>&1 && \
+            --start_gene psbA --sample {wildcards.sample} --software chloe >> {log} 2>&1 && \
         touch {output}
         """

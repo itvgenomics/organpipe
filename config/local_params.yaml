@@ -3,7 +3,7 @@ use-singularity: true
 singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
 latency-wait: 30
 show-failed-logs: True
-keep-going: False
+keep-going: True
 printshellcmds: True
 rerun-incomplete: True
 
@@ -48,16 +48,26 @@ set-threads:
   rotate_mito_gb_getorganelle: 1
   rotate_cpgavas_gb_getorganelle: 1
   rotate_chloe_gb_getorganelle: 1
-  get_genbank_fastas: 1
-  run_blastn: 1
-  run_recruitment_plot: 1
-  run_bwa_index_rotated: 1
-  run_bwa_mem_rotated: 4
-  run_samtools_depth: 1
-  run_samtools_depth_rotated: 1
-  run_depth_plot: 1
-  run_ogdraw_mito: 1
-  run_ogdraw_chloro: 1
+  get_genbank_fastas_novoplasty: 1
+  run_blastn_novoplasty: 1
+  run_recruitment_plot_novoplasty: 1
+  run_bwa_index_rotated_novoplasty: 1
+  run_bwa_mem_rotated_novoplasty: 4
+  run_samtools_depth_novoplasty: 1
+  run_samtools_depth_novoplasty_rotated: 1
+  run_depth_plot_novoplasty: 1
+  run_ogdraw_mito_novoplasty: 1
+  run_ogdraw_chloro_novoplasty: 1
+  get_genbank_fastas_getorganelle: 1
+  run_blastn_getorganelle: 1
+  run_recruitment_plot_getorganelle: 1
+  run_bwa_index_rotated_getorganelle: 1
+  run_bwa_mem_rotated_getorganelle: 4
+  run_samtools_depth_getorganelle: 1
+  run_samtools_depth_getorganelle_rotated: 1
+  run_depth_plot_getorganelle: 1
+  run_ogdraw_mito_getorganelle: 1
+  run_ogdraw_chloro_getorganelle: 1
   get_mito_ncRNA_sequences_short: 1
   run_ncRNA_nhmmer_short: 4
   get_mito_intergenes_sequences_short: 1

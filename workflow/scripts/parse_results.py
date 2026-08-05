@@ -1239,7 +1239,7 @@ if __name__ == "__main__":
 
                     if config["samples"][sample]["run_images"].lower() == "yes":
                         logging.info(f"Getting all images from sample: {sample}")
-                        for root, dirs, files in os.walk(f"results/{sample}/images"):
+                        for root, dirs, files in os.walk(f"results/{sample}/images/novoplasty"):
                             for file in files:
                                 if file.endswith(".png") and ".depth." in file:
                                     depth_img_dir = (

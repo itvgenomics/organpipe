@@ -60,6 +60,7 @@ rule run_getorganelle_mitos2:
     shell:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
+
             original_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             pilon_dir=results/{wildcards.sample}/pilon/getorganelle/$original_header
 
@@ -117,7 +118,7 @@ rule run_novoplasty_cpgavas2:
 
 rule run_getorganelle_cpgavas2:
     input:
-        fasta="results/{sample}/pilon/getorganelle_pilon.check",
+        fasta="results/{sample}/pilon/getorganelle/getorganelle_pilon.check",
     output:
         "results/{sample}/cpgavas2/getorganelle/getorganelle_cpgavas2.check"
     log:
