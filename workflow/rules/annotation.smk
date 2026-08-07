@@ -156,13 +156,13 @@ rule run_novoplasty_chloe:
         f"{config["sif_dir"]}/chloe.sif"
     shell:
         """
-        mkdir -p results/{wildcards.sample}/chloe && \
+        mkdir -p results/{wildcards.sample}/chloe/novoplasty/ && \
         for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             if [ "$fasta_header" != "INVALIDSEED_1" ]; then
                 awk '/^>/{{sub(/_pilon$/,"",$0)}}1' results/{wildcards.sample}/pilon/novoplasty/$fasta_header/$fasta_header.fasta > results/{wildcards.sample}/pilon/novoplasty/$fasta_header/temp.fasta && \
                 mv results/{wildcards.sample}/pilon/novoplasty/$fasta_header/temp.fasta results/{wildcards.sample}/pilon/novoplasty/$fasta_header/$fasta_header.fasta && \
-                julia --project=/opt/chloe /opt/chloe/chloe.jl annotate -o results/{wildcards.sample}/chloe results/{wildcards.sample}/pilon/novoplasty/$fasta_header/$fasta_header.fasta >> {log} 2>&1
+                julia --project=/opt/chloe /opt/chloe/chloe.jl annotate -o results/{wildcards.sample}/chloe/novoplasty results/{wildcards.sample}/pilon/novoplasty/$fasta_header/$fasta_header.fasta >> {log} 2>&1
             fi
         done
         touch {output}
@@ -181,12 +181,12 @@ rule run_getorganelle_chloe:
         f"{config["sif_dir"]}/chloe.sif"
     shell:
         """
-        mkdir -p results/{wildcards.sample}/chloe && \
+        mkdir -p results/{wildcards.sample}/chloe/getorganelle && \
         for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
             awk '/^>/{{sub(/_pilon$/,"",$0)}}1' results/{wildcards.sample}/pilon/getorganelle/$fasta_header/$fasta_header.fasta > results/{wildcards.sample}/pilon/getorganelle/$fasta_header/temp.fasta && \
             mv results/{wildcards.sample}/pilon/getorganelle/$fasta_header/temp.fasta results/{wildcards.sample}/pilon/getorganelle/$fasta_header/$fasta_header.fasta && \
-            julia --project=/opt/chloe /opt/chloe/chloe.jl annotate -o results/{wildcards.sample}/chloe results/{wildcards.sample}/pilon/getorganelle/$fasta_header/$fasta_header.fasta >> {log} 2>&1
+            julia --project=/opt/chloe /opt/chloe/chloe.jl annotate -o results/{wildcards.sample}/chloe/getorganelle results/{wildcards.sample}/pilon/getorganelle/$fasta_header/$fasta_header.fasta >> {log} 2>&1
         done
         touch {output}
         """

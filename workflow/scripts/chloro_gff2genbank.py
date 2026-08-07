@@ -393,26 +393,26 @@ if __name__ == "__main__":
         if args.software == "chloe":
             for file in os.listdir(annotations_path):
                 if sample in file and seed in file and file.endswith(".fa"):
-                        create_features_table(fasta=f"results/{sample}/chloe/novoplasty/{file}",
-                                    gff_file=f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.gff")}",
-                                    gene2product=gene2product,
-                                    features_file=f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.tbl")}")
+                    create_features_table(fasta=f"results/{sample}/chloe/novoplasty/{file}",
+                                gff_file=f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.gff")}",
+                                gene2product=gene2product,
+                                features_file=f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.tbl")}")
 
-                        edit_fasta_header(fasta_file=f"results/{sample}/chloe/novoplasty/{file}",
-                                        new_header="Asm_Contig")
+                    edit_fasta_header(fasta_file=f"results/{sample}/chloe/novoplasty/{file}",
+                                    new_header="Asm_Contig")
 
-                        command = [
-                            './resources/table2asn.linux64',
-                            '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
-                            '-a', 's',
-                            '-i', f"results/{sample}/chloe/novoplasty/{file}",
-                            '-f', f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.tbl")}",
-                            '-V', 'vb'
-                        ]
-                        subprocess.run(command, check=True)
+                    command = [
+                        './resources/table2asn.linux64',
+                        '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
+                        '-a', 's',
+                        '-i', f"results/{sample}/chloe/novoplasty/{file}",
+                        '-f', f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.tbl")}",
+                        '-V', 'vb'
+                    ]
+                    subprocess.run(command, check=True)
 
-                        shutil.copy(f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.gbf")}",
-                                    f"results/{sample}/genbanks/{file.replace(".chloe.fa", ".chloe.gb")}")
+                    shutil.copy(f"results/{sample}/chloe/novoplasty/{file.replace(".chloe.fa", ".chloe.gbf")}",
+                                f"results/{sample}/genbanks/novoplasty/{file.replace(".chloe.fa", ".chloe.gb")}")
 
         # Copy cpgavas2 files
         elif args.software == "cpgavas2":
@@ -433,27 +433,26 @@ if __name__ == "__main__":
         annotations_path = f"results/{sample}/chloe/getorganelle/"
         if args.software == "chloe":
             for file in os.listdir(annotations_path):
-                if sample in file and seed in file and file.endswith(".fa"):
-                        create_features_table(fasta=f"results/{sample}/chloe/getorganelle/{file}",
-                                    gff_file=f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.gff")}",
-                                    gene2product=gene2product,
-                                    features_file=f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.tbl")}")
+                if file.endswith(".fa"):
+                    create_features_table(fasta=f"results/{sample}/chloe/getorganelle/{file}",
+                                gff_file=f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.gff")}",
+                                gene2product=gene2product,
+                                features_file=f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.tbl")}")
 
-                        edit_fasta_header(fasta_file=f"results/{sample}/chloe/getorganelle/{file}",
-                                        new_header="Asm_Contig")
+                    edit_fasta_header(fasta_file=f"results/{sample}/chloe/getorganelle/{file}",
+                                    new_header="Asm_Contig")
 
-                        command = [
-                            './resources/table2asn.linux64',
-                            '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
-                            '-a', 's',
-                            '-i', f"results/{sample}/chloe/getorganelle/{file}",
-                            '-f', f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.tbl")}",
-                            '-V', 'vb'
-                        ]
-                        subprocess.run(command, check=True)
-
-                        shutil.copy(f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.gbf")}",
-                                    f"results/{sample}/genbanks/{file.replace(".chloe.fa", ".chloe.gb")}")
+                    command = [
+                        './resources/table2asn.linux64',
+                        '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
+                        '-a', 's',
+                        '-i', f"results/{sample}/chloe/getorganelle/{file}",
+                        '-f', f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.tbl")}",
+                        '-V', 'vb'
+                    ]
+                    subprocess.run(command, check=True)
+                    shutil.copy(f"results/{sample}/chloe/getorganelle/{file.replace(".chloe.fa", ".chloe.gbf")}",
+                                f"results/{sample}/genbanks/getorganelle/{file.replace(".chloe.fa", ".chloe.gb")}")
 
         # Copy cpgavas2 files
         elif args.software == "cpgavas2":

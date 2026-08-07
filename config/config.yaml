@@ -32,7 +32,7 @@ sequencing_type:
 run_trimming:
 
 # Indicate whether to run the annotation pipeline for the assembled genome. Options: "Yes" or "No".
-# This is not supported for long reads.
+# Must be set to yes on running long reads.
 annotation: "Yes"
 
 # Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: "Yes" or "No".
@@ -89,6 +89,7 @@ feature:
 
 # If no seed file is provided, indicate whether to search NCBI for reference sequences.
 # Options: "Yes" to search NCBI, "No" to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
+# Must be set to "Yes" on running long reads.
 search_ncbi:
 
 # List the specific genes (e.g., "COI,16S,ATP6") to search for on NCBI if NCBI search is enabled.

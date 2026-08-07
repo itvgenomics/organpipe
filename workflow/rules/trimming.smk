@@ -44,7 +44,7 @@ rule run_cutadapt:
     shell:
         """
         cutadapt -j {threads} --discard -O 35 --rc \
-            -e 0.1 {params} -o {output.reads} {input} >> {log} 2>&1
+            -e 0.1 {params} -o {output.reads} {input} > {log} 2>&1
 
         touch {output.check}
         """

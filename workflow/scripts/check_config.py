@@ -33,7 +33,6 @@ REQUIRED_FIELDS = {
     "insert_size": "Provide the read length (in base pairs) and average insert size (in base pairs) of the sequencing data.",
     "annotation": "Indicate whether to run the annotation pipeline for the assembled genome. Options: 'Yes' or 'No'.",
     "run_nhmmer": "Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: 'Yes' or 'No'.",
-    "nhmmer_db": "Provide the path to the HMM database file to be used with nhmmer. We are currently working on a better database for improved accuracy. A parsing step will be implemented to enhance this process.",
     "run_images": "Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: 'Yes' or 'No'.",
 }
 
@@ -303,22 +302,25 @@ def check_genome_range(config):
     genome_range = str(config.get("genome_range", "")).strip()
     seq_type = config.get("sequencing_type", "").strip().lower()
 
+
     pattern = r"^\d+-\d+$"
 
     if seq_type in {"short", "Short"}:
-        if genome_range in ["None", "nan"]:
-            errors.append("`genome_range` field is empty.")
-        elif not re.match(pattern, genome_range):
-            errors.append(
-                f"Invalid format for `genome_range`: '{genome_range}'. "
-                "Expected format is 'min-max' (e.g., '14000-22000')."
-            )
-        else:
-            min_val, max_val = map(int, genome_range.split("-"))
-            if min_val > max_val:
+        run_novoplasty = config.get("run_novoplasty", "").strip().lower()
+        if run_novoplasty == "yes":
+            if genome_range in ["None", "nan"]:
+                errors.append("`genome_range` field is empty.")
+            elif not re.match(pattern, genome_range):
                 errors.append(
-                    f"`genome_range` values are invalid: min '{min_val}' is greater than max '{max_val}'."
+                    f"Invalid format for `genome_range`: '{genome_range}'. "
+                    "Expected format is 'min-max' (e.g., '14000-22000')."
                 )
+            else:
+                min_val, max_val = map(int, genome_range.split("-"))
+                if min_val > max_val:
+                    errors.append(
+                        f"`genome_range` values are invalid: min '{min_val}' is greater than max '{max_val}'."
+                    )
 
         return errors
 
@@ -391,6 +393,7 @@ def check_seed_format_and_file(config):
     search_ncbi = str(config.get("search_ncbi", "")).strip().lower()
 
     if sequencing_type == "short":
+        run_novoplasty = str(config.get("run_novoplasty", "")).strip().lower()
         if seed_format == "fasta":
             if seed_file in ["None", "nan"]:
                 errors.append(
@@ -431,7 +434,7 @@ def check_seed_format_and_file(config):
                     f"(expected one of: {', '.join(valid_exts)})."
                 )
 
-        elif seed_format in ["None", "nan"]:
+        elif seed_format in ["None", "nan"] and run_novoplasty == "yes":
             if search_ncbi == "no":
                 errors.append(
                     "`seed_format` is empty, but `search_ncbi` is also set to 'no'. "
@@ -489,12 +492,12 @@ def check_search_ncbi_requirements(config):
     if seq_type == "long":
         if search_ncbi == "yes":
 
-            if str(config.get("search_term", "")).strip() in ["None", "nan"]:
-                errors.append("`search_ncbi` is 'Yes', but `search_term` is not set.")
+            if str(config.get("search_species", "")).strip() in ["None", "nan"]:
+                errors.append("`search_ncbi` is 'Yes', but `search_species` is not set.")
 
-            if str(config.get("max_references", "")).strip() in ["None", "nan"]:
+            if str(config.get(" n_references", "")).strip() in ["None", "nan"]:
                 errors.append(
-                    "`search_ncbi` is 'Yes', but `max_references` is not set."
+                    "`search_ncbi` is 'Yes', but ` n_references` is not set."
                 )
 
         else:

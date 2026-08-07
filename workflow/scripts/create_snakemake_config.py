@@ -61,65 +61,25 @@ def prepare_seeds(
     search_species,
     n_references
 ):
-    if str(seed_format).lower() == "genbank":
 
-        # Extract the sequences from the gb file
-        genbank_file = seed_file
+    if sequencing_type.lower() == "short":
+        if str(seed_format).lower() == "genbank":
 
-        if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
+            # Extract the sequences from the gb file
+            genbank_file = seed_file
 
-            valid_features = ["CDS", "rRNA", "tRNA"]
-            if feature not in valid_features:
-                raise ValueError(
-                    f"Invalid feature: {feature}. Must be one of {valid_features}."
-                )
-
-            get_seeds.main(
-                featuretype=feature,
-                genbank_file=genbank_file,
-                output_file=f"resources/{sample}/seeds/seeds.fasta",
-            )
-
-            # Split the seeds file into multiple sequences
-            get_seeds.split_fasta(
-                fasta_file=f"resources/{sample}/seeds/seeds.fasta",
-                output_dir=f"resources/{sample}/seeds/",
-            )
-
-        # Extract the headers to use them as seeds in the Snakemake config file
-        seeds = get_seeds.get_fasta_headers(
-            fasta_file=f"resources/{sample}/seeds/seeds.fasta"
-        )
-
-        return seeds
-
-    elif str(seed_format).lower() == "fasta":
-
-        if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
-
-            shutil.copy(seed_file, f"resources/{sample}/seeds/seeds.fasta")
-            # Split the seeds file into multiple sequences
-            get_seeds.split_fasta(
-                fasta_file=seed_file,
-                output_dir=f"resources/{sample}/seeds/",
-            )
-        # Extract the headers to use them as seeds in the Snakemake config file
-        seeds = get_seeds.get_fasta_headers(
-            fasta_file=f"resources/{sample}/seeds/seeds.fasta"
-        )
-
-        return seeds
-
-    elif str(search_ncbi).lower() == "yes":
-        if str(sequencing_type).lower() == "short":
             if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
-                outpath = f"resources/{sample}/seeds/"
-                download_seeds.main(
-                    taxon=search_term,
-                    outpath=outpath,
-                    maxcount=max_references,
-                    genes=genes,
-                    organelle=organelle,
+
+                valid_features = ["CDS", "rRNA", "tRNA"]
+                if feature not in valid_features:
+                    raise ValueError(
+                        f"Invalid feature: {feature}. Must be one of {valid_features}."
+                    )
+
+                get_seeds.main(
+                    featuretype=feature,
+                    genbank_file=genbank_file,
+                    output_file=f"resources/{sample}/seeds/seeds.fasta",
                 )
 
                 # Split the seeds file into multiple sequences
@@ -128,11 +88,53 @@ def prepare_seeds(
                     output_dir=f"resources/{sample}/seeds/",
                 )
 
-            # Extract the headers to use as seeds into snakemake config file
+            # Extract the headers to use them as seeds in the Snakemake config file
             seeds = get_seeds.get_fasta_headers(
                 fasta_file=f"resources/{sample}/seeds/seeds.fasta"
             )
+
             return seeds
+
+        elif str(seed_format).lower() == "fasta":
+
+            if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
+
+                shutil.copy(seed_file, f"resources/{sample}/seeds/seeds.fasta")
+                # Split the seeds file into multiple sequences
+                get_seeds.split_fasta(
+                    fasta_file=seed_file,
+                    output_dir=f"resources/{sample}/seeds/",
+                )
+            # Extract the headers to use them as seeds in the Snakemake config file
+            seeds = get_seeds.get_fasta_headers(
+                fasta_file=f"resources/{sample}/seeds/seeds.fasta"
+            )
+
+            return seeds
+
+        elif str(search_ncbi).lower() == "yes":
+            if str(sequencing_type).lower() == "short":
+                if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
+                    outpath = f"resources/{sample}/seeds/"
+                    download_seeds.main(
+                        taxon=search_term,
+                        outpath=outpath,
+                        maxcount=max_references,
+                        genes=genes,
+                        organelle=organelle,
+                    )
+
+                    # Split the seeds file into multiple sequences
+                    get_seeds.split_fasta(
+                        fasta_file=f"resources/{sample}/seeds/seeds.fasta",
+                        output_dir=f"resources/{sample}/seeds/",
+                    )
+
+                # Extract the headers to use as seeds into snakemake config file
+                seeds = get_seeds.get_fasta_headers(
+                    fasta_file=f"resources/{sample}/seeds/seeds.fasta"
+                )
+                return seeds
 
     elif str(sequencing_type).lower() == "long":
             seeds = [
@@ -310,7 +312,9 @@ if __name__ == "__main__":
                 "run_getorganelle": data["run_getorganelle"],
                 "database": data["database"],
                 "n_rounds": int(data["n_rounds"]) if data["n_rounds"] != None else "",
-                "target_size": data["target_size"],
+                "target_size": (
+                    int(data["target_size"]) if data["target_size"] != None else ""
+                ),
                 "extra_flags": data["extra_flags"],
                 "spades_kmers": data["spades_kmers"]
             }
@@ -416,7 +420,11 @@ if __name__ == "__main__":
                 "run_getorganelle": row["run_getorganelle"],
                 "database": row["database"],
                 "n_rounds": int(row["n_rounds"]) if row["n_rounds"] != "" else str(row["n_rounds"]),
-                "target_size": row["target_size"],
+                "target_size": (
+                    int(row["target_size"])
+                    if row["target_size"] != ""
+                    else str(row["target_size"])
+                ),
                 "extra_flags": row["extra_flags"],
                 "spades_kmers": row["spades_kmers"]
             }

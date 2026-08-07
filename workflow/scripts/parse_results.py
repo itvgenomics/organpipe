@@ -12,6 +12,7 @@ import yaml
 import shutil
 import argparse
 from Bio.SeqRecord import SeqRecord
+from pathlib import Path
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -151,12 +152,20 @@ def concat_csv_files(directory):
         )
 
 
-def parse_mitos2(logfile):
+def parse_mitos2(logfile, config):
     logging.info(f"Parsing MITOS2 files: {logfile}")
 
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
+
+    assembler = str(logfile).split("/")[3]
+
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
+
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
 
@@ -186,6 +195,7 @@ def parse_mitos2(logfile):
             "coding_count",
         ]
     )
+
     mitos_df["sample"] = [sample]
     mitos_df["seed"] = [seed]
     mitos_df["kmer"] = [kmer]
@@ -304,13 +314,22 @@ def parse_mitos2(logfile):
     mitos_df.to_csv(f"workflow/reports/{sample}/mitos2/{assembly}.csv", index=False)
 
 
-def parse_pilon(logfile):
+def parse_pilon(logfile, config):
     logging.info(f"Parsing Pilon data for: {logfile}")
     sample = str(logfile).split("/")[1]
-    seed = "_".join(str(logfile).split("/")[3].split(sample)[1].split("_")[1:-2])
-    kmer = str(logfile).split("/")[3].split("_")[-2]
+
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
+
+    assembler = str(logfile).split("/")[3]
+
+    if assembler == "novoplasty":
+        seed = "_".join(str(logfile).split("/")[4].split(sample)[1].split("_")[1:-2])
+        kmer = str(logfile).split("/")[4].split("_")[-2]
+
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
 
     pilon_df = pd.DataFrame(
         columns=[
@@ -345,7 +364,7 @@ def parse_pilon(logfile):
         for line in file:
             if "Input genome size" in line:
                 genome_size = line.split(":")[1].replace("\n", "").strip()
-            elif line.startswith(f"results/{sample}/pilon"):
+            elif line.startswith(f"results/{sample}/pilon/{assembler}"):
                 data = line.split(".bam:")
                 if len(data) == 7:
                     reads = str(data).split(",")[1].strip().split(" ")[1]
@@ -453,7 +472,7 @@ def parse_pilon(logfile):
 
         # Get number of changes
         changes = []
-        with open(f"results/{sample}/pilon/{assembly}/{assembly}.changes", "r") as file:
+        with open(f"results/{sample}/pilon/{assembler}/{assembly}/{assembly}.changes", "r") as file:
             lines = file.readlines()  # Read all lines at once
             line_count = len(lines)  # Count the lines
             if line_count > 0:
@@ -476,19 +495,26 @@ def parse_pilon(logfile):
         pilon_df.to_csv(f"workflow/reports/{sample}/pilon/{assembly}.csv", index=False)
 
 
-def parse_cpgavas2_report_table(logfile):
+def parse_cpgavas2_report_table(logfile, config):
     logging.info(f"Parsing CPGAVAS2 Report Table: {logfile}")
 
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
+
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
 
+    assembler = str(logfile).split("/")[3]
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
+    elif assembler  == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
+
     output_dirs = [
-        f"workflow/reports/{sample}/cpgavas2/report_table/gene_composition",
-        f"workflow/reports/{sample}/cpgavas2/report_table/intron_exon",
-        f"workflow/reports/{sample}/cpgavas2/report_table/codon_usage",
+        f"workflow/reports/{sample}/cpgavas2/{assembler}/report_table/gene_composition",
+        f"workflow/reports/{sample}/cpgavas2/{assembler}/report_table/intron_exon",
+        f"workflow/reports/{sample}/cpgavas2/{assembler}/report_table/codon_usage",
     ]
 
     for output_dir in output_dirs:
@@ -517,7 +543,7 @@ def parse_cpgavas2_report_table(logfile):
             df1.insert(0, "Sample", sample)
 
             df1.to_csv(
-                f"workflow/reports/{sample}/cpgavas2/report_table/gene_composition/{assembly}_gene_composition.csv",
+                f"workflow/reports/{sample}/cpgavas2/{assembler}/report_table/gene_composition/{assembly}_gene_composition.csv",
                 index=False,
             )
         except Exception as e:
@@ -546,7 +572,7 @@ def parse_cpgavas2_report_table(logfile):
             df2.insert(0, "Sample", sample)
 
             df2.to_csv(
-                f"workflow/reports/{sample}/cpgavas2/report_table/intron_exon/{assembly}_intron_exon.csv",
+                f"workflow/reports/{sample}/cpgavas2/{assembler}/report_table/intron_exon/{assembly}_intron_exon.csv",
                 index=False,
             )
         except Exception as e:
@@ -566,24 +592,31 @@ def parse_cpgavas2_report_table(logfile):
             df3.insert(0, "Sample", sample)
 
             df3.to_csv(
-                f"workflow/reports/{sample}/cpgavas2/report_table/codon_usage/{assembly}_codon_usage.csv",
+                f"workflow/reports/{sample}/cpgavas2/{assembler}/report_table/codon_usage/{assembly}_codon_usage.csv",
                 index=False,
             )
         except Exception as e:
             logging.error(f"Warning while parsing Table: {e}")
 
 
-def parse_cpgavas2_problems(logfile):
+def parse_cpgavas2_problems(logfile, config):
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
+
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
 
+    assembler = str(logfile).split("/")[3]
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
+
     logging.info(f"Parsing Problems: {logfile}")
 
-    if not os.path.exists(f"workflow/reports/{sample}/cpgavas2/problems"):
-        os.makedirs(f"workflow/reports/{sample}/cpgavas2/problems")
+    if not os.path.exists(f"workflow/reports/{sample}/cpgavas2/{assembler}/problems"):
+        os.makedirs(f"workflow/reports/{sample}/cpgavas2/{assembler}/problems")
 
     with open(logfile, "r") as file:
         lines = file.readlines()
@@ -605,19 +638,27 @@ def parse_cpgavas2_problems(logfile):
         df.insert(0, "Sample", sample)
 
         df.to_csv(
-            f"workflow/reports/{sample}/cpgavas2/problems/{assembly}_problems.csv",
+            f"workflow/reports/{sample}/cpgavas2/{assembler}/problems/{assembly}_problems.csv",
             index=False,
         )
 
 
-def parse_ncRNA_nhmmer(logfile):
+def parse_ncRNA_nhmmer(logfile, config):
     logging.info(f"Parsing rRNA-tRNA NHMMER data: {logfile}")
 
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
+
+    assembler = str(logfile).split("/")[3]
+
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
+
 
     if not os.path.exists(f"workflow/reports/{sample}/nhmmer/ncRNA/"):
         os.makedirs(f"workflow/reports/{sample}/nhmmer/ncRNA/", exist_ok=True)
@@ -664,14 +705,21 @@ def parse_ncRNA_nhmmer(logfile):
         logging.error(f"Warning while parsing Table: {e}")
 
 
-def parse_intergenes_nhmmer(logfile):
+def parse_intergenes_nhmmer(logfile, config):
     logging.info(f"Parsing intergenes NHMMER data: {logfile}")
 
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
+
+    assembler = str(logfile).split("/")[3]
+
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
 
     if not os.path.exists(f"workflow/reports/{sample}/nhmmer/intergenes/"):
         os.makedirs(f"workflow/reports/{sample}/nhmmer/intergenes/", exist_ok=True)
@@ -875,115 +923,219 @@ def get_novoplasty_files(logfile):
     )
 
 
-def get_mitos2_files(logfile):
+def get_mitos2_files(logfile, config):
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
+    assembly_dir = os.path.dirname(logfile)
+    assembly = str(assembly_dir).split("/")[-1]
+    assembler = str(logfile).split("/")[3]
+
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
+
+        logging.info(
+            f"Getting MITOS2 files for sample: {sample}, seed: {seed}, kmer: {kmer}, assembly: {assembly}"
+        )
+
+        mitos2_outdir = f"workflow/reports/{sample}/files/{seed}/kmer{kmer}"
+
+        if not os.path.exists(mitos2_outdir):
+            os.makedirs(mitos2_outdir)
+
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/ignored.mitos",
+            f"{mitos2_outdir}/{assembly}.ignored.mitos",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.bed",
+            f"{mitos2_outdir}/{assembly}.result.bed",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.faa",
+            f"{mitos2_outdir}/{assembly}.result.faa",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.fas",
+            f"{mitos2_outdir}/{assembly}.result.fas",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.geneorder",
+            f"{mitos2_outdir}/{assembly}.result.geneorder",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.gff",
+            f"{mitos2_outdir}/{assembly}.result.gff",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.mitos",
+            f"{mitos2_outdir}/{assembly}.result.mitos",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.seq",
+            f"{mitos2_outdir}/{assembly}.result.seq",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/stst.dat",
+            f"{mitos2_outdir}/{assembly}.stst.dat",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_tRNAout.nc",
+            f"{mitos2_outdir}/{assembly}_tRNAout.nc",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_rRNAout.nc",
+            f"{mitos2_outdir}/{assembly}_rRNAout.nc",
+        )
+
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
+
+        logging.info(
+            f"Getting MITOS2 files for sample: {sample}, assembly: {assembly}"
+        )
+
+        mitos2_outdir = f"workflow/reports/{sample}/files/{assembly}"
+
+        if not os.path.exists(mitos2_outdir):
+            os.makedirs(mitos2_outdir)
+
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/ignored.mitos",
+            f"{mitos2_outdir}/{assembly}.ignored.mitos",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.bed",
+            f"{mitos2_outdir}/{assembly}.result.bed",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.faa",
+            f"{mitos2_outdir}/{assembly}.result.faa",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.fas",
+            f"{mitos2_outdir}/{assembly}.result.fas",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.geneorder",
+            f"{mitos2_outdir}/{assembly}.result.geneorder",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.gff",
+            f"{mitos2_outdir}/{assembly}.result.gff",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.mitos",
+            f"{mitos2_outdir}/{assembly}.result.mitos",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/result.seq",
+            f"{mitos2_outdir}/{assembly}.result.seq",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/stst.dat",
+            f"{mitos2_outdir}/{assembly}.stst.dat",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/mitfi-global/sequence.fas-0_tRNAout.nc",
+            f"{mitos2_outdir}/{assembly}_tRNAout.nc",
+        )
+        shutil.copy(
+            f"results/{sample}/mitos2/getorganelle/{assembly}/mitfi-global/sequence.fas-0_rRNAout.nc",
+            f"{mitos2_outdir}/{assembly}_rRNAout.nc",
+        )
+
+def get_pilon_files(logfile, config):
+
+    sample = str(logfile).split("/")[1]
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
 
-    logging.info(
-        f"Getting NOVOPlasty files for sample: {sample}, seed: {seed}, kmer: {kmer}, assembly: {assembly}"
-    )
+    assembler = str(logfile).split("/")[3]
 
-    mitos2_outdir = f"workflow/reports/{sample}/files/{seed}/kmer{kmer}"
-
-    if not os.path.exists(mitos2_outdir):
-        os.makedirs(mitos2_outdir)
-
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/ignored.mitos",
-        f"{mitos2_outdir}/{assembly}.ignored.mitos",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.bed",
-        f"{mitos2_outdir}/{assembly}.result.bed",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.faa",
-        f"{mitos2_outdir}/{assembly}.result.faa",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.fas",
-        f"{mitos2_outdir}/{assembly}.result.fas",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.geneorder",
-        f"{mitos2_outdir}/{assembly}.result.geneorder",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.gff",
-        f"{mitos2_outdir}/{assembly}.result.gff",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.mitos",
-        f"{mitos2_outdir}/{assembly}.result.mitos",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/result.seq",
-        f"{mitos2_outdir}/{assembly}.result.seq",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/stst.dat",
-        f"{mitos2_outdir}/{assembly}.stst.dat",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_tRNAout.nc",
-        f"{mitos2_outdir}/{assembly}_tRNAout.nc",
-    )
-    shutil.copy(
-        f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{assembly}/mitfi-global/sequence.fas-0_rRNAout.nc",
-        f"{mitos2_outdir}/{assembly}_rRNAout.nc",
-    )
+    if assembler == "novoplasty":
+        seed = "_".join(str(logfile).split("/")[4].split(sample)[1].split("_")[1:-2])
+        kmer = str(logfile).split("/")[4].split("_")[-2]
 
 
-def get_pilon_files(logfile):
+        logging.info(
+            f"Getting Pilon files for sample: {sample}, seed: {seed}, kmer: {kmer}, assembly: {assembly}"
+        )
 
-    sample = str(logfile).split("/")[1]
-    seed = "_".join(str(logfile).split("/")[3].split(sample)[1].split("_")[1:-2])
-    kmer = str(logfile).split("/")[3].split("_")[-2]
-    assembly_dir = os.path.dirname(logfile)
-    assembly = str(assembly_dir).split("/")[-1]
+        pilon_outdir = f"workflow/reports/{sample}/files/{seed}/kmer{kmer}"
 
-    logging.info(
-        f"Getting NOVOPlasty files for sample: {sample}, seed: {seed}, kmer: {kmer}, assembly: {assembly}"
-    )
+        if not os.path.exists(pilon_outdir):
+            os.makedirs(pilon_outdir)
 
-    pilon_outdir = f"workflow/reports/{sample}/files/{seed}/kmer{kmer}"
+        shutil.copy(
+            f"results/{sample}/pilon/{assembler}/{assembly}/{assembly}.changes",
+            f"{pilon_outdir}/{assembly}_pilon.changes",
+        )
+        shutil.copy(
+            f"results/{sample}/pilon/{assembler}/{assembly}/pilon.log",
+            f"{pilon_outdir}/{assembly}_pilon.log",
+        )
 
-    if not os.path.exists(pilon_outdir):
-        os.makedirs(pilon_outdir)
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
 
-    shutil.copy(
-        f"results/{sample}/pilon/{assembly}/{assembly}.changes",
-        f"{pilon_outdir}/{assembly}_pilon.changes",
-    )
-    shutil.copy(
-        f"results/{sample}/pilon/{assembly}/pilon.log",
-        f"{pilon_outdir}/{assembly}_pilon.log",
-    )
+        logging.info(
+            f"Getting Pilon files for sample: {sample}, assembly: {assembly}"
+        )
 
+        pilon_outdir = f"workflow/reports/{sample}/files/{assembly}"
+
+        if not os.path.exists(pilon_outdir):
+            os.makedirs(pilon_outdir)
+
+        shutil.copy(
+            f"results/{sample}/pilon/{assembler}/{assembly}/{assembly}.changes",
+            f"{pilon_outdir}/{assembly}_pilon.changes",
+        )
+        shutil.copy(
+            f"results/{sample}/pilon/{assembler}/{assembly}/pilon.log",
+            f"{pilon_outdir}/{assembly}_pilon.log",
+        )
 
 def ignore_symlinks(src, names):
     return [name for name in names if os.path.islink(os.path.join(src, name))]
 
 
-def get_cpgavas2_files(logfile):
+def get_cpgavas2_files(logfile, config):
     sample = str(logfile).split("/")[1]
-    seed = str(logfile).split("/")[3].split("_kmer")[0]
-    kmer = str(logfile).split("/")[3].split("_kmer")[1]
+
     assembly_dir = os.path.dirname(logfile)
     assembly = str(assembly_dir).split("/")[-1]
 
-    logging.info(
-        f"Copying CPGAVAS2 files for sample: {sample}, seed: {seed}, kmer: {kmer}, assembly: {assembly}"
-    )
+    assembler = str(logfile).split("/")[3]
+    if assembler == "novoplasty":
+        seed = str(logfile).split("/")[4].split("_kmer")[0]
+        kmer = str(logfile).split("/")[4].split("_kmer")[1]
 
-    source_path = f"results/{sample}/cpgavas2/{seed}_kmer{kmer}/{assembly}"
-    destination_path = f"workflow/reports/{sample}/files/cpgavas2/{assembly}"
+        logging.info(
+            f"Copying CPGAVAS2 files for sample: {sample}, seed: {seed}, kmer: {kmer}, assembly: {assembly}"
+        )
 
-    if not os.path.exists(destination_path):
-        shutil.copytree(source_path, destination_path, ignore=ignore_symlinks)
+        source_path = f"results/{sample}/cpgavas2/novoplasty/{seed}_kmer{kmer}/{assembly}"
+        destination_path = f"workflow/reports/{sample}/files/cpgavas2/novoplasty/{assembly}"
+
+        if not os.path.exists(destination_path):
+            shutil.copytree(source_path, destination_path, ignore=ignore_symlinks)
+
+    elif assembler == "getorganelle":
+        seed = config["samples"][sample]["database"].lower()
+        kmer = config["samples"][sample]["spades_kmers"].lower()
+
+        logging.info(
+            f"Copying CPGAVAS2 files for sample: {sample}, assembly: {assembly}"
+        )
+
+        source_path = f"results/{sample}/cpgavas2/getorganelle/{assembly}"
+        destination_path = f"workflow/reports/{sample}/files/cpgavas2/getorganelle/{assembly}"
+
+        if not os.path.exists(destination_path):
+            shutil.copytree(source_path, destination_path, ignore=ignore_symlinks)
 
 
 def extract_features(genbank_file):
@@ -1044,30 +1196,31 @@ if __name__ == "__main__":
                             f"workflow/reports/{sample}/files/fastp.html",
                         )
 
-                    logging.info(f"Parsing NOVOPlasty sample: {sample}")
-                    for root, dirs, files in os.walk(f"results/{sample}/novoplasty"):
-                        for file in files:
-                            if "log_" in file:
-                                parse_novoplasty(os.path.join(root, file))
-                                get_novoplasty_files(os.path.join(root, file))
+                    if config["samples"][sample]["run_novoplasty"].lower() == "yes":
+                        logging.info(f"Parsing NOVOPlasty sample: {sample}")
+                        for root, dirs, files in os.walk(f"results/{sample}/novoplasty"):
+                            for file in files:
+                                if "log_" in file and "_extended" not in file:
+                                    parse_novoplasty(os.path.join(root, file))
+                                    get_novoplasty_files(os.path.join(root, file))
 
-                    logging.info(f"Joining NOVOPlasty .csv files for sample: {sample}")
-                    combined_df = concat_csv_files(f"workflow/reports/{sample}/novoplasty")
+                        logging.info(f"Joining NOVOPlasty .csv files for sample: {sample}")
+                        combined_df = concat_csv_files(f"workflow/reports/{sample}/novoplasty")
 
-                    combined_df = combined_df.sort_values(by=["Seed", "kmer"])
-                    combined_df.reset_index(drop=True, inplace=True)
+                        combined_df = combined_df.sort_values(by=["Seed", "kmer"])
+                        combined_df.reset_index(drop=True, inplace=True)
 
-                    combined_df.to_csv(
-                        f"workflow/reports/{sample}/novoplasty.csv", index=False
-                    )
+                        combined_df.to_csv(
+                            f"workflow/reports/{sample}/novoplasty.csv", index=False
+                        )
 
-                    if config["samples"][sample]["organelle"].lower() == "mito":
+                    if config["samples"][sample]["organelle"].lower() == "mito" and config["samples"][sample]["annotation"].lower() == "yes":
                         logging.info(f"Parsing MITOS2 sample: {sample}")
                         for root, dirs, files in os.walk(f"results/{sample}/mitos2"):
                             for file in files:
                                 if "mitos.log" in file:
-                                    parse_mitos2(os.path.join(root, file))
-                                    get_mitos2_files(os.path.join(root, file))
+                                    parse_mitos2(os.path.join(root, file), config)
+                                    get_mitos2_files(os.path.join(root, file), config)
 
                         logging.info(f"Joining MITOS2 .csv files for sample: {sample}")
 
@@ -1084,16 +1237,16 @@ if __name__ == "__main__":
                                 f"workflow/reports/{sample}/mitos2.csv", index=False
                             )
 
-                    elif config["samples"][sample]["organelle"].lower() == "chloro":
+                    elif config["samples"][sample]["organelle"].lower() == "chloro" and config["samples"][sample]["annotation"].lower() == "yes":
                         logging.info(f"Parsing CPGAVAS2 sample: {sample}")
                         for root, dirs, files in os.walk(f"results/{sample}/cpgavas2"):
                             for file in files:
                                 if "_reportTable.txt" in file:
-                                    parse_cpgavas2_report_table(os.path.join(root, file))
-                                    get_cpgavas2_files(os.path.join(root, file))
+                                    parse_cpgavas2_report_table(os.path.join(root, file), config)
+                                    get_cpgavas2_files(os.path.join(root, file), config)
 
                                 elif ".annotation_with_problems.txt" in file:
-                                    parse_cpgavas2_problems(os.path.join(root, file))
+                                    parse_cpgavas2_problems(os.path.join(root, file), config)
 
                         logging.info(
                             f"Joining CPGAVAS2 Report Table Condon Usage .csv files for sample: {sample}"
@@ -1167,8 +1320,8 @@ if __name__ == "__main__":
                     for root, dirs, files in os.walk(f"results/{sample}/pilon"):
                         for file in files:
                             if file == "pilon.log":
-                                parse_pilon(os.path.join(root, file))
-                                get_pilon_files(os.path.join(root, file))
+                                parse_pilon(os.path.join(root, file), config)
+                                get_pilon_files(os.path.join(root, file), config)
 
                     logging.info(f"Joining PILON .csv files for sample: {sample}")
 
@@ -1187,7 +1340,7 @@ if __name__ == "__main__":
                         for root, dirs, files in os.walk(f"results/{sample}/nhmmer"):
                             for file in files:
                                 if file == "rRNA-tRNA.tblout.out":
-                                    parse_ncRNA_nhmmer(os.path.join(root, file))
+                                    parse_ncRNA_nhmmer(os.path.join(root, file), config)
 
                         logging.info(
                             f"Joining ncRNA NHMMER .csv files for sample: {sample}"
@@ -1215,7 +1368,7 @@ if __name__ == "__main__":
                         for root, dirs, files in os.walk(f"results/{sample}/nhmmer"):
                             for file in files:
                                 if file == "intergenes_filter.tblout.out":
-                                    parse_intergenes_nhmmer(os.path.join(root, file))
+                                    parse_intergenes_nhmmer(os.path.join(root, file), config)
 
                         logging.info(
                             f"Joining intergenes NHMMER .csv files for sample: {sample}"
@@ -1239,71 +1392,147 @@ if __name__ == "__main__":
 
                     if config["samples"][sample]["run_images"].lower() == "yes":
                         logging.info(f"Getting all images from sample: {sample}")
-                        for root, dirs, files in os.walk(f"results/{sample}/images/novoplasty"):
-                            for file in files:
-                                if file.endswith(".png") and ".depth." in file:
-                                    depth_img_dir = (
-                                        f"workflow/reports/{sample}/images/depth"
-                                    )
 
-                                    if not os.path.exists(depth_img_dir):
-                                        os.makedirs(depth_img_dir, exist_ok=True)
+                        if config["samples"][sample]["run_novoplasty"].lower() == "yes":
+                            for root, dirs, files in os.walk(f"results/{sample}/images/novoplasty"):
+                                for file in files:
+                                    if file.endswith(".png") and ".depth." in file:
+                                        depth_img_dir = (
+                                            f"workflow/reports/{sample}/images/depth"
+                                        )
 
-                                    logging.info(f"Copying file: {file}")
-                                    shutil.copy(os.path.join(root, file), depth_img_dir)
+                                        if not os.path.exists(depth_img_dir):
+                                            os.makedirs(depth_img_dir, exist_ok=True)
 
-                                elif file.endswith(".png") and "_recruitment_plot." in file:
-                                    rec_plot_dir = (
-                                        f"workflow/reports/{sample}/images/recruitment_plot"
-                                    )
+                                        logging.info(f"Copying file: {file}")
+                                        shutil.copy(os.path.join(root, file), depth_img_dir)
 
-                                    if not os.path.exists(rec_plot_dir):
-                                        os.makedirs(rec_plot_dir, exist_ok=True)
+                                    elif file.endswith(".png") and "_recruitment_plot." in file:
+                                        rec_plot_dir = (
+                                            f"workflow/reports/{sample}/images/recruitment_plot"
+                                        )
 
-                                    logging.info(f"Copying file: {file}")
-                                    shutil.copy(os.path.join(root, file), rec_plot_dir)
+                                        if not os.path.exists(rec_plot_dir):
+                                            os.makedirs(rec_plot_dir, exist_ok=True)
 
-                                elif file.endswith(".png"):
-                                    ogdraw_dir = f"workflow/reports/{sample}/images/ogdraw"
+                                        logging.info(f"Copying file: {file}")
+                                        shutil.copy(os.path.join(root, file), rec_plot_dir)
 
-                                    if not os.path.exists(ogdraw_dir):
-                                        os.makedirs(ogdraw_dir, exist_ok=True)
+                                    elif file.endswith(".png"):
+                                        ogdraw_dir = f"workflow/reports/{sample}/images/ogdraw"
 
-                                    logging.info(f"Copying file: {file}")
-                                    shutil.copy(os.path.join(root, file), ogdraw_dir)
+                                        if not os.path.exists(ogdraw_dir):
+                                            os.makedirs(ogdraw_dir, exist_ok=True)
+
+                                        logging.info(f"Copying file: {file}")
+                                        shutil.copy(os.path.join(root, file), ogdraw_dir)
+
+                        if config["samples"][sample]["run_getorganelle"].lower() == "yes":
+                            for root, dirs, files in os.walk(f"results/{sample}/images/getorganelle"):
+                                for file in files:
+                                    if file.endswith(".png") and ".depth." in file:
+                                        depth_img_dir = (
+                                            f"workflow/reports/{sample}/images/depth"
+                                        )
+
+                                        if not os.path.exists(depth_img_dir):
+                                            os.makedirs(depth_img_dir, exist_ok=True)
+
+                                        logging.info(f"Copying file: {file}")
+                                        shutil.copy(os.path.join(root, file), depth_img_dir)
+
+                                    elif file.endswith(".png") and "_recruitment_plot." in file:
+                                        rec_plot_dir = (
+                                            f"workflow/reports/{sample}/images/recruitment_plot"
+                                        )
+
+                                        if not os.path.exists(rec_plot_dir):
+                                            os.makedirs(rec_plot_dir, exist_ok=True)
+
+                                        logging.info(f"Copying file: {file}")
+                                        shutil.copy(os.path.join(root, file), rec_plot_dir)
+
+                                    elif file.endswith(".png"):
+                                        ogdraw_dir = f"workflow/reports/{sample}/images/ogdraw"
+
+                                        if not os.path.exists(ogdraw_dir):
+                                            os.makedirs(ogdraw_dir, exist_ok=True)
+
+                                        logging.info(f"Copying file: {file}")
+                                        shutil.copy(os.path.join(root, file), ogdraw_dir)
 
                     logging.info(f"Getting GenBank file for sample: {sample}")
 
-                    kmers = [kmer for kmer in config["samples"][sample]["kmers"]]
-                    seeds = [seed for seed in config["samples"][sample]["seeds"]]
+                    if config["samples"][sample]["run_novoplasty"].lower() == "yes":
+                        kmers = [kmer for kmer in config["samples"][sample]["kmers"]]
+                        seeds = [seed for seed in config["samples"][sample]["seeds"]]
 
-                    gb_files = []
-                    for root, dirs, files in os.walk(f"results/{sample}/genbanks/novoplasty"):
-                        for file in files:
-                            if file.endswith(".gb"):
-                                gb_files.append(file)
+                        gb_files = []
+                        for root, dirs, files in os.walk(f"results/{sample}/genbanks/novoplasty"):
+                            for file in files:
+                                if file.endswith(".gb"):
+                                    gb_files.append(file)
 
-                    for seed in seeds:
-                        for file in gb_files:
-                            if f"_{seed}_" in file:
-                                logging.info(f"Copying GenBank file: {file}")
+                        for seed in seeds:
+                            for file in gb_files:
+                                if f"_{seed}_" in file:
+                                    logging.info(f"Copying GenBank file: {file}")
 
-                                if not os.path.exists(
-                                    f"workflow/reports/{sample}/genbanks/{seed}"
-                                ):
-                                    os.makedirs(
+                                    if not os.path.exists(
                                         f"workflow/reports/{sample}/genbanks/{seed}"
+                                    ):
+                                        os.makedirs(
+                                            f"workflow/reports/{sample}/genbanks/{seed}"
+                                        )
+
+                                    shutil.copy(
+                                        f"results/{sample}/genbanks/novoplasty/{file}",
+                                        f"workflow/reports/{sample}/genbanks/{seed}/",
                                     )
 
-                                shutil.copy(
-                                    f"results/{sample}/genbanks/{file}",
-                                    f"workflow/reports/{sample}/genbanks/{seed}/",
+                            if not os.path.exists(f"workflow/reports/{sample}/fastas/{seed}"):
+                                os.makedirs(
+                                    f"workflow/reports/{sample}/fastas/{seed}", exist_ok=True
                                 )
 
-                        if not os.path.exists(f"workflow/reports/{sample}/fastas/{seed}"):
-                            os.makedirs(
-                                f"workflow/reports/{sample}/fastas/{seed}", exist_ok=True
-                            )
+                    if config["samples"][sample]["run_getorganelle"].lower() == "yes" and config["samples"][sample]["annotation"].lower() == "yes":
+                        gb_files = []
+                        for root, dirs, files in os.walk(f"results/{sample}/genbanks/getorganelle"):
+                            for file in files:
+                                if file.endswith(".gb"):
+                                    gb_files.append(file)
+
+                        if config["samples"][sample]["organelle"].lower() == "mito":
+                            base_dir = Path(f"results/{sample}/mitos2/getorganelle")
+                        elif config["samples"][sample]["organelle"].lower() == "chloro":
+                            base_dir = Path(f"results/{sample}/cpgavas2/getorganelle")
+
+                        assemblies = sorted(d.name for d in base_dir.iterdir() if d.is_dir())
+
+                        print(base_dir, assemblies)
+                        for assembly in assemblies:
+                            print(f"Processing assembly: {assembly}")
+                            for file in gb_files:
+                                print(f"Checking file: {file} against assembly: {assembly}")
+                                if assembly in str(file):
+                                    logging.info(f"Copying GenBank file: {file}")
+
+                                    if not os.path.exists(
+                                        f"workflow/reports/{sample}/genbanks/{assembly}"
+                                    ):
+                                        os.makedirs(
+                                            f"workflow/reports/{sample}/genbanks/{assembly}"
+                                        )
+
+                                    shutil.copy(
+                                        f"results/{sample}/genbanks/getorganelle/{file}",
+                                        f"workflow/reports/{sample}/genbanks/{assembly}/",
+                                    )
+
+                            if not os.path.exists(f"workflow/reports/{sample}/fastas/{assembly}"):
+                                os.makedirs(
+                                    f"workflow/reports/{sample}/fastas/{assembly}", exist_ok=True
+                                )
 
                     logging.info(f"Getting FASTA file for sample: {sample}")
 
@@ -1472,7 +1701,7 @@ if __name__ == "__main__":
                                     all_data = extract_features(os.path.join(root, file))
                                     for data in all_data:
                                         assembly = file.split("/")[-1].replace(".gb", "")
-                                        feature = data["feature"]
+                                        feature = str(data["feature"]).split("(")[0].strip()
                                         seq = data["seq"]
 
                                         if not os.path.exists(
@@ -1529,28 +1758,17 @@ if __name__ == "__main__":
                 if config["samples"][sample]["sequencing_type"].lower() == "short":
                     if config["samples"][sample]["organelle"].lower() == "mito":
                         if (
-                            os.path.exists(f"workflow/reports/{sample}/novoplasty.csv")
-                            and os.path.exists(f"workflow/reports/{sample}/pilon.csv")
+                            os.path.exists(f"workflow/reports/{sample}/pilon.csv")
                             and os.path.exists(f"workflow/reports/{sample}/mitos2.csv")
                         ):
 
                             logging.info(f"Writting summary.csv for sample: {sample}")
 
-                            df_novoplasty = pd.read_csv(
-                                f"workflow/reports/{sample}/novoplasty.csv"
-                            )
-                            df_mitos2 = pd.read_csv(f"workflow/reports/{sample}/mitos2.csv")
-
-                            df_abstract = pd.merge(
-                                df_novoplasty,
-                                df_mitos2,
-                                left_on=["Sample", "Seed", "kmer"],
-                                right_on=["sample", "seed", "kmer"],
-                            )
+                            df_abstract = pd.read_csv(f"workflow/reports/{sample}/mitos2.csv")
 
                             columns_to_keep = [
-                                "Sample",
-                                "Seed",
+                                "sample",
+                                "seed",
                                 "kmer",
                                 "assembly",
                                 "transporter_count",
@@ -1558,6 +1776,7 @@ if __name__ == "__main__":
                                 "origins_count",
                                 "coding_count",
                             ]
+
                             df_abstract = df_abstract[columns_to_keep]
 
                             df_pilon = pd.read_csv(f"workflow/reports/{sample}/pilon.csv")
@@ -1571,14 +1790,15 @@ if __name__ == "__main__":
                                 left_on="assembly",
                                 right_on="assembly",
                             )
+
                             df_abstract.to_csv(
                                 f"workflow/reports/{sample}/summary.csv", index=False
                             )
+
                     elif config["samples"][sample]["organelle"].lower() == "chloro":
                         base_dir = f"workflow/reports/{sample}/genbanks/"
                         if (
-                            os.path.exists(f"workflow/reports/{sample}/novoplasty.csv")
-                            and os.path.exists(f"workflow/reports/{sample}/pilon.csv")
+                            os.path.exists(f"workflow/reports/{sample}/pilon.csv")
                             and os.path.exists(base_dir)
                         ):
                             logging.info(f"Writing summary.csv for sample: {sample}")
@@ -1590,8 +1810,12 @@ if __name__ == "__main__":
                                     if file.endswith(("chloe.gb", "cpgavas2.gb")):
                                         filepath = os.path.join(root, file)
                                         assembly = os.path.splitext(file)[0]
-                                        kmer = assembly.split("_")[-2]
 
+                                        try:
+                                            kmer = int(assembly.split("_")[-2])
+                                        except:
+                                            seed = config["samples"][sample]["database"]
+                                            kmer = config["samples"][sample]["spades_kmers"]
 
                                         transporter_count = 0
                                         ribosomal_count = 0
@@ -1611,7 +1835,7 @@ if __name__ == "__main__":
                                         rows.append({
                                             "Sample": sample,
                                             "Seed": seed,
-                                            "kmer": int(kmer),
+                                            "kmer": kmer,
                                             "assembly": assembly,
                                             "annotation_tool": "chloe" if "chloe" in file else "cpgavas2",
                                             "transporter_count": transporter_count,

@@ -195,11 +195,11 @@ def get_positions(input_file):
     return positions, positions_list
 
 
-def filter_fasta_by_size(input_file, output_file, min_size):
+def filter_fasta_by_size(input_file, output_file, min_size, max_size=10000):
     with open(input_file, "r") as input_handle, open(output_file, "w") as output_handle:
         for record in SeqIO.parse(input_handle, "fasta"):
             sequence_size = len(record.seq)
-            if sequence_size >= min_size:
+            if sequence_size >= min_size and sequence_size <= max_size:
                 SeqIO.write(record, output_handle, "fasta")
 
 
@@ -287,7 +287,7 @@ if __name__ == "__main__":
                         filter_fasta_by_size(
                             f"{output_path}/intergenes.fasta",
                             f"{output_path}/intergenes_filter.fasta",
-                            30,
+                            30, 10000
                         )
             elif args.assembler == "getorganelle":
                 annotations_path = (
@@ -313,7 +313,7 @@ if __name__ == "__main__":
                         filter_fasta_by_size(
                             f"{output_path}/intergenes.fasta",
                             f"{output_path}/intergenes_filter.fasta",
-                            30,
+                            30, 10000
                         )
 
         else:

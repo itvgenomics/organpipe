@@ -36,7 +36,7 @@ rule run_ncRNA_nhmmer_novoplasty:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.tblout.out \
@@ -44,7 +44,7 @@ rule run_ncRNA_nhmmer_novoplasty:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -88,7 +88,7 @@ rule run_intergenes_nhmmer_novoplasty:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.tblout.out \
@@ -96,7 +96,7 @@ rule run_intergenes_nhmmer_novoplasty:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -137,7 +137,7 @@ rule run_ncRNA_nhmmer_long:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
-        if [ -e "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.fasta" ]; then
+        if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.fasta" ]; then
             hmmscan --cpu {threads} --noali \
             -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.nhmmer.out \
             --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.tblout.out \
@@ -145,7 +145,7 @@ rule run_ncRNA_nhmmer_long:
             resources/nhmmer_db.hmm \
             results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.fasta 2>{log}
         else
-            echo "Input fasta file does not exist." >> {log} 2>&1
+            echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
         fi
         touch {output}
         """
@@ -185,7 +185,7 @@ rule run_intergenes_nhmmer_long:
         f"{config["sif_dir"]}/hmmer.sif"
     shell:
         """
-        if [ -e "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.fasta" ]; then
+        if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.fasta" ]; then
             hmmscan --cpu {threads} --noali \
             -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.nhmmer.out \
             --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.tblout.out \
@@ -193,7 +193,7 @@ rule run_intergenes_nhmmer_long:
             resources/nhmmer_db.hmm \
             results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.fasta 2> {log}
         else
-            echo "Input fasta file does not exist." >> {log} 2>&1
+            echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
         fi
         touch {output}
         """
@@ -235,7 +235,7 @@ rule run_intergenes_nhmmer_chloro_novoplasty:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.tblout.out \
@@ -243,7 +243,7 @@ rule run_intergenes_nhmmer_chloro_novoplasty:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -286,7 +286,7 @@ rule run_ncRNA_nhmmer_chloro_novoplasty:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.tblout.out \
@@ -294,7 +294,7 @@ rule run_ncRNA_nhmmer_chloro_novoplasty:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -357,7 +357,7 @@ rule run_ncRNA_nhmmer_getorganelle:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.tblout.out \
@@ -365,7 +365,7 @@ rule run_ncRNA_nhmmer_getorganelle:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -389,7 +389,7 @@ rule run_ncRNA_nhmmer_chloro_getorganelle:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.tblout.out \
@@ -397,7 +397,7 @@ rule run_ncRNA_nhmmer_chloro_getorganelle:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -461,7 +461,7 @@ rule run_intergenes_nhmmer_getorganelle:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.tblout.out \
@@ -469,7 +469,7 @@ rule run_intergenes_nhmmer_getorganelle:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}
@@ -492,7 +492,7 @@ rule run_intergenes_nhmmer_chloro_getorganelle:
         """
         for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -e "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta" ]; then
+            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta" ]; then
                 hmmscan --cpu {threads} --noali \
                 -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.nhmmer.out \
                 --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.tblout.out \
@@ -500,7 +500,7 @@ rule run_intergenes_nhmmer_chloro_getorganelle:
                 resources/nhmmer_db.hmm \
                 results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta 2> {log}
             else
-                echo "Input fasta file does not exist." >> {log} 2>&1
+                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
             fi
         done
         touch {output}

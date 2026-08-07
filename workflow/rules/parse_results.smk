@@ -5,8 +5,9 @@ def get_output_files(wildcards):
 
     sample_config = config["samples"][sample_id]
 
-    kmers = [kmer for kmer in config["samples"][sample_id]["kmers"]]
-    seeds = [seed for seed in config["samples"][sample_id]["seeds"]]
+    if config["samples"][sample_id].get("sequencing_type", "").lower() == "short" and config["samples"][sample_id].get("run_novoplasty", "").lower() == "yes":
+        kmers = [kmer for kmer in config["samples"][sample_id]["kmers"]]
+        seeds = [seed for seed in config["samples"][sample_id]["seeds"]]
 
     if config["samples"][sample_id].get("sequencing_type", "").lower() == "short":
 
@@ -138,6 +139,7 @@ def get_output_files(wildcards):
                         sample_output.extend(expand("results/{sample_id}/nhmmer/getorganelle/chloro.intergenes_nhmmer.check", sample_id=sample_id))
 
     elif config["samples"][sample_id].get("sequencing_type", "").lower() == "long":
+        seeds = [seed for seed in config["samples"][sample_id]["seeds"]]
 
         if config["samples"][sample_id].get("run_trimming", "").lower() == "yes":
             sample_output.extend(expand("resources/{sample_id}/rawreads/{sample_id}.trimmed.check", sample_id=sample_id))
