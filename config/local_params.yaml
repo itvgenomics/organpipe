@@ -3,7 +3,7 @@ use-singularity: true
 singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
 latency-wait: 30
 show-failed-logs: True
-keep-going: False
+keep-going: True
 printshellcmds: True
 rerun-incomplete: True
 

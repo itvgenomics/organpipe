@@ -34,6 +34,15 @@ REQUIRED_FIELDS = {
     "annotation": "Indicate whether to run the annotation pipeline for the assembled genome. Options: 'Yes' or 'No'.",
     "run_nhmmer": "Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: 'Yes' or 'No'.",
     "run_images": "Indicate whether to generate visualizations, such as OGDraw diagrams, depth plots, and recruitment plots. Options: 'Yes' or 'No'.",
+    "search_species": "Specify the taxon name to use as a query when searching NCBI (e.g., 'Amphisbaena') for complete mitogenome references.",
+    "n_references": "Set the maximum number of reference sequences to download during the NCBI search (e.g., 5).",
+    "run_novoplasty": "Indicate whether to run NOVOPlasty for genome assembly. Options: 'Yes' to run NOVOPlasty, 'No' to skip this step.",
+    "run_getorganelle": "Indicate whether to run GetOrganelle for genome assembly. Options: 'Yes' to run GetOrganelle, 'No' to skip this step.",
+    "database": "GetOrganelle organelle type (e.g., 'embplant_pt', 'animal_mt'). Required if run_getorganelle is 'Yes'.",
+    "n_rounds": "Maximum number of extending rounds (suggested: >=2).",
+    "target_size": "Hypothetical value(s) of target genome size.",
+    "spades_kmers": "SPAdes kmer settings. Use the same format as in SPAdes. e.g: 21,55,85,115",
+    "extra_flags": "Add any additional flags to be passed to the GetOrganelle command line.",
 }
 
 
@@ -76,6 +85,12 @@ def check_spacing_issues(config):
     if isinstance(genes, str) and " " in genes:
         errors.append(
             "Field `search_genes` must be a comma-separated list **without spaces** (e.g., `COI,16S,NAD4`)."
+        )
+
+    spades_kmers = config.get("spades_kmers")
+    if isinstance(spades_kmers, str) and " " in spades_kmers:
+        errors.append(
+            "Field `spades_kmers` must be a comma-separated list **without spaces** (e.g., `21,55,85,115`)."
         )
 
     # Generic: leading/trailing whitespace
@@ -330,7 +345,7 @@ def check_genome_range(config):
 
 def check_yes_no_fields(config):
     errors = []
-    fields = ["annotation", "run_trimming", "run_nhmmer", "run_images"]
+    fields = ["annotation", "run_trimming", "run_nhmmer", "run_images", "run_novoplasty", "run_getorganelle"]
     allowed = {"yes", "no", "Yes", "No"}
 
     sequencing_type = str(config.get("sequencing_type", "")).strip().lower()
@@ -483,30 +498,14 @@ def check_search_ncbi_requirements(config):
     search_ncbi = str(config.get("search_ncbi", "")).strip().lower()
     seq_type = config.get("sequencing_type", "").strip().lower()
 
-    if search_ncbi not in {"yes", "no", "Yes", "No"}:
-        errors.append(
-            f"Invalid value for `search_ncbi`: '{config.get('search_ncbi')}'. "
-            "Accepted values are: 'yes' or 'no'."
-        )
+    if seq_type == "short":
 
-    if seq_type == "long":
-        if search_ncbi == "yes":
-
-            if str(config.get("search_species", "")).strip() in ["None", "nan"]:
-                errors.append("`search_ncbi` is 'Yes', but `search_species` is not set.")
-
-            if str(config.get(" n_references", "")).strip() in ["None", "nan"]:
-                errors.append(
-                    "`search_ncbi` is 'Yes', but ` n_references` is not set."
-                )
-
-        else:
+        if search_ncbi not in {"yes", "no", "Yes", "No"}:
             errors.append(
-                f"Invalid value for `search_ncbi`: '{config.get('search_ncbi')}'."
-                f"If your sequencing_type is set to `long`, you need to run with search_ncbi: `yes`."
+                f"Invalid value for `search_ncbi`: '{config.get('search_ncbi')}'. "
+                "Accepted values are: 'yes' or 'no'."
             )
 
-    elif seq_type == "short":
         if search_ncbi == "yes":
             if str(config.get("search_genes", "")).strip() in ["None", "nan"]:
                 errors.append("`search_ncbi` is 'Yes', but `search_genes` is not set.")
@@ -520,7 +519,6 @@ def check_search_ncbi_requirements(config):
                 )
 
     return errors
-
 
 def check_pacbio_adapters(config):
     errors = []
@@ -542,6 +540,32 @@ def check_pacbio_adapters(config):
                     "  -b ACTG... -b ACTG... (valid characters: A, C, G, T)"
                 )
 
+    return errors
+
+
+def check_assembler_requirements(config):
+    errors = []
+    seq_type = str(config.get("sequencing_type", "")).strip().lower()
+
+    if seq_type == "short":
+        run_novoplasty = str(config.get("run_novoplasty", "")).strip().lower()
+        run_getorganelle = str(config.get("run_getorganelle", "")).strip().lower()
+
+        if run_novoplasty != "yes" and run_getorganelle != "yes":
+            errors.append("For short reads, at least one assembler (`run_novoplasty` or `run_getorganelle`) must be set to 'Yes'.")
+
+        if run_novoplasty == "yes":
+            reads_length = str(config.get("reads_length", "")).strip()
+            insert_size = str(config.get("insert_size", "")).strip()
+            if reads_length in ["None", "nan", ""]:
+                errors.append("`run_novoplasty` is 'Yes', but `reads_length` is not set.")
+            if insert_size in ["None", "nan", ""]:
+                errors.append("`run_novoplasty` is 'Yes', but `insert_size` is not set.")
+
+        if run_getorganelle == "yes":
+            database = str(config.get("database", "")).strip()
+            if database in ["None", "nan", ""]:
+                errors.append("`run_getorganelle` is 'Yes', but `database` is not set.")
     return errors
 
 
@@ -692,6 +716,12 @@ def main():
             logging.info("\n Problem with `pacbio_adapters` setting:")
             for msg in pacbio_adapters:
                 logging.info(f" - {msg}")
+
+        assembler_errors = check_assembler_requirements(config)
+        if assembler_errors:
+            logging.info("\n Problem with Assembler requirements:")
+            for msg in assembler_errors:
+                raise ValueError(f" - {msg}")
 
 
 if __name__ == "__main__":

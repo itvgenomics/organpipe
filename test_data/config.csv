@@ -1,5 +1,7 @@
-sample,reads_path,organelle,genetic_code,reference,sequencing_type,genome_range,annotation,run_trimming,adapters,minlength,minquality,seed_format,seed_file,feature,search_ncbi,search_genes,search_term,max_references,kmers,max_memory,reads_length,insert_size,run_nhmmer,nhmmer_db,run_images,pacbio_adapters
-hs1,test_data/rawreads,mito,2,,short,14000-22000,Yes,No,,,,genbank,test_data/human_mito.gb,CDS,no,,,2,"18,23",2,150,251,No,,Yes,
-hs2,test_data/rawreads,mito,2,,short,14000-22000,Yes,No,,,,genbank,test_data/human_mito.gb,rRNA,no,,,2,"23,39",2,150,251,No,,Yes,
-hs3,test_data/rawreads,mito,2,,short,14000-22000,Yes,No,,,,fasta,test_data/human_coi.fasta,,no,,,2,"18,33",2,150,251,No,,Yes,
-SRR1328237,test_data/rawreads,chloro,11,,short,120000-180000,Yes,No,,,,fasta,test_data/Seed_RUBP.fasta,,no,,,,"33,39",2,151,450,No,,Yes,
+sample;reads_path;organelle;genetic_code;sequencing_type;run_trimming;annotation;run_nhmmer;run_images;adapters;minlength;minquality;pacbio_adapters;run_novoplasty;genome_range;reference;seed_format;seed_file;feature;search_ncbi;search_genes;search_term;max_references;kmers;max_memory;reads_length;insert_size;run_getorganelle;database;n_rounds;target_size;spades_kmers;extra_flags;search_species;n_references;
+hifi;test_data/rawreads;mito;5;long;yes;yes;;;;;;-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT;;;;;;;;;;;;;;;;;;;;;Vanessa atalanta;2;
+hs1;test_data/rawreads;mito;2;short;no;yes;yes;yes;;25;5;;yes;14000-18000;;fasta;test_data/human_coi.fasta;;no;;;;19,23;2;150;250;no;;;;;;;;
+hs2;test_data/rawreads;mito;2;short;yes;no;no;no;;25;5;;yes;14000-18000;;;;;yes;COI,16S;Pan troglodytes;2;19,23;2;150;250;yes;animal_mt;15;16000;21,55,85,115;;;;
+hs4;test_data/rawreads;mito;2;short;yes;yes;no;no;;25;5;;no;;;;;;no;;;;;;;;yes;animal_mt;15;16000;21,55,85,115;;;;
+hs3;test_data/rawreads;mito;2;short;yes;yes;no;no;;25;5;;yes;14000-18000;;genbank;test_data/human_mito.gb;CDS;no;;;;19,23;2;150;250;yes;animal_mt;15;16000;21,55,85,115;;;;
+SRR1328237;test_data/rawreads;chloro;11;short;yes;yes;yes;yes;;25;5;;yes;80000-180000;;fasta;test_data/Seed_RUBP.fasta;;no;;;;19,23;2;150;250;yes;embplant_pt;15;160000;21,55,85,115;;;;

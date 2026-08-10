@@ -2,6 +2,14 @@
 
 ![OrganPipe Logo](OrganPipe.png)
 
+---
+
+> 🛠️ **Generate your config file online**
+> Use our interactive web tool to easily create the configuration file for your run:
+> **[https://itvgenomics.github.io/config_generator/](https://itvgenomics.github.io/config_generator/)**
+
+---
+
 ## How to cite OrganPipe (preprint)
 
  ```
@@ -87,6 +95,12 @@ Before installing the required software, make sure you have the following:
 
 ## How to run OrganPipe
 
+OrganPipe uses different assembly tools depending on your data and configuration. Here is a brief overview of how each tool works within the pipeline:
+
+- **[NOVOPlasty](https://github.com/ndierckx/NOVOPlasty)** (Short Reads): A *de novo* assembler that requires a **seed sequence** (a fasta or genbank file) to initiate the assembly. It extends this seed iteratively using the provided short reads to assemble the circular organelle genome.
+- **[GetOrganelle](https://github.com/Kinggerm/GetOrganelle)** (Short Reads): Uses a pre-compiled **database** (e.g., `animal_mt`, `embplant_pt`) rather than a single seed. It recruits reads mapping to the target database and performs a graph-based assembly to resolve the complete organelle genome.
+- **[MitoHiFi](https://github.com/marcelauliano/MitoHiFi)** (Long Reads): Designed for PacBio HiFi or ONT reads. It queries NCBI to **download reference FASTA and GenBank files** based on a specified species name, and then uses these references to identify, filter, and circularize the mitochondrial contigs from your long-read assembly.
+
 >⚠️ **Warning about parallelization**:
 Snakemake uses the specified number of threads (CPUs) in local mode to check job availability. If the product of `-t` × `max_memory` exceeds your system's available RAM, it can cause the system to crash. Make sure your -t value and max_memory settings are compatible with your machine’s memory.
 
@@ -126,8 +140,16 @@ The fields to be edited are the following:
 | `insert_size`       | `300`               | Average insert size (in base pairs) of sequencing data.                                                                                                                             | Required for Short Reads.                  |
 | `annotation`        | `"Yes"`               | Run annotation pipeline: "Yes" to annotate, "No" to skip.                                                                                                                           | Optional. Default is "No".                    |
 | `run_nhmmer`        | `"No"`                | Run nhmmer to identify ncRNA and intergenic regions. **Note:** Enabling this can  slow down the pipeline.                                                                                                                               | Optional. Default is "No".                    |
-| `nhmmer_db`         | `"resources/rfam.hmm"`| Path to the HMM database for nhmmer. We are providing a simple database in the `resources` directory, but you can use any HMMER database compatible with HMMER version 3.4 for improved accuracy.                                                                                                                                                | Required if `run_nhmmer` is "Yes".            |
 | `run_images`        | `"Yes"`               | Generate visualizations like OGDraw diagrams and depth plots. **Note:** Enabling this can slow down the pipeline.                                                                                                                      | Optional. Default is "Yes".                   |
+| `run_novoplasty`    | `"Yes"`               | Run NOVOPlasty for genome assembly: "Yes" to run, "No" to skip. You can run both assemblers simultaneously by setting both `run_novoplasty` and `run_getorganelle` to "Yes".                                                          | Optional. Default is "Yes".                   |
+| `run_getorganelle`  | `"No"`                | Run GetOrganelle for genome assembly: "Yes" to run, "No" to skip. You can run both assemblers simultaneously by setting both `run_novoplasty` and `run_getorganelle` to "Yes".                                                         | Optional. Default is "No".                    |
+| `database`          | `"animal_mt"`         | GetOrganelle organelle type (e.g., `embplant_pt`, `other_pt`, `embplant_mt`, `embplant_nr`, `animal_mt`, `fungus_mt`, `fungus_nr`). Multiple types can be combined with commas.                                                       | Required if `run_getorganelle` is "Yes".      |
+| `n_rounds`          | `10`                  | Maximum number of extending rounds for GetOrganelle (suggested: ≥ 2). Defaults vary by organelle type (e.g., 15 for `embplant_pt`, 10 for `animal_mt`).                                                                              | Optional (GetOrganelle).                      |
+| `target_size`       | `13000`               | Hypothetical target genome size used by GetOrganelle to estimate word size. Defaults vary by organelle type. Should be a comma-separated list of integers in multi-organelle mode.                                                     | Optional (GetOrganelle).                      |
+| `spades_kmers`      | `"21,55,85,115"`      | SPAdes k-mer settings passed to GetOrganelle. Use the same format as SPAdes (e.g., `21,55,85,115`).                                                                                                                                   | Optional (GetOrganelle).                      |
+| `extra_flags`       | `"--overwrite"`       | Any additional flags to pass directly to the GetOrganelle command line.                                                                                                                                                               | Optional (GetOrganelle).                      |
+| `search_species`    | `"Amphisbaena"`       | Taxon name used when searching NCBI for complete mitogenome references (MitoHiFi / long reads only).                                                                                                                                  | Required for Long Reads.                      |
+| `n_references`      | `5`                   | Maximum number of reference sequences to download during the NCBI search (MitoHiFi / long reads only).                                                                                                                               | Required for Long Reads.                      |
 
 >If search_ncbi is set to "Yes" and no matching sequences are found for the provided `search_term`, OrganPipe will raise an error and stop the pipeline. Make sure the term you are searching for has available sequences in NCBI before running the pipeline.
 
@@ -147,10 +169,14 @@ The fields to be edited are the following:
         - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with `-nbatch` (Default = 15)
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
         - **-rerun** (Optional) = Delete previous results and temporary files for the specified sample(s) to ensure a clean re-run with updated configurations. Use this when reprocessing samples with different parameters.
-        - **-slurm** (Optional) = Use the `config/slurm_params.yaml` file to run the workflow with SLURM job submission using Snakemake’s profile system. This enables use of SLURM-specific resource configuration, submission rules, and cluster-specific options. If you want to change any default SLURM settings, such as the partition: Edit `config/slurm_params.yaml` and set the appropriate value for the `slurm_partition` variable.
+        - **-nhmmer_db** {path} (Optional) = Path to the HMM database used by nhmmer. If not specified, defaults to `resources/rfam.hmm`. You can use any HMMER database compatible with HMMER version 3.4 for improved accuracy.
+        - **-slurm** (Optional) = Use the `config/slurm_params.yaml` file to run the workflow with SLURM job submission using Snakemake's profile system. This enables use of SLURM-specific resource configuration, submission rules, and cluster-specific options. If you want to change any default SLURM settings, such as the partition: Edit `config/slurm_params.yaml` and set the appropriate value for the `slurm_partition` variable.
+        - **-j** {int} (Optional, **-slurm** mode only) = Controls how many jobs are submitted to the SLURM queue at once.
         - **-partition** {string} (Required when **-slurm** is used) — Specifies the SLURM partition (queue) to which the jobs will be submitted.
 
     - If you want to change any default settings, such as the threads number and memory usage: Edit config/local_params.yaml. **DO NOT CHANGE THE `{WORKDIR}`, `{THREADS}` and `{PARTITION}` VARIABLES**. Change `{PARTITION}` only if you want to redirect specific rules to diffent partitions.
+
+    - **OOM (Out Of Memory) Errors**: If a specific rule fails due to an Out-Of-Memory error during pipeline execution, you can increase the `mem_mb` directive for that specific rule in the `config/local_params.yaml` file.
 
     - We recommend initially running the pipeline with the -np (dry run) flag. This will allow you to verify that all paths and configurations are correct and that the pipeline will execute as expected. It's a good way to ensure everything is set up properly before running the actual workflow.
 
@@ -181,6 +207,7 @@ Each sample directory contains the following folders:
 | `genes/` | Holds all assembled genes for each seed/k-mer. |
 | `mitos2/` | Contains mitochondrial-specific results (mito only). |
 | `novoplasty/` | Results from NOVOPlasty (short reads only). |
+| `getorganelle/` | Results from GetOrganelle (short reads only, when enabled). |
 | `pilon/` | Polishing results from Pilon (short reads only). |
 | `mitohifi/` | Results from MitoHiFi (long reads only). |
 | `nhmmer/` | HMMER-based search results. |
@@ -204,6 +231,8 @@ Each sample folder also includes the following key files:
 
 Entries in the `summary.csv` file follow this format:
 
+**NOVOPlasty assemblies:**
+
 ```
 {CA/Option/Contig}_{sample}_{seed}_{TaxID}_{kmer}_1
 ```
@@ -225,23 +254,48 @@ For the entry: `CA_1_ITV00872_25_1-COI_941666_19_1`
 - **19** → K-mer size used
 - **_1** → Assembly Number
 
+**GetOrganelle assemblies:**
+
+```
+{database}_{status}_{number}
+```
+
+- **database** → GetOrganelle database used, as set in the config file (e.g., `animal_mt`, `embplant_pt`)
+- **status** → Assembly status: `complete` for a closed circular genome, `scaffold` for a non-closed sequence
+- **number** → Assembly number (incremental, starting at 1)
+
+For the entry: `animal_mt_complete_1`
+
+- **animal_mt** → Database used (animal mitogenome)
+- **complete** → Genome was successfully circularized
+- **1** → First assembly produced
+
 # Changelog
 
 ## OrganPipe 1.2.0 – Changelog
 
 ### New Features
-- Introduced a new `-j` flag in Slurm mode to control how many jobs are submitted to the queue.
+- Introduced a new `-j` flag in SLURM mode to control how many jobs are submitted to the queue.
 - Converted result parsing into a Snakemake rule:
-  - Parsing now runs automatically when each sample completes all jobs.
-  - Reports are generated incrementally during pipeline execution instead of only at the end.
+  - Parsing now runs automatically when each sample completes all its jobs.
+  - Reports are generated incrementally during pipeline execution instead of waiting until the end.
+- Added **GetOrganelle** to the pipeline as an alternative (or complementary) assembler:
+  - New config directives: `database`, `n_rounds`, `target_size`, `spades_kmers`, `extra_flags`.
+  - New config directive `run_getorganelle` to enable/disable GetOrganelle.
+- Users can now choose which assembler to use (`run_novoplasty`, `run_getorganelle`), or run both simultaneously.
+- Added `-nhmmer_db` flag: if not specified, defaults to `resources/rfam.hmm`;
+    - Removed the `nhmmer_db` directive from the config file.
+- New long-read config directives: `search_species` and `n_references` (replaces earlier naming).
 
 ### Improvements
-- Updated `mitos` to version 2.1.10.
-- Improved robustness when handling `mitos` BLAST outputs with fewer than 12 columns.
+- Updated MitoS to version 2.1.10.
+- Improved robustness when handling MitoS BLAST outputs with fewer than 12 columns.
+- Updated the all test data and its config files.
 
 ### Bug Fixes
-- Fixed parsing issues when `result.geneorder` is missing from `mitos2` output files.
+- Fixed parsing issues when `result.geneorder` is missing from MitoS2 output files.
 - Attempted to resolve failures during Singularity `.sif` image builds.
+- Fixed when `novoplasty.csv` returned empty columns.
 
 ## OrganPipe v1.1 — Change Log
 
@@ -308,6 +362,7 @@ All outputs are located in: `workflow/reports/<sample_name>/`
 - `summary.csv`
 - `mitos2.csv` (mitochondria only)
 - `novoplasty.csv` (short reads only)
+- `getorganelle.csv` (short reads only, when enabled)
 - `pilon.csv` (short reads only)
 - `mitohifi.csv` (long reads only)
 - `nhmmer_intergenes.csv`
