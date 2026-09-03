@@ -24,15 +24,31 @@ def extract_sequences(genbank_file, fasta_file, featuretype):
 
 
 def split_fasta(fasta_file, output_dir):
+    try:
+        if not os.path.exists(fasta_file):
+            raise FileNotFoundError
+
+    except FileNotFoundError:
+        print(
+            "\nERROR: No seed sequence was found for the combination of "
+            "taxon and search_gene in the NCBI Nucleotide database.\n"
+            "\n"
+            "Please try one of the following:\n"
+            "  - Change the search_gene.\n"
+            "  - Change the taxon.\n"
+            "\n"
+            f"Expected seed FASTA file: {fasta_file}\n"
+        )
+        raise SystemExit(1)
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     index = 1
-    # Iterate over each record in the FASTA file
+
     for record in SeqIO.parse(fasta_file, "fasta"):
         output_path = os.path.join(output_dir, f"{index}-{record.id}.fasta")
 
-        # Write each record to a separate file
         with open(output_path, "w") as outfile:
             SeqIO.write(record, outfile, "fasta")
 
