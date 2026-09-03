@@ -166,7 +166,7 @@ The fields to be edited are the following:
         - **-t** {int} (Required) = Number of threads to use. If running in **SLURM** mode, this value determines how many jobs will be submitted to the queue.
         - **-np** (Optional) = Perform a dry run to see what jobs will be executed without actually running them.
         - **-unlock** (Optional) = Unlock the working directory if Snakemake has somehow locked it.
-        - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with `-nbatch` (Default = 15)
+        - **-batch** (Optional) = If you are running a large number of samples, or number of rules executed > 3000, consider using this flag. This slightly improves the DAG resolution time from Snakemake. You can set the number with `-nbatch` (Default = 3)
         - **-sifdir** (Optional) = Choose a directory to build all singularity image files used in the pipeline. If the path already contains the images, they will not be pulled. Default: resources/sif_dir
         - **-rerun** (Optional) = Delete previous results and temporary files for the specified sample(s) to ensure a clean re-run with updated configurations. Use this when reprocessing samples with different parameters.
         - **-nhmmer_db** {path} (Optional) = Path to the HMM database used by nhmmer. If not specified, defaults to `resources/rfam.hmm`. You can use any HMMER database compatible with HMMER version 3.4 for improved accuracy.
