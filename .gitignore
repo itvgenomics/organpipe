@@ -1,3 +1,5 @@
 *.pbs
 *.slurm
 changelog.txt
+benchmarks/
+workflow/reports/
