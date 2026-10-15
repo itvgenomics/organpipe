@@ -1,10 +1,13 @@
 #!/bin/bash
 set -e
 
-cat << 'EOF'
+VERSION="1.3.0"
+
+print_banner() {
+cat << EOF
 
 ### OrganPipe: An automated tool to facilitate the assembly, annotation, and curation of mitochondrial and chloroplast genomes
-#Version: 1.2.0
+#Version: $VERSION
 #Authors: Moreira-Oliveira, R. R., Silva, B. M., Molina, M., Oliveira-Lima, M., Leão, T. F., Vasconcelos, S., & Nunes, G. L. (2025).
 #https://doi.org/10.21203/RS.3.RS-5686696/V1
 
@@ -24,6 +27,58 @@ cat << 'EOF'
 ###    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 EOF
+}
+
+usage() {
+cat << EOF
+OrganPipe $VERSION - assembly, annotation and curation of mitochondrial and chloroplast genomes
+
+Usage:
+  bash OrganPipe.sh -d <workdir> -c <configfile> -t <cores> [options]
+  bash OrganPipe.sh -d <workdir> -c <configfile> -slurm -j <jobs> -partition <name> [options]
+
+Required:
+  -d <path>           Working directory (the OrganPipe directory)
+  -c <file>           Configuration file (.yaml or .csv)
+  -t <int>            Local mode: number of CPU cores Snakemake may use at once
+  -j <int>            SLURM mode: maximum number of jobs queued or running at once
+
+SLURM:
+  -slurm              Submit each job to SLURM (resources in config/slurm_params.yaml)
+  -partition <name>   Default SLURM partition (required with -slurm)
+
+Options:
+  -np                 Dry run: show the jobs that would run without running them
+  -unlock             Unlock the working directory after an interrupted run
+  -rerun              Delete results/, resources/ and workflow/reports/ of the samples
+                      from the previous run before starting
+  -batch              Split the DAG into batches (useful for many samples)
+  -nbatch <int>       Number of batches used with -batch (default: 3)
+  -sifdir <path>      Directory for the Singularity images (default: resources/sif_dir)
+  -nhmmer_db <path>   HMM database used by HMMER (default: resources/rfam.hmm)
+  -h, --help          Show this help and exit
+  -v, --version       Show the OrganPipe version and exit
+
+Examples:
+  bash OrganPipe.sh -d . -c config/config.csv -t 8 -np
+  bash OrganPipe.sh -d . -c config/config.csv -slurm -j 50 -partition <your_partition>
+
+Documentation: https://github.com/itvgenomics/organpipe
+EOF
+}
+
+fail() {
+    echo "ERROR: $1" >&2
+    echo "Run 'bash OrganPipe.sh -h' for usage." >&2
+    exit 1
+}
+
+# Options that take a value must be followed by one (not by another option).
+require_value() {
+    if [ -z "$2" ] || [[ "$2" == -* ]]; then
+        fail "Option $1 requires a value."
+    fi
+}
 
 SETNP=""
 SETUNLOCK=""
@@ -37,22 +92,39 @@ PARTITION=""
 USED_T=false
 USED_J=false
 
+if [ $# -eq 0 ]; then
+    usage
+    exit 1
+fi
+
 while [ "$1" != "" ]; do
     case $1 in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    -v|--version)
+        echo "OrganPipe $VERSION"
+        exit 0
+        ;;
     -c)
+        require_value "$1" "$2"
         shift
         CONFIGFILE=$1
         ;;
     -d)
+        require_value "$1" "$2"
         shift
         WORKDIR=$1
         ;;
     -t)
+        require_value "$1" "$2"
         shift
         THREADS=$1
         USED_T=true
         ;;
     -j)
+        require_value "$1" "$2"
         shift
         THREADS=$1
         USED_J=true
@@ -70,6 +142,7 @@ while [ "$1" != "" ]; do
         SETSLURM=true
         ;;
     -partition)
+        require_value "$1" "$2"
         shift
         PARTITION=$1
         ;;
@@ -77,39 +150,40 @@ while [ "$1" != "" ]; do
         RERUN=true
         ;;
     -sifdir)
+        require_value "$1" "$2"
         shift
         SIFDIR=$1
         ;;
     -nhmmer_db)
+        require_value "$1" "$2"
         shift
         NHMMER_DB=$1
         ;;
     -nbatch)
+        require_value "$1" "$2"
         shift
         NBATCH=$1
         ;;
     *)
-        exit 1
+        fail "Unknown option: $1"
         ;;
     esac
     shift
 done
 
-if [ "$SETSLURM" = true ]; then
-    if [ "$USED_J" = false ]; then
-        echo "ERROR: When using -slurm, you must use -j (not -t) to set the number of jobs submitted to the queue."
-        exit 1
-    fi
-    if [ "$USED_T" = true ]; then
-        echo "ERROR: -t is not allowed with -slurm. Use -j instead."
-        exit 1
-    fi
+[ -z "$CONFIGFILE" ] && fail "Missing required option -c <configfile>."
+[ -z "$WORKDIR" ] && fail "Missing required option -d <workdir>."
+if [ "$SETSLURM" != true ] && [ "$USED_T" = false ] && [ "$USED_J" = false ]; then
+    fail "Missing required option -t <cores>."
 fi
 
-if [ "$SETSLURM" = true ] && [ -z "$PARTITION" ]; then
-    echo "ERROR: -partition flag is required when using -slurm."
-    exit 1
+if [ "$SETSLURM" = true ]; then
+    [ "$USED_T" = true ] && fail "-t is not allowed with -slurm. Use -j instead."
+    [ "$USED_J" = false ] && fail "When using -slurm, you must use -j (not -t) to set the number of jobs submitted to the queue."
+    [ -z "$PARTITION" ] && fail "-partition is required when using -slurm."
 fi
+
+print_banner
 
 CONFIGFILE=$(realpath "$CONFIGFILE")
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
