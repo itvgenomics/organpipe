@@ -24,3 +24,25 @@ wildcard_constraints:
 rule all:
     input:
         expand("workflow/reports/{sample_id}/parse_results.done", sample_id=SAMPLES)
+
+# Benchmark report (workflow/reports/benchmark.html), rebuilt at the end of every
+# run, also when some jobs failed, so it reflects all benchmarks written so far.
+# Snakemake skips these handlers on dry runs. It is a handler and not an input of
+# `rule all` so that `-batch` keeps splitting the samples across batches.
+def build_benchmark_report():
+    os.makedirs("logs", exist_ok=True)
+    try:
+        shell(
+            "python workflow/scripts/benchmark_report.py "
+            "-c config/snakemake_config.yaml -o workflow/reports/benchmark.html "
+            "> logs/benchmark_report.log 2>&1"
+        )
+        print("Benchmark report written to workflow/reports/benchmark.html")
+    except Exception:
+        print("Benchmark report could not be generated, see logs/benchmark_report.log")
+
+onsuccess:
+    build_benchmark_report()
+
+onerror:
+    build_benchmark_report()
