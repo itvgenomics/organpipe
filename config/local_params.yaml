@@ -1,94 +1,59 @@
+###############################################################################
+# OrganPipe - Snakemake profile for LOCAL execution
+#
+# This is a template. OrganPipe.sh replaces {WORKDIR} and writes the result
+# to profiles/local/config.yaml before every run, so edit THIS file, not the
+# generated one.
+#
+# The total number of cores is set with `OrganPipe.sh -t <N>`. A job never
+# uses more threads than that, even if a higher value is set below.
+###############################################################################
+
+# ── General settings ─────────────────────────────────────────────────────────
 executor: local
 use-singularity: true
 singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
-latency-wait: 30
-show-failed-logs: True
-keep-going: True
-printshellcmds: True
-rerun-incomplete: True
+latency-wait: 30          # seconds to wait for output files on slow file systems
+show-failed-logs: True    # print the log of a failed job
+keep-going: True          # keep running independent jobs when one fails
+printshellcmds: True      # print the shell command of each job
+rerun-incomplete: True    # re-run jobs whose output was left incomplete
 
+
+# ── Threads per rule ─────────────────────────────────────────────────────────
+# Every rule runs with 1 thread unless it is listed here.
+# To give a rule more threads, add a line `<rule_name>: <threads>`.
+#
+# Memory note: the NOVOPlasty and GetOrganelle steps use up to `max_memory`
+# (GB, from your config file) per job. Keep `-t` x `max_memory` within the RAM
+# of your machine (see the README warning about parallelization).
 set-threads:
-  all: 1
-  download_getorganelle_db: 1
-  run_novoplasty_mitos2: 1
-  run_getorganelle_mitos2: 1
-  run_novoplasty_cpgavas2: 1
-  run_getorganelle_cpgavas2: 1
-  run_novoplasty_chloe: 1
-  run_getorganelle_chloe: 1
-  create_hash: 1
-  run_novoplasty: 1
+  # Trimming
+  run_fastp: 4
+  run_cutadapt: 4
+
+  # Assembly
   run_getorganelle: 8
   run_mitohifi: 8
-  get_novoplasty_assemblies: 1
-  get_getorganelle_assemblies: 1
-  check_shortreads_files: 1
-  check_longreads_files: 1
-  check_adapters: 1
-  check_nhmmer_db: 1
-  extract_table2asn: 1
-  index_hmmer_db: 1
-  run_novoplasty_bwa_index: 1
+
+  # Error correction (read mapping + Pilon)
   run_novoplasty_bwa_mem: 4
-  run_novoplasty_samtools_index: 1
-  run_novoplasty_pilon: 2
-  run_getorganelle_bwa_index: 1
   run_getorganelle_bwa_mem: 4
-  run_getorganelle_samtools_index: 1
+  run_novoplasty_pilon: 2
   run_getorganelle_pilon: 2
-  write_gb_novoplasty_mitos2: 1
-  write_gb_novoplasty_chloe: 1
-  write_gb_novoplasty_cpgavas2: 1
-  write_gb_getorganelle_mitos2: 1
-  write_gb_getorganelle_chloe: 1
-  write_gb_getorganelle_cpgavas2: 1
-  rotate_mito_gb_novoplasty: 1
-  rotate_cpgavas_gb_novoplasty: 1
-  rotate_chloe_gb_novoplasty: 1
-  rotate_mito_gb_getorganelle: 1
-  rotate_cpgavas_gb_getorganelle: 1
-  rotate_chloe_gb_getorganelle: 1
-  get_genbank_fastas_novoplasty: 1
-  run_blastn_novoplasty: 1
-  run_recruitment_plot_novoplasty: 1
-  run_bwa_index_rotated_novoplasty: 1
+
+  # Images (read mapping for the depth plots)
   run_bwa_mem_rotated_novoplasty: 4
-  run_samtools_depth_novoplasty: 1
-  run_samtools_depth_novoplasty_rotated: 1
-  run_depth_plot_novoplasty: 1
-  run_ogdraw_mito_novoplasty: 1
-  run_ogdraw_chloro_novoplasty: 1
-  get_genbank_fastas_getorganelle: 1
-  run_blastn_getorganelle: 1
-  run_recruitment_plot_getorganelle: 1
-  run_bwa_index_rotated_getorganelle: 1
   run_bwa_mem_rotated_getorganelle: 4
-  run_samtools_depth_getorganelle: 1
-  run_samtools_depth_getorganelle_rotated: 1
-  run_depth_plot_getorganelle: 1
-  run_ogdraw_mito_getorganelle: 1
-  run_ogdraw_chloro_getorganelle: 1
-  get_mito_ncRNA_sequences_novoplasty: 1
+
+  # nhmmer (ncRNA and intergenic region search)
   run_ncRNA_nhmmer_novoplasty: 4
-  get_mito_intergenes_sequences_novoplasty: 1
   run_intergenes_nhmmer_novoplasty: 4
-  get_mito_ncRNA_sequences_getorganelle: 1
-  run_ncRNA_nhmmer_getorganelle: 4
-  get_mito_intergenes_sequences_getorganelle: 1
-  run_intergenes_nhmmer_getorganelle: 4
-  get_mito_ncRNA_sequences_long: 1
-  run_ncRNA_nhmmer_long: 4
-  get_mito_intergenes_sequences_long: 1
-  run_intergenes_nhmmer_long: 4
-  get_chloro_intergenes_sequences_novoplasty: 1
-  run_intergenes_nhmmer_chloro_novoplasty: 4
-  get_chloro_ncRNA_sequences_novoplasty: 1
   run_ncRNA_nhmmer_chloro_novoplasty: 4
-  get_chloro_intergenes_sequences_getorganelle: 1
-  run_intergenes_nhmmer_chloro_getorganelle: 4
-  get_chloro_ncRNA_sequences_getorganelle: 1
+  run_intergenes_nhmmer_chloro_novoplasty: 4
+  run_ncRNA_nhmmer_getorganelle: 4
+  run_intergenes_nhmmer_getorganelle: 4
   run_ncRNA_nhmmer_chloro_getorganelle: 4
-  run_fastp: 4
-  check_reference: 1
-  check_fasta_longreads: 1
-  parse_results: 1
+  run_intergenes_nhmmer_chloro_getorganelle: 4
+  run_ncRNA_nhmmer_long: 4
+  run_intergenes_nhmmer_long: 4

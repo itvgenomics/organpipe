@@ -1,521 +1,140 @@
+###############################################################################
+# OrganPipe - Snakemake profile for SLURM execution
+#
+# This is a template. OrganPipe.sh replaces {WORKDIR}, {THREADS} (the value
+# of -j) and {PARTITION} (the value of -partition), and writes the result to
+# profiles/slurm/config.yaml before every run, so edit THIS file, not the
+# generated one.
+#
+# Each job is submitted with:
+#   --cpus-per-task = threads   (set-threads)
+#   --mem           = mem_mb    (MB)
+#   -t              = runtime   (minutes)
+#   -p              = slurm_partition
+###############################################################################
+
+# ── General settings ─────────────────────────────────────────────────────────
 executor: slurm
 use-singularity: true
 singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
-latency-wait: 30
-show-failed-logs: True
-keep-going: True
-printshellcmds: True
-rerun-incomplete: True
-max-jobs-per-second: {THREADS}
+latency-wait: 30                   # seconds to wait for output files on shared file systems
+show-failed-logs: True             # print the log of a failed job
+keep-going: True                   # keep running independent jobs when one fails
+printshellcmds: True               # print the shell command of each job
+rerun-incomplete: True             # re-run jobs whose output was left incomplete
+jobs: {THREADS}                    # maximum number of jobs queued/running at once (-j)
+max-jobs-per-second: 10            # submission rate limit, to avoid flooding the scheduler
 max-status-checks-per-second: 20
-jobs: {THREADS}
 
 
+# ── Default resources ────────────────────────────────────────────────────────
+# Applied to every rule. Rules listed under `set-resources` override only the
+# values they set and inherit the rest from here.
+# String values are wrapped in single quotes inside double quotes so Snakemake
+# reads them as text and not as Python expressions.
+default-resources:
+  slurm_partition: "'{PARTITION}'"
+  mem_mb: 1000                     # 1 GB
+  runtime: 4320                    # 72 h
+  # slurm_account: "'my_account'"  # uncomment if your cluster requires an account
+
+
+# ── Threads per rule ─────────────────────────────────────────────────────────
+# Every rule runs with 1 thread (1 CPU) unless it is listed here.
+# To give a rule more threads, add a line `<rule_name>: <threads>`.
 set-threads:
-  all: 1
-  download_getorganelle_db: 1
-  run_novoplasty_mitos2: 1
-  run_getorganelle_mitos2: 1
-  run_novoplasty_cpgavas2: 1
-  run_getorganelle_cpgavas2: 1
-  run_novoplasty_chloe: 1
-  run_getorganelle_chloe: 1
-  create_hash: 1
-  run_novoplasty: 1
+  # Trimming
+  run_fastp: 4
+  run_cutadapt: 4
+
+  # Assembly
   run_getorganelle: 8
   run_mitohifi: 8
-  get_novoplasty_assemblies: 1
-  get_getorganelle_assemblies: 1
-  check_shortreads_files: 1
-  check_longreads_files: 1
-  check_adapters: 1
-  check_nhmmer_db: 1
-  extract_table2asn: 1
-  index_hmmer_db: 1
-  run_novoplasty_bwa_index: 1
+
+  # Error correction (read mapping + Pilon)
   run_novoplasty_bwa_mem: 4
-  run_novoplasty_samtools_index: 1
-  run_novoplasty_pilon: 2
-  run_getorganelle_bwa_index: 1
   run_getorganelle_bwa_mem: 4
-  run_getorganelle_samtools_index: 1
+  run_novoplasty_pilon: 2
   run_getorganelle_pilon: 2
-  write_gb_novoplasty_mitos2: 1
-  write_gb_novoplasty_chloe: 1
-  write_gb_novoplasty_cpgavas2: 1
-  write_gb_getorganelle_mitos2: 1
-  write_gb_getorganelle_chloe: 1
-  write_gb_getorganelle_cpgavas2: 1
-  rotate_mito_gb_novoplasty: 1
-  rotate_cpgavas_gb_novoplasty: 1
-  rotate_chloe_gb_novoplasty: 1
-  rotate_mito_gb_getorganelle: 1
-  rotate_cpgavas_gb_getorganelle: 1
-  rotate_chloe_gb_getorganelle: 1
-  get_genbank_fastas_novoplasty: 1
-  run_blastn_novoplasty: 1
-  run_recruitment_plot_novoplasty: 1
-  run_bwa_index_rotated_novoplasty: 1
+
+  # Images (read mapping for the depth plots)
   run_bwa_mem_rotated_novoplasty: 4
-  run_samtools_depth_novoplasty: 1
-  run_samtools_depth_novoplasty_rotated: 1
-  run_depth_plot_novoplasty: 1
-  run_ogdraw_mito_novoplasty: 1
-  run_ogdraw_chloro_novoplasty: 1
-  get_genbank_fastas_getorganelle: 1
-  run_blastn_getorganelle: 1
-  run_recruitment_plot_getorganelle: 1
-  run_bwa_index_rotated_getorganelle: 1
   run_bwa_mem_rotated_getorganelle: 4
-  run_samtools_depth_getorganelle: 1
-  run_samtools_depth_getorganelle_rotated: 1
-  run_depth_plot_getorganelle: 1
-  run_ogdraw_mito_getorganelle: 1
-  run_ogdraw_chloro_getorganelle: 1
-  get_mito_ncRNA_sequences_novoplasty: 1
+
+  # nhmmer (ncRNA and intergenic region search)
   run_ncRNA_nhmmer_novoplasty: 4
-  get_mito_intergenes_sequences_novoplasty: 1
   run_intergenes_nhmmer_novoplasty: 4
-  get_mito_ncRNA_sequences_getorganelle: 1
-  run_ncRNA_nhmmer_getorganelle: 4
-  get_mito_intergenes_sequences_getorganelle: 1
-  run_intergenes_nhmmer_getorganelle: 4
-  get_mito_ncRNA_sequences_long: 1
-  run_ncRNA_nhmmer_long: 4
-  get_mito_intergenes_sequences_long: 1
-  run_intergenes_nhmmer_long: 4
-  get_chloro_intergenes_sequences_novoplasty: 1
-  run_intergenes_nhmmer_chloro_novoplasty: 4
-  get_chloro_ncRNA_sequences_novoplasty: 1
   run_ncRNA_nhmmer_chloro_novoplasty: 4
-  get_chloro_intergenes_sequences_getorganelle: 1
-  run_intergenes_nhmmer_chloro_getorganelle: 4
-  get_chloro_ncRNA_sequences_getorganelle: 1
+  run_intergenes_nhmmer_chloro_novoplasty: 4
+  run_ncRNA_nhmmer_getorganelle: 4
+  run_intergenes_nhmmer_getorganelle: 4
   run_ncRNA_nhmmer_chloro_getorganelle: 4
-  run_fastp: 4
-  check_reference: 1
-  check_fasta_longreads: 1
-  parse_results: 1
+  run_intergenes_nhmmer_chloro_getorganelle: 4
+  run_ncRNA_nhmmer_long: 4
+  run_intergenes_nhmmer_long: 4
 
 
+# ── Resources per rule ───────────────────────────────────────────────────────
+# Only rules that need more than the defaults above are listed. Any key from
+# default-resources (mem_mb, runtime, slurm_partition, ...) can be set here,
+# e.g. `run_novoplasty: {mem_mb: 50000, runtime: 1440}`.
 set-resources:
-  all:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  download_getorganelle_db:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_novoplasty_mitos2:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  run_getorganelle_mitos2:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  run_novoplasty_cpgavas2:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  run_getorganelle_cpgavas2:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  run_novoplasty_chloe:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  run_getorganelle_chloe:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  create_hash:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_mitohifi:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  get_novoplasty_assemblies:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  get_getorganelle_assemblies:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  check_shortreads_files:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  check_longreads_files:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  check_adapters:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  check_reference:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  check_nhmmer_db:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  extract_table2asn:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  index_hmmer_db:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_novoplasty_bwa_index:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_novoplasty_bwa_mem:
-    slurm_partition: {PARTITION}
-    mem_mb: 10000
-    runtime: 4320
-    node: 1
-  run_novoplasty_samtools_index:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_novoplasty_pilon:
-    slurm_partition: {PARTITION}
-    mem_mb: 80000
-    runtime: 4320
-    node: 1
-  run_getorganelle_bwa_index:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_getorganelle_bwa_mem:
-    slurm_partition: {PARTITION}
-    mem_mb: 10000
-    runtime: 4320
-    node: 1
-  run_getorganelle_samtools_index:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_getorganelle_pilon:
-    slurm_partition: {PARTITION}
-    mem_mb: 80000
-    runtime: 4320
-    node: 1
-  write_gb_novoplasty_mitos2:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  write_gb_novoplasty_chloe:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  write_gb_novoplasty_cpgavas2:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  rotate_mito_gb_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  rotate_cpgavas_gb_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  rotate_chloe_gb_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  write_gb_getorganelle_mitos2:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  write_gb_getorganelle_chloe:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  write_gb_getorganelle_cpgavas2:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  rotate_mito_gb_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  rotate_cpgavas_gb_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  rotate_chloe_gb_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  get_genbank_fastas_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_blastn_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_recruitment_plot_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_bwa_index_rotated_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_bwa_mem_rotated_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_samtools_depth_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 2000
-    runtime: 4320
-    node: 1
-  run_samtools_depth_novoplasty_rotated:
-    slurm_partition: {PARTITION}
-    mem_mb: 2000
-    runtime: 4320
-    node: 1
-  run_depth_plot_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 2000
-    runtime: 4320
-    node: 1
-  run_ogdraw_mito_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ogdraw_chloro_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  get_genbank_fastas_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_blastn_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_recruitment_plot_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_bwa_index_rotated_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_bwa_mem_rotated_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 50000
-    runtime: 4320
-    node: 1
-  run_samtools_depth_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 2000
-    runtime: 4320
-    node: 1
-  run_samtools_depth_getorganelle_rotated:
-    slurm_partition: {PARTITION}
-    mem_mb: 2000
-    runtime: 4320
-    node: 1
-  run_depth_plot_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 2000
-    runtime: 4320
-    node: 1
-  run_ogdraw_mito_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ogdraw_chloro_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  get_mito_ncRNA_sequences_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ncRNA_nhmmer_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_mito_intergenes_sequences_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_intergenes_nhmmer_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_mito_ncRNA_sequences_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ncRNA_nhmmer_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_mito_intergenes_sequences_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_intergenes_nhmmer_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_mito_ncRNA_sequences_long:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ncRNA_nhmmer_long:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_mito_intergenes_sequences_long:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_intergenes_nhmmer_long:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_chloro_intergenes_sequences_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_intergenes_nhmmer_chloro_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_chloro_ncRNA_sequences_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ncRNA_nhmmer_chloro_novoplasty:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_chloro_intergenes_sequences_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_intergenes_nhmmer_chloro_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  get_chloro_ncRNA_sequences_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 1000
-    runtime: 4320
-    node: 1
-  run_ncRNA_nhmmer_chloro_getorganelle:
-    slurm_partition: {PARTITION}
-    mem_mb: 8000
-    runtime: 4320
-    node: 1
-  run_fastp:
-    slurm_partition: {PARTITION}
-    mem_mb: 4000
-    runtime: 4320
-    node: 1
-  check_fasta_longreads:
-    slurm_partition: {PARTITION}
-    mem_mb: 4000
-    runtime: 4320
-    node: 1
-  parse_results:
-    slurm_partition: {PARTITION}
-    mem_mb: 4000
-    runtime: 4320
-    node: 1
+  # Trimming and read preparation - 4 GB
+  run_fastp: {mem_mb: 4000}
+  run_cutadapt: {mem_mb: 4000}
+  run_seqtk: {mem_mb: 4000}
+  check_fastq_longreads: {mem_mb: 4000}
+  check_fasta_longreads: {mem_mb: 4000}
+
+  # Assembly - 50 GB
+  # NOVOPlasty uses up to `max_memory` (GB, from your config file), so keep
+  # mem_mb for create_hash and run_novoplasty above max_memory x 1000.
+  create_hash: {mem_mb: 50000}
+  run_novoplasty: {mem_mb: 50000}
+  run_getorganelle: {mem_mb: 50000}
+  run_mitohifi: {mem_mb: 50000}
+
+  # Error correction
+  run_novoplasty_bwa_mem: {mem_mb: 10000}
+  run_getorganelle_bwa_mem: {mem_mb: 10000}
+  run_novoplasty_pilon: {mem_mb: 80000}
+  run_getorganelle_pilon: {mem_mb: 80000}
+
+  # Annotation (MITOS2, CPGAVAS2, Chloë) - 8 GB
+  run_novoplasty_mitos2: {mem_mb: 8000}
+  run_getorganelle_mitos2: {mem_mb: 8000}
+  run_novoplasty_cpgavas2: {mem_mb: 8000}
+  run_getorganelle_cpgavas2: {mem_mb: 8000}
+  run_novoplasty_chloe: {mem_mb: 8000}
+  run_getorganelle_chloe: {mem_mb: 8000}
+
+  # Images - BLAST, recruitment plots and read mapping: 50 GB
+  run_blastn_novoplasty: {mem_mb: 50000}
+  run_blastn_getorganelle: {mem_mb: 50000}
+  run_recruitment_plot_novoplasty: {mem_mb: 50000}
+  run_recruitment_plot_getorganelle: {mem_mb: 50000}
+  run_bwa_mem_rotated_novoplasty: {mem_mb: 50000}
+  run_bwa_mem_rotated_getorganelle: {mem_mb: 50000}
+
+  # Images - read depth: 2 GB
+  run_samtools_depth_novoplasty: {mem_mb: 2000}
+  run_samtools_depth_novoplasty_rotated: {mem_mb: 2000}
+  run_samtools_depth_getorganelle: {mem_mb: 2000}
+  run_samtools_depth_getorganelle_rotated: {mem_mb: 2000}
+  run_depth_plot_novoplasty: {mem_mb: 2000}
+  run_depth_plot_getorganelle: {mem_mb: 2000}
+
+  # nhmmer - 8 GB
+  run_ncRNA_nhmmer_novoplasty: {mem_mb: 8000}
+  run_intergenes_nhmmer_novoplasty: {mem_mb: 8000}
+  run_ncRNA_nhmmer_chloro_novoplasty: {mem_mb: 8000}
+  run_intergenes_nhmmer_chloro_novoplasty: {mem_mb: 8000}
+  run_ncRNA_nhmmer_getorganelle: {mem_mb: 8000}
+  run_intergenes_nhmmer_getorganelle: {mem_mb: 8000}
+  run_ncRNA_nhmmer_chloro_getorganelle: {mem_mb: 8000}
+  run_intergenes_nhmmer_chloro_getorganelle: {mem_mb: 8000}
+  run_ncRNA_nhmmer_long: {mem_mb: 8000}
+  run_intergenes_nhmmer_long: {mem_mb: 8000}
+
+  # Results parsing - 4 GB
+  parse_results: {mem_mb: 4000}
