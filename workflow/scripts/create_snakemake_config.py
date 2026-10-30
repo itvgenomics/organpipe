@@ -3,8 +3,6 @@ import argparse
 import os
 import shutil
 import pandas as pd
-import subprocess
-import csv
 import logging
 import sys
 
@@ -12,6 +10,50 @@ import sys
 import get_seeds
 import download_seeds
 import download_references
+from naming import SHORT_READ_SUFFIXES, LONG_READ_SUFFIXES, mate_marker, read_stem
+
+# Fields written in lowercase, so the rules can compare them directly.
+LOWERCASE_FIELDS = [
+    "organelle",
+    "sequencing_type",
+    "run_trimming",
+    "annotation",
+    "run_nhmmer",
+    "run_images",
+    "run_novoplasty",
+    "run_getorganelle",
+    "search_ncbi",
+]
+
+INTEGER_FIELDS = [
+    "genetic_code",
+    "max_memory",
+    "reads_length",
+    "insert_size",
+    "max_references",
+    "minlength",
+    "minquality",
+    "n_references",
+    "n_rounds",
+]
+
+TEXT_FIELDS = [
+    "reads_path",
+    "genome_range",
+    "seed_format",
+    "seed_file",
+    "feature",
+    "search_genes",
+    "search_term",
+    "adapters",
+    "pacbio_adapters",
+    "reference",
+    "search_species",
+    "database",
+    "target_size",
+    "extra_flags",
+    "spades_kmers",
+]
 
 
 def parse_arguments():
@@ -62,8 +104,8 @@ def prepare_seeds(
     n_references
 ):
 
-    if sequencing_type.lower() == "short":
-        if str(seed_format).lower() == "genbank":
+    if sequencing_type == "short":
+        if seed_format.lower() == "genbank":
 
             # Extract the sequences from the gb file
             genbank_file = seed_file
@@ -95,7 +137,7 @@ def prepare_seeds(
 
             return seeds
 
-        elif str(seed_format).lower() == "fasta":
+        elif seed_format.lower() == "fasta":
 
             if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
 
@@ -112,89 +154,145 @@ def prepare_seeds(
 
             return seeds
 
-        elif str(search_ncbi).lower() == "yes":
-            if str(sequencing_type).lower() == "short":
-                if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
-                    outpath = f"resources/{sample}/seeds/"
-                    download_seeds.main(
-                        taxon=search_term,
-                        outpath=outpath,
-                        maxcount=max_references,
-                        genes=genes,
-                        organelle=organelle,
-                    )
-
-                    # Split the seeds file into multiple sequences
-                    get_seeds.split_fasta(
-                        fasta_file=f"resources/{sample}/seeds/seeds.fasta",
-                        output_dir=f"resources/{sample}/seeds/",
-                    )
-
-                # Extract the headers to use as seeds into snakemake config file
-                seeds = get_seeds.get_fasta_headers(
-                    fasta_file=f"resources/{sample}/seeds/seeds.fasta"
-                )
-                return seeds
-
-    elif str(sequencing_type).lower() == "long":
-            seeds = [
-                f.split(".fasta")[0]
-                for f in os.listdir(f"resources/{sample}/seeds/")
-                if f.endswith(".fasta")
-            ]
-
-            if len(seeds) == 0:
-                download_references.main(
-                    species=search_species,
-                    email="ncbiapirunner@gmail.com",
-                    outfolder=f"resources/{sample}/seeds/",
-                    min_length=10000,
-                    n=int(n_references),
+        elif search_ncbi == "yes":
+            if not os.path.exists(f"resources/{sample}/seeds/seeds.fasta"):
+                outpath = f"resources/{sample}/seeds/"
+                download_seeds.main(
+                    taxon=search_term,
+                    outpath=outpath,
+                    maxcount=max_references,
+                    genes=genes,
+                    organelle=organelle,
                 )
 
-            seeds = [
-                f.split(".fasta")[0]
-                for f in os.listdir(f"resources/{sample}/seeds/")
-                if f.endswith(".fasta")
-            ]
+                # Split the seeds file into multiple sequences
+                get_seeds.split_fasta(
+                    fasta_file=f"resources/{sample}/seeds/seeds.fasta",
+                    output_dir=f"resources/{sample}/seeds/",
+                )
 
+            # Extract the headers to use as seeds into snakemake config file
+            seeds = get_seeds.get_fasta_headers(
+                fasta_file=f"resources/{sample}/seeds/seeds.fasta"
+            )
             return seeds
 
+        return []
 
-def get_samples_ids(reads_path):
-    # List all files in the directory
-    file_list = os.listdir(reads_path)
-    sample_ids = []
+    seeds = [
+        f.split(".fasta")[0]
+        for f in os.listdir(f"resources/{sample}/seeds/")
+        if f.endswith(".fasta")
+    ]
 
-    for filename in file_list:
-        if str(filename).endswith(".fasta.gz") and "Undetermined" not in filename:
-            sample_id = filename.split(".fasta.gz")[0]
-            if "_R1" in sample_id:
-                prefix = sample_id.split("_R1")[0]
-                sample_ids.append(prefix)
-            elif "_pair1" in sample_id:
-                prefix = sample_id.split("_pair1")[0]
-                sample_ids.append(prefix)
-        elif str(filename).endswith(".fastq.gz"):
-            sample_id = filename.split(".fastq.gz")[0]
-            if "_R1" in sample_id:
-                prefix = sample_id.split("_R1")[0]
-                sample_ids.append(prefix)
-            elif "_pair1" in sample_id:
-                prefix = sample_id.split("_pair1")[0]
-                sample_ids.append(prefix)
+    if len(seeds) == 0:
+        download_references.main(
+            species=search_species,
+            email="ncbiapirunner@gmail.com",
+            outfolder=f"resources/{sample}/seeds/",
+            min_length=10000,
+            n=int(n_references),
+        )
 
-    return set(sample_ids)
+    seeds = [
+        f.split(".fasta")[0]
+        for f in os.listdir(f"resources/{sample}/seeds/")
+        if f.endswith(".fasta")
+    ]
+
+    if len(seeds) == 0:
+        print(
+            f"\nERROR: No reference mitogenome was found on NCBI for sample {sample} "
+            f"and search_species '{search_species}'.\n"
+            "\n"
+            "Please try one of the following:\n"
+            "  - Use a broader taxon in search_species.\n"
+            f"  - Copy a reference (<name>.fasta and <name>.gb) to resources/{sample}/seeds/.\n"
+        )
+        raise SystemExit(1)
+
+    return seeds
 
 
-def replace_none_with_empty_string(d):
-    for key, value in d.items():
-        if isinstance(value, dict):
-            replace_none_with_empty_string(
-                value
-            )  # Recursively handle nested dictionaries
-        elif value is None:
-            d[key] = ""  # Replace None with an empty string
+def get_samples_ids(reads_path, sequencing_type):
+    """Return the samples of `sample: all`: every read file or read pair in reads_path."""
+    suffixes = SHORT_READ_SUFFIXES if sequencing_type == "short" else LONG_READ_SUFFIXES
+    sample_ids = set()
+
+    for filename in os.listdir(reads_path):
+        if not filename.endswith(suffixes) or "Undetermined" in filename:
+            continue
+
+        marker = mate_marker(filename)
+        if sequencing_type == "short" and marker and marker.group(1)[-1] == "1":
+            sample_ids.add(filename[: marker.start()])
+        elif sequencing_type == "long" and not marker:
+            sample_ids.add(read_stem(filename))
+
+    if not sample_ids:
+        raise SystemExit(f"\nERROR: `sample: all`, but no read files were found in {reads_path}.\n")
+
+    return sorted(sample_ids)
+
+
+def read_config_rows(configfile):
+    """Return one dict per sample, with every value as text and blank values as ""."""
+    if configfile.endswith((".yaml", ".yml")):
+        with open(configfile, "r") as file:
+            data = yaml.safe_load(file)
+
+        data = {key: "" if value is None else str(value) for key, value in data.items()}
+        sequencing_type = data["sequencing_type"].strip().lower()
+
+        if data["sample"].strip() == "all":
+            sample_ids = get_samples_ids(data["reads_path"], sequencing_type)
+        else:
+            sample_ids = [sample.strip() for sample in data["sample"].split(",")]
+
+        return [{**data, "sample": sample} for sample in sample_ids]
+
+    delimiter = detect_delimiter(configfile)
+    df = pd.read_csv(configfile, delimiter=delimiter, dtype=str, keep_default_na=False)
+    return df.to_dict("records")
+
+
+def to_int(value):
+    return int(float(value)) if value != "" else ""
+
+
+def split_list(value):
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def sample_config(row):
+    """Build the Snakemake config entry of one sample, preparing its seeds on the way."""
+    sample = row["sample"]
+
+    logging.info(f"Preparing Sample: {sample}")
+
+    create_dirs(sample)
+
+    entry = {field: row[field].strip().lower() for field in LOWERCASE_FIELDS}
+    entry.update({field: to_int(row[field]) for field in INTEGER_FIELDS})
+    entry.update({field: row[field] for field in TEXT_FIELDS})
+
+    entry["kmers"] = split_list(row["kmers"])
+    entry["seeds"] = prepare_seeds(
+        seed_format=row["seed_format"],
+        seed_file=row["seed_file"],
+        sample=sample,
+        search_ncbi=entry["search_ncbi"],
+        search_term=row["search_term"],
+        genes=split_list(row["search_genes"]),
+        organelle=entry["organelle"],
+        max_references=entry["max_references"],
+        feature=row["feature"],
+        sequencing_type=entry["sequencing_type"],
+        search_species=row["search_species"],
+        n_references=row["n_references"],
+    )
+
+    return entry
 
 
 if __name__ == "__main__":
@@ -215,219 +313,9 @@ if __name__ == "__main__":
     for arg in vars(args):
         print(f"{arg}: {getattr(args, arg)}")
 
-    if str(args.configfile).endswith(".yaml") or str(args.configfile).endswith(".yml"):
-        with open(args.configfile, "r") as file:
-            # Load the YAML content
-            data = yaml.safe_load(file)
+    samples_dict = {
+        "samples": {row["sample"]: sample_config(row) for row in read_config_rows(args.configfile)}
+    }
 
-        if "all" in data["sample"]:
-            sample_ids = get_samples_ids(data["reads_path"])
-        else:
-            sample_ids = [
-                sample_id.strip() for sample_id in str(data["sample"]).split(",")
-            ]
-
-        samples_dict = {"samples": {}}
-        for sample_id in sample_ids:
-            logging.info(f"Preparing Sample: {sample_id}")
-
-            sample = sample_id
-
-            if data["sequencing_type"].lower() == "short":
-                kmers = data["kmers"].split(",")
-            else:
-                kmers = ""
-
-            create_dirs(sample)
-
-            if data["search_genes"] == None:
-                genes = ""
-            else:
-                genes = data["search_genes"].split(",")
-
-            seeds = prepare_seeds(
-                seed_format=data["seed_format"],
-                seed_file=data["seed_file"],
-                sample=sample_id,
-                search_ncbi=data["search_ncbi"],
-                search_term=data["search_term"],
-                genes=genes,
-                organelle=data["organelle"],
-                max_references=data["max_references"],
-                feature=data["feature"],
-                sequencing_type=data["sequencing_type"],
-                search_species=data["search_species"],
-                n_references=data["n_references"],
-            )
-
-            samples_dict["samples"][sample] = {
-                "run_novoplasty": data["run_novoplasty"],
-                "seeds": seeds,
-                "kmers": kmers,
-                "reads_path": data["reads_path"],
-                "organelle": data["organelle"],
-                "genetic_code": (
-                    int(data["genetic_code"])
-                    if data["genetic_code"] != None
-                    else str(data["genetic_code"])
-                ),
-                "sequencing_type": data["sequencing_type"],
-                "genome_range": data["genome_range"],
-                "annotation": data["annotation"],
-                "run_trimming": data["run_trimming"],
-                "seed_format": data["seed_format"],
-                "seed_file": data["seed_file"],
-                "feature": data["feature"],
-                "search_ncbi": data["search_ncbi"],
-                "search_genes": data["search_genes"],
-                "search_term": data["search_term"],
-                "max_memory": (
-                    int(data["max_memory"]) if data["max_memory"] != None else ""
-                ),
-                "reads_length": (
-                    int(data["reads_length"]) if data["reads_length"] != None else ""
-                ),
-                "insert_size": (
-                    int(data["insert_size"]) if data["insert_size"] != None else ""
-                ),
-                "reads_path": data["reads_path"],
-                "adapters": data["adapters"],
-                "pacbio_adapters": data["pacbio_adapters"],
-                "max_references": (
-                    int(data["max_references"])
-                    if data["max_references"] != None
-                    else ""
-                ),
-                "minlength": (
-                    int(data["minlength"]) if data["minlength"] != None else ""
-                ),
-                "minquality": (
-                    int(data["minquality"]) if data["minquality"] != None else ""
-                ),
-                "reference": data["reference"],
-                "run_nhmmer": data["run_nhmmer"],
-                "run_images": data["run_images"],
-                "search_species": data["search_species"],
-                "n_references": int(data["n_references"]) if data["n_references"] != None else "",
-                "run_getorganelle": data["run_getorganelle"],
-                "database": data["database"],
-                "n_rounds": int(data["n_rounds"]) if data["n_rounds"] != None else "",
-                "target_size": (
-                    int(data["target_size"]) if data["target_size"] != None else ""
-                ),
-                "extra_flags": data["extra_flags"],
-                "spades_kmers": data["spades_kmers"]
-            }
-
-        replace_none_with_empty_string(samples_dict)
-
-        with open("config/snakemake_config.yaml", "w") as file:
-            yaml.dump(samples_dict, file)
-
-    elif str(args.configfile).endswith(".csv"):
-        delimiter = detect_delimiter(args.configfile)
-        df = pd.read_csv(args.configfile, delimiter=delimiter)
-
-        df.fillna("", inplace=True)
-
-        # Initiate the samples dict
-        samples_dict = {"samples": {}}
-
-        for idx, row in df.iterrows():
-            sample = row["sample"]
-
-            logging.info(f"Preparing Sample: {sample}")
-
-            kmers = row["kmers"].split(",")
-            genes = row["search_genes"].split(",")
-
-            create_dirs(sample)
-
-            seeds = prepare_seeds(
-                seed_format=row["seed_format"],
-                seed_file=row["seed_file"],
-                sample=sample,
-                search_ncbi=row["search_ncbi"],
-                search_term=row["search_term"],
-                genes=genes,
-                organelle=row["organelle"],
-                max_references=row["max_references"],
-                feature=row["feature"],
-                sequencing_type=row["sequencing_type"],
-                search_species=row["search_species"],
-                n_references=row["n_references"]
-            )
-
-            samples_dict["samples"][sample] = {
-                "run_novoplasty": row["run_novoplasty"],
-                "seeds": seeds,
-                "kmers": kmers,
-                "reads_path": row["reads_path"],
-                "organelle": row["organelle"],
-                "genetic_code": (
-                    int(row["genetic_code"])
-                    if row["genetic_code"] != ""
-                    else str(row["genetic_code"])
-                ),
-                "sequencing_type": row["sequencing_type"],
-                "genome_range": row["genome_range"],
-                "annotation": row["annotation"],
-                "run_trimming": row["run_trimming"],
-                "seed_format": row["seed_format"],
-                "seed_file": row["seed_file"],
-                "feature": row["feature"],
-                "search_ncbi": row["search_ncbi"],
-                "search_genes": row["search_genes"],
-                "search_term": row["search_term"],
-                "max_memory": (
-                    int(row["max_memory"])
-                    if row["max_memory"] != ""
-                    else str(row["max_memory"])
-                ),
-                "reads_length": (
-                    int(row["reads_length"])
-                    if row["reads_length"] != ""
-                    else str(row["reads_length"])
-                ),
-                "insert_size": (
-                    int(row["insert_size"])
-                    if row["insert_size"] != ""
-                    else str(row["insert_size"])
-                ),
-                "reads_path": row["reads_path"],
-                "adapters": row["adapters"],
-                "pacbio_adapters": row["pacbio_adapters"],
-                "max_references": (
-                    int(row["max_references"])
-                    if row["max_references"] != ""
-                    else str(row["max_references"])
-                ),
-                "minlength": (
-                    int(row["minlength"])
-                    if row["minlength"] != ""
-                    else str(row["minlength"])
-                ),
-                "minquality": (
-                    int(row["minquality"])
-                    if row["minquality"] != ""
-                    else str(row["minquality"])
-                ),
-                "reference": row["reference"],
-                "run_nhmmer": row["run_nhmmer"],
-                "run_images": row["run_images"],
-                "search_species": row["search_species"],
-                "n_references": int(row["n_references"]) if row["n_references"] != "" else str(row["n_references"]),
-                "run_getorganelle": row["run_getorganelle"],
-                "database": row["database"],
-                "n_rounds": int(row["n_rounds"]) if row["n_rounds"] != "" else str(row["n_rounds"]),
-                "target_size": (
-                    int(row["target_size"])
-                    if row["target_size"] != ""
-                    else str(row["target_size"])
-                ),
-                "extra_flags": row["extra_flags"],
-                "spades_kmers": row["spades_kmers"]
-            }
-
-        with open("config/snakemake_config.yaml", "w") as file:
-            yaml.dump(samples_dict, file)
+    with open("config/snakemake_config.yaml", "w") as file:
+        yaml.dump(samples_dict, file)

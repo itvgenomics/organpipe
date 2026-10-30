@@ -4,13 +4,13 @@ import argparse
 import os
 from Bio import SeqIO
 import pandas as pd
-import warnings
+from naming import warn
 
 
 def parse_arguments():
     # Set up argument parsing
     parser = argparse.ArgumentParser(
-        description="Convert GenBank files to FASTA format."
+        description="Convert GenBank files to FASTA format and plot read recruitment and depth."
     )
     parser.add_argument(
         "--parse_gb", action="store_true", help="Trigger GenBank to FASTA conversion."
@@ -20,24 +20,14 @@ def parse_arguments():
     )
     parser.add_argument("--depth", action="store_true", help="Trigger Depth Plot.")
     parser.add_argument(
-        "--sample",
-        help="Sample dir",
-        required=False,
-        nargs="?",
+        "--genbanks",
+        help="GenBank files to convert to FASTA. Files that do not exist are skipped",
+        nargs="*",
     )
     parser.add_argument(
-        "--kmer",
-        help="kmer used",
+        "--fasta_dir",
+        help="Directory for the FASTA files converted from GenBank",
         nargs="?",
-    )
-    parser.add_argument(
-        "--seed",
-        help="Seed used",
-        nargs="?",
-    )
-    parser.add_argument(
-        "--organelle",
-        help="Type of organelle (e.g., mito or chloro)",
     )
     parser.add_argument(
         "--blastn_fasta",
@@ -54,7 +44,11 @@ def parse_arguments():
         help="Depth output file from samtools depth",
         nargs="?",
     )
-    parser.add_argument("--assembler", help="Assembler used (e.g., getorganelle, novoplasty)", required=True)
+    parser.add_argument(
+        "--depth_fasta",
+        help="Fasta file of the assembly in the depth file",
+        nargs="?",
+    )
 
     args = parser.parse_args()
 
@@ -239,207 +233,43 @@ def plot_depth(depth_report, output_name, plot_title, genome_size, normalize=Fal
 if __name__ == "__main__":
     args = parse_arguments()
 
-    sample = args.sample
-    seed = args.seed
-    kmer = args.kmer
-    organelle = args.organelle
-    blastn_fasta = args.blastn_fasta
     blastn_out = args.blastn_out
     depth_bam = args.depth_bam
 
-    if args.assembler == "novoplasty":
+    if args.parse_gb:
+        os.makedirs(args.fasta_dir, exist_ok=True)
 
-        if args.parse_gb:
-            genbank_dir = f"results/{sample}/genbanks/novoplasty"
-            output_dir = f"results/{sample}/images/novoplasty"
+        for genbank in args.genbanks:
+            if os.path.exists(genbank):
+                parse_genbank_to_fasta(genbank, args.fasta_dir)
 
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
+    # A plot that cannot be drawn does not stop the run, but it is reported in warnings.txt
+    if args.recruitment_plot:
+        try:
+            genomesize = count_nucleotides(args.blastn_fasta)
 
-            for genbank in os.listdir(genbank_dir):
-                if organelle == "mito":
-                    if genbank.endswith(".gb") and seed in genbank and kmer in genbank:
-                        fasta_dir = f"results/{sample}/images/novoplasty/{seed}_kmer{kmer}"
+            plot_recruitment_plot(
+                blast_tabular_output=blastn_out,
+                output_plot=blastn_out.replace(".blastn.out", "_recruitment_plot.png"),
+                plot_title="Recruitment Plot",
+                genome_size=int(genomesize),
+                minimum_identity_displayed=80,
+                min_alignment_length=100,
+                identity_species_cutoff=95,
+            )
+        except Exception as e:
+            warn(f"Could not draw the recruitment plot of {blastn_out}: {e}")
 
-                        if not os.path.exists(fasta_dir):
-                            os.makedirs(fasta_dir)
+    if args.depth:
+        try:
+            genomesize = count_nucleotides(args.depth_fasta)
 
-                        parse_genbank_to_fasta(
-                            os.path.join(genbank_dir, genbank), fasta_dir
-                        )
-                elif organelle == "chloro":
-                    if (
-                        genbank.endswith(".gb")
-                        and seed in genbank
-                        and kmer in genbank
-                        and "cpgavas2" in genbank
-                    ):
-                        fasta_dir = f"results/{sample}/images/novoplasty/{seed}_kmer{kmer}"
-
-                        if not os.path.exists(fasta_dir):
-                            os.makedirs(fasta_dir)
-
-                        parse_genbank_to_fasta(
-                            os.path.join(genbank_dir, genbank), fasta_dir
-                        )
-
-        if args.recruitment_plot:
-            try:
-                genomesize = count_nucleotides(blastn_fasta)
-
-                plot_recruitment_plot(
-                    blast_tabular_output=blastn_out,
-                    output_plot=blastn_out.replace(".blastn.out", "_recruitment_plot.png"),
-                    plot_title="Recruitment Plot",
-                    genome_size=int(genomesize),
-                    minimum_identity_displayed=80,
-                    min_alignment_length=100,
-                    identity_species_cutoff=95,
-                )
-            except Exception as e:
-                warnings.warn(
-                    f"An error occurred: {e}. The script will continue running.",
-                    RuntimeWarning,
-                )
-
-        if args.depth:
-            if organelle == "mito":
-                try:
-                    fasta_file = depth_bam.replace(".depth", ".fasta")
-                    genomesize = count_nucleotides(fasta_file)
-
-                    plot_depth(
-                        depth_report=depth_bam,
-                        output_name=f"{depth_bam}.png",
-                        plot_title="Depth Plot",
-                        genome_size=int(genomesize) + 1,
-                        normalize=False,
-                    )
-                except Exception as e:
-                    warnings.warn(
-                        f"An error occurred: {e}. The script will continue running.",
-                        RuntimeWarning,
-                    )
-
-            elif organelle == "chloro":
-                print("depth_bam", depth_bam)
-
-                if ".cpgavas2.rotated." in depth_bam:
-                    fasta_file = depth_bam.replace(".depth", ".fasta")
-                else:
-                    fasta_file = depth_bam.replace(".depth", ".cpgavas2.fasta")
-
-                try:
-                    genomesize = count_nucleotides(fasta_file)
-
-                    print("fasta_file", fasta_file)
-
-                    plot_depth(
-                        depth_report=depth_bam,
-                        output_name=f"{depth_bam}.png",
-                        plot_title="Depth Plot",
-                        genome_size=int(genomesize) + 1,
-                        normalize=False,
-                    )
-                except Exception as e:
-                    warnings.warn(
-                        f"An error occurred: {e}. The script will continue running.",
-                        RuntimeWarning,
-                    )
-
-    elif args.assembler == "getorganelle":
-        if args.parse_gb:
-            genbank_dir = f"results/{sample}/genbanks/getorganelle"
-            output_dir = f"results/{sample}/images/getorganelle"
-
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-
-            for genbank in os.listdir(genbank_dir):
-                if organelle == "mito":
-                    if genbank.endswith(".gb"):
-                        fasta_dir = f"results/{sample}/images/getorganelle"
-
-                        if not os.path.exists(fasta_dir):
-                            os.makedirs(fasta_dir)
-
-                        parse_genbank_to_fasta(
-                            os.path.join(genbank_dir, genbank), fasta_dir
-                        )
-                elif organelle == "chloro":
-                    if (
-                        genbank.endswith(".gb")
-                        and "cpgavas2" in genbank
-                    ):
-                        fasta_dir = f"results/{sample}/images/getorganelle"
-
-                        if not os.path.exists(fasta_dir):
-                            os.makedirs(fasta_dir)
-
-                        parse_genbank_to_fasta(
-                            os.path.join(genbank_dir, genbank), fasta_dir
-                        )
-
-        if args.recruitment_plot:
-            try:
-                genomesize = count_nucleotides(blastn_fasta)
-
-                plot_recruitment_plot(
-                    blast_tabular_output=blastn_out,
-                    output_plot=blastn_out.replace(".blastn.out", "_recruitment_plot.png"),
-                    plot_title="Recruitment Plot",
-                    genome_size=int(genomesize),
-                    minimum_identity_displayed=80,
-                    min_alignment_length=100,
-                    identity_species_cutoff=95,
-                )
-            except Exception as e:
-                warnings.warn(
-                    f"An error occurred: {e}. The script will continue running.",
-                    RuntimeWarning,
-                )
-
-        if args.depth:
-            if organelle == "mito":
-                try:
-                    fasta_file = depth_bam.replace(".depth", ".fasta")
-                    genomesize = count_nucleotides(fasta_file)
-
-                    plot_depth(
-                        depth_report=depth_bam,
-                        output_name=f"{depth_bam}.png",
-                        plot_title="Depth Plot",
-                        genome_size=int(genomesize) + 1,
-                        normalize=False,
-                    )
-                except Exception as e:
-                    warnings.warn(
-                        f"An error occurred: {e}. The script will continue running.",
-                        RuntimeWarning,
-                    )
-
-            elif organelle == "chloro":
-                print("depth_bam", depth_bam)
-
-                if ".cpgavas2.rotated." in depth_bam:
-                    fasta_file = depth_bam.replace(".depth", ".fasta")
-                else:
-                    fasta_file = depth_bam.replace(".depth", ".cpgavas2.fasta")
-
-                try:
-                    genomesize = count_nucleotides(fasta_file)
-
-                    print("fasta_file", fasta_file)
-
-                    plot_depth(
-                        depth_report=depth_bam,
-                        output_name=f"{depth_bam}.png",
-                        plot_title="Depth Plot",
-                        genome_size=int(genomesize) + 1,
-                        normalize=False,
-                    )
-                except Exception as e:
-                    warnings.warn(
-                        f"An error occurred: {e}. The script will continue running.",
-                        RuntimeWarning,
-                    )
+            plot_depth(
+                depth_report=depth_bam,
+                output_name=f"{depth_bam}.png",
+                plot_title="Depth Plot",
+                genome_size=int(genomesize) + 1,
+                normalize=False,
+            )
+        except Exception as e:
+            warn(f"Could not draw the depth plot of {depth_bam}: {e}")

@@ -5,6 +5,10 @@ import pandas as pd
 import re
 import logging
 import sys
+from naming import find_long_reads, find_short_reads
+
+# Samples must match the `sample` wildcard in workflow/Snakefile.
+VALID_SAMPLE_NAME = r"^[A-Za-z0-9_]+$"
 
 # Expected fields and their descriptions
 REQUIRED_FIELDS = {
@@ -64,6 +68,20 @@ def parse_samples(sample_field):
 
 def check_required_fields(config, required_fields):
     return [field for field in required_fields if field not in config]
+
+
+def check_sample_names(config):
+    errors = []
+    samples = parse_samples(config.get("sample"))
+
+    if samples != ["all"]:
+        for sample in samples:
+            if not re.match(VALID_SAMPLE_NAME, sample):
+                errors.append(
+                    f"Sample name '{sample}' is not valid. Use only letters, numbers and underscores."
+                )
+
+    return errors
 
 
 def check_spacing_issues(config):
@@ -152,12 +170,10 @@ def check_reads_path(config):
         # Sample validation
         if samples and samples != ["all"]:
             for sample in samples:
-                sample_matches = [f for f in fastq_fasta_files if sample in f]
-                if not sample_matches:
-                    errors.append(
-                        f"No read filenames in '{path}' contain the sample name '{sample}'. "
-                        "Filenames must include each sample name."
-                    )
+                try:
+                    find_short_reads(sample, path)
+                except ValueError as e:
+                    errors.append(str(e))
 
         return errors
 
@@ -173,12 +189,18 @@ def check_reads_path(config):
 
         # Sample validation
         if samples and samples != ["all"]:
+            run_trimming = str(config.get("run_trimming", "")).strip().lower()
             for sample in samples:
-                sample_matches = [f for f in fasta_files if sample in f]
-                if not sample_matches:
+                try:
+                    reads = find_long_reads(sample, path)
+                except ValueError as e:
+                    errors.append(str(e))
+                    continue
+
+                if run_trimming == "yes" and not reads.endswith(".fastq.gz"):
                     errors.append(
-                        f"No .fasta.gz filenames in '{path}' contain the sample name '{sample}'. "
-                        "Filenames must include each sample name."
+                        f"`run_trimming` is 'Yes', but the reads of sample '{sample}' are not in "
+                        f".fastq.gz format ({reads}). Trimming is only supported for .fastq.gz files."
                     )
     else:
         errors.append(
@@ -523,9 +545,10 @@ def check_search_ncbi_requirements(config):
 def check_pacbio_adapters(config):
     errors = []
     seq_type = config.get("sequencing_type", "").strip().lower()
+    run_trimming = str(config.get("run_trimming", "")).strip().lower()
     adapter_value = str(config.get("pacbio_adapters", "")).strip()
 
-    if seq_type == "long":
+    if seq_type == "long" and run_trimming == "yes":
         if not adapter_value:
             errors.append(
                 "`sequencing_type` is 'long' but `pacbio_adapters` is not set."
@@ -557,10 +580,16 @@ def check_assembler_requirements(config):
         if run_novoplasty == "yes":
             reads_length = str(config.get("reads_length", "")).strip()
             insert_size = str(config.get("insert_size", "")).strip()
+            max_memory = str(config.get("max_memory", "")).strip()
             if reads_length in ["None", "nan", ""]:
                 errors.append("`run_novoplasty` is 'Yes', but `reads_length` is not set.")
             if insert_size in ["None", "nan", ""]:
                 errors.append("`run_novoplasty` is 'Yes', but `insert_size` is not set.")
+            if not re.match(r"^[1-9]\d*(\.0)?$", max_memory):
+                errors.append(
+                    f"`run_novoplasty` is 'Yes', but `max_memory` is '{max_memory}'. "
+                    "It must be a whole number of GB (e.g., 40)."
+                )
 
         if run_getorganelle == "yes":
             database = str(config.get("database", "")).strip()
@@ -609,17 +638,17 @@ def main():
 
         except FileNotFoundError:
             logging.info(f"\n Error: File '{config_path}' not found.")
-            return
+            sys.exit(1)
 
         except yaml.YAMLError as e:
             logging.info(f"\n Error: Failed to parse YAML file. Details:\n{e}")
-            return
+            sys.exit(1)
 
         if not isinstance(config, dict):
             logging.info(
                 "\n Error: The config file format is invalid (expected a top-level dictionary)."
             )
-            return
+            sys.exit(1)
 
     for config in all_configs:
         sample = config.get("sample")
@@ -633,6 +662,13 @@ def main():
 
         if spacing_errors:
             print_spacing_errors(spacing_errors)
+
+        sample_name_errors = check_sample_names(config)
+
+        if sample_name_errors:
+            logging.info("\n Problem with `sample` field:")
+            for msg in sample_name_errors:
+                raise ValueError(f" - {msg}")
 
         read_path_errors = check_reads_path(config)
 
@@ -715,7 +751,7 @@ def main():
         if pacbio_adapters:
             logging.info("\n Problem with `pacbio_adapters` setting:")
             for msg in pacbio_adapters:
-                logging.info(f" - {msg}")
+                raise ValueError(f" - {msg}")
 
         assembler_errors = check_assembler_requirements(config)
         if assembler_errors:

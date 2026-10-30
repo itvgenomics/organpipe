@@ -1,507 +1,78 @@
-rule get_mito_ncRNA_sequences_novoplasty:
+def annotation_done(wildcards):
+    """Output of the step that wrote the annotation used in the nhmmscan search."""
+    if wildcards.assembler == "mitohifi":
+        return f"results/{wildcards.sample}/mitohifi/{wildcards.run}/contigs_stats.tsv"
+    if config["samples"][wildcards.sample]["organelle"] == "mito":
+        return f"results/{wildcards.sample}/mitos2/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}/mitos2.fasta"
+    return f"results/{wildcards.sample}/genbanks/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}.cpgavas2.genbank.check"
+
+def annotation_source(wildcards):
+    """Argument of the sequence extraction scripts with the annotation to read."""
+    if wildcards.assembler == "mitohifi":
+        return f"--genbank results/{wildcards.sample}/mitohifi/{wildcards.run}/{MITOHIFI_ASSEMBLY}.gb"
+    if config["samples"][wildcards.sample]["organelle"] == "mito":
+        return f"--mitos_dir results/{wildcards.sample}/mitos2/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}"
+    return f"--genbank {genbank_path(wildcards, 'cpgavas2')}"
+
+rule get_ncRNA_sequences:
     input:
-        "results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
+        annotation_done
     output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check"
+        "results/{sample}/nhmmer/{assembler}/{run}/{assembly}/rRNA-tRNA.fasta"
     log:
-        "logs/{sample}/nhmmer/novoplasty/{kmer}_{seed}_get_mito_ncRNA_sequences.log"
+        "logs/{sample}/nhmmer/{assembler}/{run}/{assembly}_get_ncRNA_sequences.log"
     benchmark:
-        "benchmarks/{sample}/nhmmer/novoplasty/{kmer}_{seed}_get_mito_ncRNA_sequences.txt"
+        "benchmarks/{sample}/nhmmer/{assembler}/{run}/{assembly}_get_ncRNA_sequences.benchmark"
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
+        source=annotation_source,
+        dir=output_dir
     shell:
         """
-        python workflow/scripts/ncRNA_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --assembler 'novoplasty' \
-            --sample {wildcards.sample} --seed {wildcards.seed} --kmer {wildcards.kmer} >> {log} 2>&1 && \
-        touch {output}
+        python workflow/scripts/ncRNA_nhmmer.py {params.source} --output_dir {params.dir} >> {log} 2>&1
         """
 
-rule run_ncRNA_nhmmer_novoplasty:
+rule get_intergenes_sequences:
     input:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_sequences.check",
-        "resources/nhmmer_db.hmm",
-        "results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
+        annotation_done
     output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.ncRNA_nhmmer.check"
+        "results/{sample}/nhmmer/{assembler}/{run}/{assembly}/intergenes_filter.fasta"
     log:
-        "logs/{sample}/nhmmer/novoplasty/{kmer}_{seed}_run_ncRNA_nhmmer.log"
+        "logs/{sample}/nhmmer/{assembler}/{run}/{assembly}_get_intergenes_sequences.log"
     benchmark:
-        "benchmarks/{sample}/nhmmer/novoplasty/{kmer}_{seed}_run_ncRNA_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule get_mito_intergenes_sequences_novoplasty:
-    input:
-        "results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.mitos2.check"
-    output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/novoplasty/{kmer}_{seed}_get_mito_intergenes_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/novoplasty/{kmer}_{seed}_get_mito_intergenes_sequences.txt"
+        "benchmarks/{sample}/nhmmer/{assembler}/{run}/{assembly}_get_intergenes_sequences.benchmark"
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
+        source=annotation_source,
+        dir=output_dir
     shell:
         """
-        python workflow/scripts/intergenes_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --assembler 'novoplasty' \
-            --sample {wildcards.sample} --seed {wildcards.seed} --kmer {wildcards.kmer} >> {log} 2>&1 && \
-        touch {output}
+        python workflow/scripts/intergenes_nhmmer.py {params.source} --output_dir {params.dir} >> {log} 2>&1
         """
 
-rule run_intergenes_nhmmer_novoplasty:
+rule run_nhmmer:
     input:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_sequences.check",
-        "resources/nhmmer_db.hmm",
-        "results/{sample}/assemblies/novoplasty/{seed}_kmer{kmer}.fasta",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
+        fasta = "results/{sample}/nhmmer/{assembler}/{run}/{assembly}/{region}.fasta",
+        db = "resources/nhmmer_db.hmm",
+        db_index = expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.intergenes_nhmmer.check"
+        "results/{sample}/nhmmer/{assembler}/{run}/{assembly}/{region}.nhmmer.check"
     log:
-        "logs/{sample}/nhmmer/novoplasty/{kmer}_{seed}_run_intergenes_nhmmer.log"
+        "logs/{sample}/nhmmer/{assembler}/{run}/{assembly}_{region}_run_nhmmer.log"
     benchmark:
-        "benchmarks/{sample}/nhmmer/novoplasty/{kmer}_{seed}_run_intergenes_nhmmer.txt"
+        "benchmarks/{sample}/nhmmer/{assembler}/{run}/{assembly}_{region}_run_nhmmer.benchmark"
     singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule get_mito_ncRNA_sequences_long:
-    input:
-        "results/{sample}/mitohifi/{seed}/contigs_stats.tsv"
-    output:
-        "results/{sample}/nhmmer/{seed}/mitohifi/ncRNA_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/{seed}_get_mito_ncRNA_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_get_mito_ncRNA_sequences.txt"
+        sif("hmmer")
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
+        prefix=lambda wildcards, input: input.fasta[: -len(".fasta")]
     shell:
         """
-        python workflow/scripts/ncRNA_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} \
-            --sample {wildcards.sample} --seed {wildcards.seed} >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule run_ncRNA_nhmmer_long:
-    input:
-        "results/{sample}/nhmmer/{seed}/mitohifi/ncRNA_sequences.check",
-        "resources/nhmmer_db.hmm",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/{seed}/mitohifi/ncRNA_nhmmer.check"
-    log:
-        "logs/{sample}/nhmmer/{seed}_run_ncRNA_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_run_ncRNA_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.fasta" ]; then
-            hmmscan --cpu {threads} --noali \
-            -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.nhmmer.out \
-            --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.tblout.out \
-            --pfamtblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.dfamtblout.out \
-            resources/nhmmer_db.hmm \
-            results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/rRNA-tRNA.fasta 2>{log}
+        if [ -s {input.fasta} ]; then
+            nhmmscan --cpu {threads} --noali \
+            -o {params.prefix}.nhmmer.out \
+            --tblout {params.prefix}.tblout.out \
+            --dfamtblout {params.prefix}.dfamtblout.out \
+            {input.db} {input.fasta} 2>> {log}
         else
             echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
         fi
-        touch {output}
-        """
-
-rule get_mito_intergenes_sequences_long:
-    input:
-        "results/{sample}/mitohifi/{seed}/contigs_stats.tsv"
-    output:
-        "results/{sample}/nhmmer/{seed}/mitohifi/intergenes_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/{seed}_get_mito_intergenes_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_get_mito_intergenes_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/intergenes_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --assembler 'novoplasty' \
-            --sample {wildcards.sample} --seed {wildcards.seed} >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule run_intergenes_nhmmer_long:
-    input:
-        "results/{sample}/nhmmer/{seed}/mitohifi/intergenes_sequences.check",
-        "resources/nhmmer_db.hmm",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/{seed}/mitohifi/intergenes_nhmmer.check"
-    log:
-        "logs/{sample}/nhmmer/{seed}_run_intergenes_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_run_intergenes_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.fasta" ]; then
-            hmmscan --cpu {threads} --noali \
-            -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.nhmmer.out \
-            --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.tblout.out \
-            --pfamtblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.dfamtblout.out \
-            resources/nhmmer_db.hmm \
-            results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}/intergenes_filter.fasta 2> {log}
-        else
-            echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-        fi
-        touch {output}
-        """
-
-rule get_chloro_intergenes_sequences_novoplasty:
-    input:
-        "results/{sample}/genbanks/novoplasty/{seed}_kmer{kmer}.cpgavas2.genbank.check"
-    output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_intergenes_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_intergenes_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/intergenes_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --sample {wildcards.sample} --seed {wildcards.seed} \
-            --kmer {wildcards.kmer} >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule run_intergenes_nhmmer_chloro_novoplasty:
-    input:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_sequences.check",
-        "resources/nhmmer_db.hmm",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.intergenes_nhmmer.check",
-    log:
-        "logs/{sample}/nhmmer/{seed}_kmer{kmer}_run_intergenes_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_run_intergenes_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/intergenes_filter.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule get_chloro_ncRNA_sequences_novoplasty:
-    input:
-        "results/{sample}/genbanks/novoplasty/{seed}_kmer{kmer}.cpgavas2.genbank.check"
-    output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_ncRNA_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_chloro_ncRNA_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/ncRNA_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --sample {wildcards.sample} --seed {wildcards.seed} \
-            --kmer {wildcards.kmer} >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule run_ncRNA_nhmmer_chloro_novoplasty:
-    input:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_sequences.check",
-        "resources/nhmmer_db.hmm",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.chloro.ncRNA_nhmmer.check",
-    log:
-        "logs/{sample}/nhmmer/{seed}_kmer{kmer}_run_ncRNA_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/{seed}_kmer{kmer}_run_ncRNA_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/$fasta_header/rRNA-tRNA.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-
-rule get_mito_ncRNA_sequences_getorganelle:
-    input:
-        "results/{sample}/mitos2/getorganelle/getorganelle_mitos2.check"
-    output:
-        "results/{sample}/nhmmer/getorganelle/ncRNA_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/getorganelle/get_mito_ncRNA_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/get_mito_ncRNA_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/ncRNA_nhmmer.py --organelle {params.organelle} --sample {wildcards.sample} \
-            --sequencing_type {params.sequencing_type} --assembler 'getorganelle' >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule get_chloro_ncRNA_sequences_novoplasty_getorganelle:
-    input:
-        "results/{sample}/cpgavas2/getorganelle/getorganelle_cpgavas2.check"
-    output:
-        "results/{sample}/nhmmer/getorganelle/chloro.ncRNA_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/getorganelle/chloro_ncRNA_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/chloro_ncRNA_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/ncRNA_nhmmer.py --organelle {params.organelle} --sample {wildcards.sample} \
-            --sequencing_type {params.sequencing_type} --assembler 'getorganelle' >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule run_ncRNA_nhmmer_getorganelle:
-    input:
-        "results/{sample}/nhmmer/getorganelle/ncRNA_sequences.check",
-        "resources/nhmmer_db.hmm",
-        "results/{sample}/getorganelle/sequences.fasta",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/getorganelle/ncRNA_nhmmer.check"
-    log:
-        "logs/{sample}/nhmmer/getorganelle/run_ncRNA_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/run_ncRNA_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule run_ncRNA_nhmmer_chloro_getorganelle:
-    input:
-        "results/{sample}/nhmmer/getorganelle/chloro.ncRNA_sequences.check",
-        "resources/nhmmer_db.hmm",
-        "results/{sample}/getorganelle/sequences.fasta",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/getorganelle/chloro.ncRNA_nhmmer.check",
-    log:
-        "logs/{sample}/nhmmer/getorganelle/run_ncRNA_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/run_ncRNA_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/rRNA-tRNA.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule get_mito_intergenes_sequences_getorganelle:
-    input:
-        "results/{sample}/mitos2/getorganelle/getorganelle_mitos2.check"
-    output:
-        "results/{sample}/nhmmer/getorganelle/intergenes_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/getorganelle/get_mito_intergenes_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/get_mito_intergenes_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/intergenes_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --sample {wildcards.sample}\
-            --assembler 'getorganelle' >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule get_chloro_intergenes_sequences_getorganelle:
-    input:
-        "results/{sample}/cpgavas2/getorganelle/getorganelle_cpgavas2.check"
-    output:
-        "results/{sample}/nhmmer/getorganelle/chloro.intergenes_sequences.check"
-    log:
-        "logs/{sample}/nhmmer/getorganelle/chloro_intergenes_sequences.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/chloro_intergenes_sequences.txt"
-    params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        sequencing_type=lambda wildcards: config["samples"][wildcards.sample]["sequencing_type"]
-    shell:
-        """
-        python workflow/scripts/intergenes_nhmmer.py --organelle {params.organelle} \
-            --sequencing_type {params.sequencing_type} --sample {wildcards.sample} \
-            --assembler 'getorganelle' >> {log} 2>&1 && \
-        touch {output}
-        """
-
-rule run_intergenes_nhmmer_getorganelle:
-    input:
-        "results/{sample}/nhmmer/getorganelle/intergenes_sequences.check",
-        "resources/nhmmer_db.hmm",
-        "results/{sample}/getorganelle/sequences.fasta",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/getorganelle/intergenes_nhmmer.check"
-    log:
-        "logs/{sample}/nhmmer/getorganelle/run_intergenes_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/run_intergenes_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule run_intergenes_nhmmer_chloro_getorganelle:
-    input:
-        "results/{sample}/nhmmer/getorganelle/chloro.intergenes_sequences.check",
-        "resources/nhmmer_db.hmm",
-        expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
-    output:
-        "results/{sample}/nhmmer/getorganelle/chloro.intergenes_nhmmer.check",
-    log:
-        "logs/{sample}/nhmmer/getorganelle/run_intergenes_nhmmer.log"
-    benchmark:
-        "benchmarks/{sample}/nhmmer/getorganelle/run_intergenes_nhmmer.txt"
-    singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ -s "results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta" ]; then
-                hmmscan --cpu {threads} --noali \
-                -o results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.nhmmer.out \
-                --tblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.tblout.out \
-                --pfamtblout results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.dfamtblout.out \
-                resources/nhmmer_db.hmm \
-                results/{wildcards.sample}/nhmmer/getorganelle/$fasta_header/intergenes_filter.fasta 2> {log}
-            else
-                echo "Input fasta file is empty. Might be an annotation error." >> {log} 2>&1
-            fi
-        done
         touch {output}
         """

@@ -88,19 +88,19 @@ For short reads you can run NOVOPlasty, GetOrganelle or both. The main steps aft
 
 | Step | Tools | When it runs |
 |:-----|:------|:-------------|
-| Trimming | fastp (short reads), cutadapt (long reads) | `run_trimming: "Yes"` |
+| Trimming | fastp (adapters and low-quality bases, short reads), cutadapt (long reads) | `run_trimming: "Yes"` |
 | Error correction | bwa-mem2, samtools, Pilon | Short reads, always |
 | Annotation | MITOS2 (mito), CPGAVAS2 and Chloë (chloro) | `annotation: "Yes"` |
 | Images | OGDRAW maps, read recruitment and depth plots | `run_images: "Yes"` (short reads only) |
-| ncRNA / intergenic search | HMMER (`-nhmmer_db`, default Rfam) | `run_nhmmer: "Yes"` |
+| ncRNA / intergenic search | HMMER `nhmmscan` (`-nhmmer_db`, default Rfam) | `run_nhmmer: "Yes"` |
 | Reports | `parse_results.py` | Always, as soon as each sample finishes |
 
 ## Input reads
 
-All read files go in the directory set in `reads_path`, and their names must contain the sample name.
+All read files go directly in the directory set in `reads_path`, and their names must contain the sample name as a whole name: `sample1` matches `sample1_R1.fastq.gz` and `sample1_S1_R1_001.fastq.gz`, but not `sample10_R1.fastq.gz`. A file named exactly after the sample is preferred. If a sample still matches more than one file (e.g. one per lane), the run stops: merge the files first.
 
 - **Short reads**: paired-end files in `.fastq.gz` (or `.fasta.gz`), with `_R1`/`_R2` or `_pair1`/`_pair2` marking the read pair, e.g. `sample1_R1.fastq.gz` and `sample1_R2.fastq.gz`. Keep only read files in this directory. Files whose name contains `Undetermined` are ignored when `sample: "all"` is used.
-- **Long reads**: one file per sample, in `.fastq.gz` or uncompressed `.fasta`, e.g. `sample1.fastq.gz`. Trimming is only supported for `.fastq.gz`.
+- **Long reads**: one file per sample, in `.fastq.gz` or uncompressed `.fasta`, e.g. `sample1.fastq.gz`. Trimming is only supported for `.fastq.gz`, and the run stops if `run_trimming` is `Yes` for a `.fasta` file.
 
 ## Configuration
 
@@ -117,7 +117,7 @@ Before running the pipeline, describe your samples in a configuration file. Temp
 
 | Field | Example | Description | Requirement |
 |:------|:--------|:------------|:------------|
-| `sample` | `"sample1"` | Sample name. Use `"all"` to process every sample in `reads_path`, or a comma-separated list (`"sample1,sample2"`). In the YAML format all listed samples share the same parameters; use the CSV format to set different values per sample. | Required |
+| `sample` | `"sample1"` | Sample name, with only letters, numbers and underscores. Use `"all"` to process every sample in `reads_path`, or a comma-separated list (`"sample1,sample2"`). In the YAML format all listed samples share the same parameters; use the CSV format to set different values per sample. | Required |
 | `reads_path` | `"/path/to/reads"` | Directory with the read files (see [Input reads](#input-reads)). | Required |
 | `organelle` | `"mito"` | `"mito"` for mitochondrial or `"chloro"` for chloroplast genomes. Chloroplast assembly is only supported for short reads. | Required |
 | `genetic_code` | `2` | NCBI genetic code used for annotation (e.g. `2` for the vertebrate mitochondrial code, `11` for plastids). | Required |
@@ -143,8 +143,10 @@ For short reads, each of these fields must be set to `Yes` or `No`. At least one
 |:------|:--------|:------------|:------------|
 | `adapters` | `"/path/to/adapters.fasta"` | FASTA file with adapter sequences for fastp. Leave blank to let fastp detect the adapters automatically. | Optional (short reads) |
 | `minlength` | `50` | Minimum read length kept after trimming. | Required if `run_trimming` is `Yes` (short reads) |
-| `minquality` | `20` | Minimum base quality used by fastp. | Required if `run_trimming` is `Yes` (short reads) |
-| `pacbio_adapters` | `"-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT"` | Adapters removed by cutadapt. Repeat `-b` for several adapters: `"-b ATTGCGCGCGTA -b TGCATGGCTAGT"`. | Required for long reads |
+| `minquality` | `20` | Quality threshold of the fastp sliding window: low-quality bases are cut from both read ends (`--cut_front --cut_tail --cut_mean_quality`). | Required if `run_trimming` is `Yes` (short reads) |
+| `pacbio_adapters` | `"-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT"` | Adapters removed by cutadapt. Repeat `-b` for several adapters: `"-b ATTGCGCGCGTA -b TGCATGGCTAGT"`. | Required if `run_trimming` is `Yes` (long reads) |
+
+> The NOVOPlasty manual recommends removing only the adapters, without quality trimming. OrganPipe keeps quality trimming because it helps with degraded data, such as museum samples. With good-quality reads and NOVOPlasty, consider `run_trimming: "No"` or a low `minquality`.
 
 ### Seeds and reference (NOVOPlasty)
 
@@ -168,7 +170,7 @@ Provide a seed file **or** let OrganPipe search NCBI for seeds.
 | Field | Example | Description | Requirement |
 |:------|:--------|:------------|:------------|
 | `kmers` | `"19,23,33,39"` | K-mer sizes. Each seed is assembled once per k-mer. | Required if `run_novoplasty` is `Yes` |
-| `max_memory` | `40` | Maximum memory (GB) used by NOVOPlasty per job. | Required if `run_novoplasty` is `Yes` |
+| `max_memory` | `40` | Maximum memory (GB) used by NOVOPlasty per job. In SLURM mode, these jobs request this value plus 10%. | Required if `run_novoplasty` is `Yes` |
 | `reads_length` | `150` | Read length (bp). | Required if `run_novoplasty` is `Yes` |
 | `insert_size` | `300` | Average insert size (bp). | Required if `run_novoplasty` is `Yes` |
 
@@ -201,11 +203,13 @@ We recommend a dry run (`-np`) first. It checks the paths and the configuration 
 bash OrganPipe.sh -d </path/to/work/dir> -c </path/to/configfile> -t 1 -np
 ```
 
+> The number of assemblies is only known after each assembler finishes, so a dry run only lists the jobs up to the assembly step. Once the assemblies exist, it also lists the jobs that follow them.
+
 ### Flags
 
 | Flag | Mode | Description |
 |:-----|:-----|:------------|
-| `-d <path>` | All (required) | Working directory, i.e. the OrganPipe directory with the `workflow/` and `config/` folders. |
+| `-d <path>` | All (required) | Working directory, i.e. the OrganPipe directory with the `workflow/` and `config/` folders. `OrganPipe.sh` can be called from any directory; relative paths in the configuration file are relative to this directory. |
 | `-c <file>` | All (required) | Configuration file (`.yaml` or `.csv`). |
 | `-t <int>` | Local (required) | Number of CPU cores Snakemake may use at once. Not allowed with `-slurm`. |
 | `-slurm` | SLURM | Submit each job to SLURM, using the settings in `config/slurm_params.yaml`, `config/threads.yaml` and `config/resources.yaml`. |
@@ -217,7 +221,9 @@ bash OrganPipe.sh -d </path/to/work/dir> -c </path/to/configfile> -t 1 -np
 | `-batch` | All | Split the DAG into batches. Useful for many samples (over ~3000 jobs), as it reduces the DAG resolution time. |
 | `-nbatch <int>` | All | Number of batches used with `-batch` (default: 3). |
 | `-sifdir <path>` | All | Directory for the Singularity images. Images already in it are not pulled again (default: `resources/sif_dir`). |
-| `-nhmmer_db <path>` | All | HMM database used by HMMER (default: `resources/rfam.hmm`). Any database compatible with HMMER 3.4 can be used. |
+| `-nhmmer_db <path>` | All | Nucleotide HMM database used by HMMER (default: `resources/rfam.hmm`). Any database compatible with HMMER 3.4 can be used. |
+| `-mitos_db <path>` | All | MITOS2 reference directory, inside the working directory (default: `resources/refseq89m`, for Metazoa). Download another MITOS2 reference to annotate other groups, e.g. `resources/refseq89f` for fungi. |
+| `-mem <int>` | Local | Memory (GB) that the NOVOPlasty jobs may use at once. Snakemake then runs only as many of them as fit in this value. |
 | `-h`, `--help` | | Show the usage and exit. |
 | `-v`, `--version` | | Show the OrganPipe version and exit. |
 
@@ -235,7 +241,28 @@ From the repository directory, run:
 bash OrganPipe.sh -d . -t 4 -c test_data/config.csv
 ```
 
-`test_data/config.csv` covers the main use cases: NOVOPlasty with a FASTA seed, a GenBank seed and an NCBI search; GetOrganelle; a chloroplast sample; and a long-read sample (MitoHiFi). It needs internet access for the NCBI searches and the image downloads. When it finishes, each test sample (`hs1`–`hs4`, `SRR1328237`, `hifi`) has its own folder in `workflow/reports/`. Other test configurations are available in `test_data/` (single sample, two samples, `sample: all` and long reads).
+`test_data/config.csv` tests each feature once, so the run stays short:
+
+| Sample | What it tests |
+|:-------|:--------------|
+| `hs1` | The whole mitochondrial chain with NOVOPlasty: FASTA seed, `reference`, two k-mers (which give identical assemblies), annotation, images and HMMER. |
+| `hs2` | fastp with an adapters file and quality trimming, the NCBI seed search and `annotation: "No"`. |
+| `hs3` | A GenBank seed (`feature: "rRNA"`, two seeds) and fastp detecting the adapters. |
+| `hs4` | GetOrganelle on a mitochondrion, with the optional fields blank. |
+| `SRR1328237` | The whole chloroplast chain with NOVOPlasty and GetOrganelle, and `extra_flags`. |
+| `hifi` | Long reads: cutadapt, MitoHiFi and HMMER. |
+
+It needs internet access for the NCBI searches and the image downloads. When it finishes, each test sample has its own folder in `workflow/reports/`. Other test configurations are available in `test_data/` (single sample, two samples, `sample: all` and long reads).
+
+### Automated tests
+
+The tests need only the conda environment, not the containers or the test reads:
+
+```bash
+python -m unittest discover -s tests
+```
+
+`tests/test_scripts.py` checks the workflow scripts. `tests/test_workflow.py` uses stand-ins for the tools to check that every combination of assembler, organelle and pipeline steps builds the expected jobs. GitHub Actions runs them on every push and pull request.
 
 ### Re-running samples with new parameters
 
@@ -245,7 +272,7 @@ Snakemake skips jobs whose outputs already exist. To reprocess a sample with dif
 
 ## Threads, memory and SLURM resources
 
-> ⚠️ **Memory in local mode**: NOVOPlasty can use up to `max_memory` GB per job, and Snakemake may run several assembly jobs at the same time. Keep `-t` × `max_memory` within the RAM of your machine, or the system may run out of memory.
+> ⚠️ **Memory in local mode**: NOVOPlasty can use up to `max_memory` GB per job, and Snakemake may run several assembly jobs at the same time. Use `-mem <GB>` to limit the memory of these jobs to what your machine has. Without it, keep `-t` × `max_memory` within your RAM, or the system may run out of memory.
 
 As a reference, in a run of 24 amphibian mitochondrial samples with `max_memory: 40`, the NOVOPlasty steps (`create_hash`, `run_novoplasty`) peaked at ~38 GB, while all other steps stayed below 2.5 GB. You can measure your own runs with the [benchmark report](#benchmark-report).
 
@@ -256,7 +283,7 @@ Threads and resources are set in Snakemake profile **templates** in `config/`, w
 | `config/threads.yaml` | Local and SLURM | `set-threads`: threads (CPUs) per rule |
 | `config/local_params.yaml` | Local | General Snakemake settings |
 | `config/slurm_params.yaml` | SLURM | General Snakemake settings and `default-resources`: partition, memory (2 GB) and runtime (72 h) for all rules |
-| `config/resources.yaml` | SLURM | `set-resources`: memory, runtime or partition of the rules that need more than the defaults |
+| `config/resources.yaml` | SLURM | `set-resources`: memory, runtime or partition of the rules that need more than the defaults. `create_hash` and `run_novoplasty` get their memory from `max_memory` |
 
 - Rules not listed in `config/threads.yaml` run with 1 thread. In local mode a job never uses more than `-t` cores.
 - In SLURM mode, each job is submitted with `--cpus-per-task` = threads, `--mem` = `mem_mb` (MB) and `--time` = `runtime` (minutes).
@@ -267,7 +294,7 @@ To send a specific rule to another partition, or to give it more memory or time,
 
 ```yaml
 set-resources:
-  run_novoplasty: {mem_mb: 80000, runtime: 1440, slurm_partition: "'highmem'"}
+  run_getorganelle: {mem_mb: 100000, runtime: 1440, slurm_partition: "'highmem'"}
 ```
 
 String values such as partition names must be wrapped in single quotes inside double quotes (`"'highmem'"`), so Snakemake reads them as text.
@@ -286,6 +313,14 @@ To update a tool, change its tag. On the next run the new image is pulled, and S
 
 Without internet access, `OrganPipe.sh` stops and prints the `singularity pull` commands to run on another machine. Copy the resulting files to the paths shown. A failed pull of `cpgavas2` only stops the jobs that use it (chloroplast annotation), not the whole run.
 
+### NCBI API key
+
+Seed searches on NCBI work without an API key, at up to 3 requests per second. If you have a key, set it to allow up to 10 requests per second:
+
+```bash
+export NCBI_API_KEY=<your_key>
+```
+
 ## Outputs
 
 OrganPipe writes three output trees in the working directory:
@@ -293,7 +328,7 @@ OrganPipe writes three output trees in the working directory:
 | Directory | Content |
 |:----------|:--------|
 | `workflow/reports/<sample>/` | Curated results and reports: **start here**. |
-| `results/<sample>/` | Raw outputs of every tool in the pipeline. |
+| `results/<sample>/` | Raw outputs of every tool in the pipeline, per assembly: `results/<sample>/<tool>/<assembler>/<run>/<assembly>/`. A run is `<seed>_kmer<kmer>` for NOVOPlasty and `all` for GetOrganelle. |
 | `logs/` and `benchmarks/` | Per-job logs and resource usage (see [Logs and benchmarks](#logs-and-benchmarks)). |
 
 ### Report folders
@@ -319,6 +354,7 @@ Each `workflow/reports/<sample>/` folder contains the subfolders below. Only the
 | File | Description |
 |:-----|:------------|
 | `summary.csv` | Summary of all assemblies and their results. |
+| `warnings.txt` | Problems that did not stop the run, e.g. a seed without an assembly in `genome_range`, an assembly that could not be rotated or a plot that could not be drawn. Only present if there is a warning. |
 | `novoplasty.csv` | NOVOPlasty assembly results (short reads). |
 | `pilon.csv` | Pilon error-correction results (short reads). |
 | `mitos2.csv` | MITOS2 annotation metrics (mitochondria). |
@@ -329,6 +365,14 @@ Each `workflow/reports/<sample>/` folder contains the subfolders below. Only the
 | `cpgavas2_gene_composition.csv` | Gene composition summary (chloroplast). |
 | `cpgavas2_intron_exon.csv` | Intron–exon structure (chloroplast). |
 | `cpgavas2_problems.csv` | Annotation issues reported by CPGAVAS2 (chloroplast). |
+
+### Identical assemblies
+
+Different seeds and k-mers often produce the same genome. The `identical_group` column of `summary.csv`, `pilon.csv` and `mitohifi.csv` marks these assemblies: rows with the same label (`group_1`, `group_2`...) have the same sequence, regardless of the start position and the strand. The column is blank for assemblies that are different from all the others.
+
+### Rotated GenBank files
+
+`<assembly>.rotated.gb` starts at `rrnS`, on the forward strand (mitochondria), and `<assembly>.cpgavas2.rotated.gb` and `<assembly>.chloe.rotated.gb` start at `psbA`, on the reverse strand (chloroplast). All the assemblies of a sample then have the same start and orientation, which makes them easier to compare. An assembly without the gene has no rotated file, and it is listed in `warnings.txt`.
 
 ### Assembly names
 
@@ -363,7 +407,7 @@ For example, `animal_mt_complete_1` is the first complete genome assembled with 
 
 | Path | Content |
 |:-----|:--------|
-| `logs/<sample>/<step>/` | Log of every job, e.g. `logs/<sample>/novoplasty/` |
+| `logs/<sample>/<step>/` | Log of every job, e.g. `logs/<sample>/pilon/<assembler>/<run>/<assembly>_run_pilon.log` |
 | `logs/<sample>.parse_results.log` | Log of the report generation for each sample |
 | `logs/benchmark_report.log` | Log of the benchmark report |
 | `benchmarks/<sample>/<step>/` | Runtime, CPU and memory usage of every job |
@@ -386,7 +430,7 @@ If `-c` is omitted, `config/snakemake_config.yaml` from the last run is used whe
 ## Troubleshooting
 
 **The run stopped or was interrupted. How do I resume it?**
-Run the same command again. Snakemake skips the jobs that already finished and re-runs the incomplete ones.
+Run the same command again. Snakemake skips the jobs that already finished and re-runs the incomplete ones. Each assembly has its own jobs, so a failed job only repeats that assembly.
 
 **"Directory cannot be locked" / "LockException".**
 A previous run was interrupted. Run the same command with `-unlock`, then run it again without `-unlock`.
@@ -395,8 +439,8 @@ A previous run was interrupted. Run the same command with `-unlock`, then run it
 No NCBI record matched `search_term` and `search_genes`. Use a broader taxon (genus or family), other genes, or provide your own `seed_file`.
 
 **A job failed with an out-of-memory error.**
-- Local mode: lower `-t` or `max_memory` so that `-t` × `max_memory` fits in your RAM.
-- SLURM mode: increase `mem_mb` for that rule in `config/resources.yaml`. For NOVOPlasty, keep `mem_mb` above `max_memory` × 1000.
+- Local mode: use `-mem`, or lower `-t` or `max_memory` so that `-t` × `max_memory` fits in your RAM.
+- SLURM mode: increase `mem_mb` for that rule in `config/resources.yaml`. For NOVOPlasty, increase `max_memory`.
 
 **A SLURM job was killed for exceeding its time limit.**
 Increase `runtime` (minutes) for that rule in `config/resources.yaml`.
@@ -404,8 +448,14 @@ Increase `runtime` (minutes) for that rule in `config/resources.yaml`.
 **A Singularity image failed to download or build.**
 Run the pipeline again; images already in the `-sifdir` directory are not pulled again. Check your internet connection and the free space in that directory. Without internet access, `OrganPipe.sh` prints the `singularity pull` commands to run on another machine (see [Container images](#container-images)).
 
+**A pull failed with `unauthorized: incorrect username or password`.**
+Singularity is using an expired Docker Hub login stored in `~/.docker/config.json`. Run `docker login` again, or remove that login with `docker logout`. The images are public and need no login.
+
 **I changed the parameters, but the sample was not re-processed.**
 Snakemake does not re-run jobs whose outputs already exist. Use `-rerun` (read the warning in [Re-running samples](#re-running-samples-with-new-parameters)), or delete `results/<sample>`, `resources/<sample>` and `workflow/reports/<sample>` manually.
+
+**A sample finished without some results.**
+Check `workflow/reports/<sample>/warnings.txt`, which lists the problems that did not stop the run.
 
 **The DAG takes too long to build.**
 With many samples, use `-batch` (and `-nbatch` to set the number of batches).

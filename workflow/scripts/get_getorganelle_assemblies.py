@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from Bio import SeqIO
+from naming import warn
 
 
 def main():
@@ -49,6 +50,9 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     SeqIO.write(records, output_path, "fasta")
+
+    if not records:
+        warn(f"GetOrganelle produced no assembly in {input_dir}.")
 
     print(f"Wrote {len(records)} sequences to {output_path}")
 

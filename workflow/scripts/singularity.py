@@ -1,10 +1,10 @@
 import os
-import re
 import subprocess
 import argparse
 import logging
 import sys
 import yaml
+from naming import sif_name
 
 FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 
@@ -20,15 +20,7 @@ logging.basicConfig(
 OPTIONAL_IMAGES = {"cpgavas2"}
 
 
-def sif_name(name, image):
-    """File name of an image. Must match sif() in workflow/rules/common.smk."""
-    tag = image.rsplit(":", 1)[1] if ":" in image.split("/")[-1] else "latest"
-    return f"{name}_{re.sub(r'[^A-Za-z0-9._-]', '_', tag)}.sif"
-
-
 def pull_command(image, output_file):
-    if image.startswith("library://"):
-        return ["singularity", "pull", "--arch", "amd64", output_file, image]
     return ["singularity", "pull", "--disable-cache", output_file, f"docker://{image}"]
 
 

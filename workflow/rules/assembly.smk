@@ -1,11 +1,23 @@
+def novoplasty_mem_mb(wildcards):
+    """NOVOPlasty uses up to max_memory GB; the extra 10% keeps the job within its memory limit."""
+    return int(config["samples"][wildcards.sample]["max_memory"]) * 1100
+
+def mitohifi_reads(wildcards):
+    """MitoHiFi reads FASTA: the file as provided, or the reads converted by run_seqtk."""
+    sample = wildcards.sample
+    if get_longreads(sample).endswith(".fasta") and not is_yes(sample, "run_trimming"):
+        return f"resources/{sample}/rawreads/{sample}.fasta"
+    return f"resources/{sample}/rawreads/{sample}.converted.fasta"
+
+def getorganelle_options(wildcards):
+    """Optional GetOrganelle flags: a blank field keeps the default of the organelle type."""
+    sample_config = config["samples"][wildcards.sample]
+    flags = {"-R": "n_rounds", "-k": "spades_kmers", "--target-genome-size": "target_size"}
+    return " ".join(f"{flag} {sample_config[field]}" for flag, field in flags.items() if sample_config[field] != "")
+
 rule create_hash:
     input:
-        r1=lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.R1.trimmed.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
-            else "resources/{sample}/rawreads/{sample}_R1.fastq.gz",
-        r2=lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.R2.trimmed.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
-            else "resources/{sample}/rawreads/{sample}_R2.fastq.gz"
+        unpack(short_reads)
     output:
         "results/{sample}/hashtable/kmer{kmer}/hash_config.txt",
         temp("results/{sample}/hashtable/kmer{kmer}/HASH2B_{sample}.txt"),
@@ -16,13 +28,15 @@ rule create_hash:
     benchmark:
         "benchmarks/{sample}/novoplasty/{sample}_{kmer}_create_hash.benchmark"
     singularity:
-        f"{config["sif_dir"]}/novoplasty.sif"
+        sif("novoplasty")
+    resources:
+        mem_mb=novoplasty_mem_mb
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        genome_range=lambda wildcards: config["samples"][wildcards.sample]["genome_range"],
-        reads_length=lambda wildcards: config["samples"][wildcards.sample]["reads_length"],
-        insert_size=lambda wildcards: config["samples"][wildcards.sample]["insert_size"],
-        max_memory=lambda wildcards: config["samples"][wildcards.sample]["max_memory"],
+        organelle=sample_param("organelle"),
+        genome_range=sample_param("genome_range"),
+        reads_length=sample_param("reads_length"),
+        insert_size=sample_param("insert_size"),
+        max_memory=sample_param("max_memory"),
     shell:
         """
         mkdir -p results/{wildcards.sample}/hashtable/kmer{wildcards.kmer}/ && \
@@ -43,17 +57,19 @@ rule run_novoplasty:
     output:
         "results/{sample}/novoplasty/{seed}/kmer{kmer}/log_{sample}.txt"
     singularity:
-        f"{config["sif_dir"]}/novoplasty.sif"
+        sif("novoplasty")
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_{seed}_novoplasty.log"
     benchmark:
         "benchmarks/{sample}/novoplasty/{sample}_{kmer}_{seed}_novoplasty.benchmark"
+    resources:
+        mem_mb=novoplasty_mem_mb
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        genome_range=lambda wildcards: config["samples"][wildcards.sample]["genome_range"],
-        reads_length=lambda wildcards: config["samples"][wildcards.sample]["reads_length"],
-        insert_size=lambda wildcards: config["samples"][wildcards.sample]["insert_size"],
-        max_memory=lambda wildcards: config["samples"][wildcards.sample]["max_memory"],
+        organelle=sample_param("organelle"),
+        genome_range=sample_param("genome_range"),
+        reads_length=sample_param("reads_length"),
+        insert_size=sample_param("insert_size"),
+        max_memory=sample_param("max_memory"),
         reference=lambda wildcards: f"resources/{wildcards.sample}/reference.fasta" if config["samples"][wildcards.sample].get("reference", "") else ""
     shell:
         """
@@ -75,9 +91,7 @@ rule run_novoplasty:
 
 rule run_mitohifi:
     input:
-        reads = lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.trimmed.fasta" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
-            else "resources/{sample}/rawreads/{sample}.fasta",
+        reads = mitohifi_reads,
         reference_fasta="resources/{sample}/seeds/{seed}.fasta",
         reference_gb="resources/{sample}/seeds/{seed}.gb",
     output:
@@ -87,9 +101,9 @@ rule run_mitohifi:
     benchmark:
        "benchmarks/{sample}/mitohifi/{seed}_run_mitohifi.txt"
     params:
-        genetic_code=lambda wildcards: config["samples"][wildcards.sample]["genetic_code"]
+        genetic_code=sample_param("genetic_code")
     singularity:
-        f"{config["sif_dir"]}/mitohifi.sif"
+        sif("mitohifi")
     shell:
         """
         mkdir -p results/{wildcards.sample}/mitohifi/{wildcards.seed} && \
@@ -102,12 +116,7 @@ rule run_mitohifi:
 
 rule run_getorganelle:
     input:
-        r1 = lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.R1.trimmed.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
-            else "resources/{sample}/rawreads/{sample}_R1.fastq.gz",
-        r2 = lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.R2.trimmed.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
-            else "resources/{sample}/rawreads/{sample}_R2.fastq.gz",
+        unpack(short_reads),
         database = "resources/getorganelle_db/getorganelle_db.check"
     output:
         "results/{sample}/getorganelle/get_org.log.txt"
@@ -116,13 +125,11 @@ rule run_getorganelle:
     benchmark:
        "benchmarks/{sample}/getorganelle/run_getorganelle.txt"
     params:
-        database=lambda wildcards: config["samples"][wildcards.sample]["database"],
-        n_rounds=lambda wildcards: config["samples"][wildcards.sample]["n_rounds"],
-        target_size=lambda wildcards: config["samples"][wildcards.sample]["target_size"],
-        extra_flags=lambda wildcards: config["samples"][wildcards.sample]["extra_flags"],
-        spades_kmers=lambda wildcards: config["samples"][wildcards.sample]["spades_kmers"]
+        database=sample_param("database"),
+        options=getorganelle_options,
+        extra_flags=sample_param("extra_flags"),
     singularity:
-        f"{config["sif_dir"]}/getorganelle.sif"
+        sif("getorganelle")
     shell:
         """
         mkdir -p results/{wildcards.sample}/getorganelle && \
@@ -130,8 +137,7 @@ rule run_getorganelle:
         get_organelle_from_reads.py -1 {input.r1} -2 {input.r2} \
             -o results/{wildcards.sample}/getorganelle -t {threads} \
             --config-dir resources/getorganelle_db/ --overwrite \
-            -F {params.database} -R {params.n_rounds} \
-            -k {params.spades_kmers} --target-genome-size {params.target_size} \
+            -F {params.database} {params.options} \
             {params.extra_flags} >> {log} 2>&1
         """
 
@@ -143,8 +149,8 @@ rule get_novoplasty_assemblies:
     log:
         "logs/{sample}/novoplasty/{sample}_{kmer}_{seed}_get_assemblies.log"
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"],
-        genome_range=lambda wildcards: config["samples"][wildcards.sample]["genome_range"],
+        organelle=sample_param("organelle"),
+        genome_range=sample_param("genome_range"),
     shell:
         """
         python workflow/scripts/get_novoplasty_assemblies.py \
@@ -156,12 +162,28 @@ rule get_getorganelle_assemblies:
     input:
         "results/{sample}/getorganelle/get_org.log.txt"
     output:
-        "results/{sample}/getorganelle/sequences.fasta"
+        "results/{sample}/assemblies/getorganelle/all.fasta"
     log:
         "logs/{sample}/getorganelle/get_assemblies.log"
     shell:
         """
         python workflow/scripts/get_getorganelle_assemblies.py \
             -i results/{wildcards.sample}/getorganelle \
-            -o results/{wildcards.sample}/getorganelle/sequences.fasta >> {log} 2>&1
+            -o {output} >> {log} 2>&1
+        """
+
+# One FASTA per assembly. Each assembly then has its own jobs, so a failed job only
+# repeats that assembly. The number of assemblies is only known after this step, and
+# that is why a dry run does not list the jobs after it until the assemblies exist.
+checkpoint split_assemblies:
+    input:
+        "results/{sample}/assemblies/{assembler}/{run}.fasta"
+    output:
+        directory("results/{sample}/assemblies/{assembler}/{run}")
+    log:
+        "logs/{sample}/assemblies/{assembler}/{run}_split_assemblies.log"
+    shell:
+        """
+        python workflow/scripts/split_fasta.py --fasta_file {input} --assembler {wildcards.assembler} \
+            --output_dir {output} >> {log} 2>&1
         """

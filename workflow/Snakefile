@@ -20,7 +20,14 @@ include: "rules/parse_results.smk"
 wildcard_constraints:
     sample = r"[A-Za-z0-9_]+",
     seed = r"[A-Za-z0-9._:-]+",
-    kmer = r"\d+"
+    kmer = r"\d+",
+    assembler = r"novoplasty|getorganelle|mitohifi",
+    run = r"[A-Za-z0-9._:-]+",
+    assembly = r"[^/]+",
+    annotator = r"mitos2|chloe|cpgavas2",
+    region = r"rRNA-tRNA|intergenes_filter"
+
+localrules: all, finish_run
 
 rule all:
     input:

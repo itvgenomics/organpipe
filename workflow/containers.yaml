@@ -4,7 +4,7 @@
 #   <name>: <image>:<tag>
 #
 # Images are pulled from Docker Hub unless the name says otherwise (e.g.
-# ghcr.io/... or library://...).
+# ghcr.io/...).
 #
 # Each image is pulled once into the -sifdir directory (default:
 # resources/sif_dir) as <name>_<tag>.sif, e.g. hmmer_3.4.sif. The rules refer
@@ -33,7 +33,7 @@ pilon: biocontainers/pilon:v1.23dfsg-1-deb_cv1
 
 # Annotation
 mitos: itvdsbioinfo/mitos:2.1.10
-cpgavas2: library://cliu/default/cpgavas2:0.03
+cpgavas2: brunomsilva/cpgavas2:latest
 chloe: itvdsbioinfo/chloe:1.0
 
 # nhmmer

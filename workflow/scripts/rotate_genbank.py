@@ -1,7 +1,11 @@
 import argparse
-import os
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
+from naming import warn
+
+# Strand of the start gene after rotation, so all assemblies of a sample have the same
+# orientation. Plastomes usually have psbA on the reverse strand, next to the start.
+START_GENE_STRAND = {"mito": 1, "chloro": -1}
 
 
 def parse_arguments():
@@ -14,58 +18,46 @@ def parse_arguments():
     parser.add_argument(
         "--organelle", type=str, help="Type of organelle (e.g., 'mito', 'chloro')"
     )
-    parser.add_argument(
-        "--sample",
-        help="Sample dir",
-        required=False,
-        nargs="?",
-    )
-    parser.add_argument(
-        "--kmer",
-        help="kmer used",
-        nargs="?",
-    )
-    parser.add_argument(
-        "--seed",
-        help="Seed used",
-        nargs="?",
-    )
-    parser.add_argument(
-        "--software",
-        help="Software used (e.g cpgavas2 or chloe)",
-        nargs="?",
-    )
-    parser.add_argument("--assembler", help="Assembler used", nargs="?")
+    parser.add_argument("--input", help="GenBank file to rotate", required=True)
+    parser.add_argument("--output", help="Rotated GenBank file", required=True)
 
     return parser.parse_args()
 
 
-def rotate_genbank(input_file, output_file, start_gene, organelle):
-    # Parse the GenBank file
-    record = SeqIO.read(input_file, "genbank")
-
-    # Locate the start position using the start_gene
-    start_pos = None
-
+def find_start_feature(record, start_gene, organelle):
     if organelle == "mito":
         for feature in record.features:
             if feature.type == "rRNA" and "product" in feature.qualifiers:
                 if start_gene in feature.qualifiers["product"]:
-                    start_pos = feature.location.start
-                    break
+                    return feature
 
-        if start_pos is None:
-            raise ValueError(f"Product '{start_gene}' not found in the GenBank file.")
+        raise ValueError(f"Product '{start_gene}' not found in the GenBank file.")
 
-    elif organelle == "chloro":
-        for feature in record.features:
-            if feature.type == "gene" and "gene" in feature.qualifiers:
-                if start_gene in feature.qualifiers["gene"]:
-                    start_pos = feature.location.start
-                    break
+    for feature in record.features:
+        if feature.type == "gene" and "gene" in feature.qualifiers:
+            if start_gene in feature.qualifiers["gene"]:
+                return feature
 
-        if start_pos is None:
-            raise ValueError(f"Gene '{start_gene}' not found in the GenBank file.")
+    raise ValueError(f"Gene '{start_gene}' not found in the GenBank file.")
+
+
+def orient_record(record, start_gene, organelle):
+    """Reverse complement the record if the start gene is on the other strand."""
+    strand = find_start_feature(record, start_gene, organelle).location.strand
+    if strand is None or strand == START_GENE_STRAND[organelle]:
+        return record
+
+    return record.reverse_complement(
+        id=True, name=True, description=True, features=True, annotations=True, dbxrefs=True
+    )
+
+
+def rotate_genbank(input_file, output_file, start_gene, organelle):
+    # Parse the GenBank file
+    record = orient_record(SeqIO.read(input_file, "genbank"), start_gene, organelle)
+
+    # Locate the start position using the start_gene
+    start_pos = find_start_feature(record, start_gene, organelle).location.start
 
     # Rotate the sequence
     sequence = record.seq
@@ -133,80 +125,13 @@ def rotate_genbank(input_file, output_file, start_gene, organelle):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    start_gene = args.start_gene
-    organelle = args.organelle
-    sample = args.sample
-    seed = args.seed
-    kmer = args.kmer
-    software = args.software
-    assembler = args.assembler
 
-    if assembler == "novoplasty":
-        gb_dir = f"results/{sample}/genbanks/novoplasty"
-
-        if organelle == "mito":
-            for file in os.listdir(gb_dir):
-                if seed in str(file) and kmer in str(file) and ".rotated." not in str(file):
-                    output_file = str(file).replace(".gb", ".rotated.gb")
-                    try:
-                        rotate_genbank(
-                            input_file=os.path.join(gb_dir, file),
-                            output_file=os.path.join(gb_dir, output_file),
-                            start_gene=start_gene,
-                            organelle=organelle,
-                        )
-                    except:
-                        pass
-
-        elif organelle == "chloro":
-            for file in os.listdir(gb_dir):
-                if (
-                    seed in str(file)
-                    and kmer in str(file)
-                    and software in str(file)
-                    and ".rotated." not in str(file)
-                ):
-                    output_file = str(file).replace(".gb", ".rotated.gb")
-                    try:
-                        rotate_genbank(
-                            input_file=os.path.join(gb_dir, file),
-                            output_file=os.path.join(gb_dir, output_file),
-                            start_gene=start_gene,
-                            organelle=organelle,
-                        )
-                    except:
-                        pass
-
-    elif assembler == "getorganelle":
-        gb_dir = f"results/{sample}/genbanks/getorganelle"
-
-        if organelle == "mito":
-            for file in os.listdir(gb_dir):
-                if ".rotated." not in str(file):
-                    output_file = str(file).replace(".gb", ".rotated.gb")
-                    try:
-                        rotate_genbank(
-                            input_file=os.path.join(gb_dir, file),
-                            output_file=os.path.join(gb_dir, output_file),
-                            start_gene=start_gene,
-                            organelle=organelle,
-                        )
-                    except:
-                        pass
-
-        elif organelle == "chloro":
-            for file in os.listdir(gb_dir):
-                if (
-                    software in str(file)
-                    and ".rotated." not in str(file)
-                ):
-                    output_file = str(file).replace(".gb", ".rotated.gb")
-                    try:
-                        rotate_genbank(
-                            input_file=os.path.join(gb_dir, file),
-                            output_file=os.path.join(gb_dir, output_file),
-                            start_gene=start_gene,
-                            organelle=organelle,
-                        )
-                    except:
-                        pass
+    try:
+        rotate_genbank(
+            input_file=args.input,
+            output_file=args.output,
+            start_gene=args.start_gene,
+            organelle=args.organelle,
+        )
+    except Exception as e:
+        warn(f"Could not rotate {args.input}: {e}")

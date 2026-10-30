@@ -1,492 +1,218 @@
-rule get_genbank_fastas_novoplasty:
+# The plots use the MITOS2 GenBank files of mitochondria and the CPGAVAS2 ones of chloroplasts.
+def plot_annotator(wildcards):
+    return annotators(wildcards.sample)[0]
+
+def plot_base(wildcards):
+    return wildcards.assembly + ANNOTATOR_SUFFIX[plot_annotator(wildcards)]
+
+def ogdraw_genbanks(wildcards):
+    genbanks = []
+    for annotator in annotators(wildcards.sample):
+        genbanks += [genbank_path(wildcards, annotator), genbank_path(wildcards, annotator, rotated=True)]
+    return genbanks
+
+rule get_genbank_fastas:
     input:
-        lambda wildcards: [
-            f"results/{wildcards.sample}/genbanks/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}.mitos2.genbank.rotated.check"
-        ] if config["samples"][wildcards.sample]["organelle"] == "mito" else [
-            f"results/{wildcards.sample}/genbanks/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}.cpgavas2.genbank.rotated.check",
-            f"results/{wildcards.sample}/genbanks/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}.chloe.genbank.rotated.check"
-        ]
+        lambda wildcards: f"results/{wildcards.sample}/genbanks/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}.{plot_annotator(wildcards)}.genbank.rotated.check"
     output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas_novoplasty.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/get_genbank_fastas.check"
     log:
-        "logs/{sample}/images/novoplasty/{seed}_{kmer}_get_genbank_fastas_novoplasty.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_get_genbank_fastas.log"
     benchmark:
-        "benchmarks/{sample}/images/novoplasty/{seed}_{kmer}_get_genbank_fastas_novoplasty.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_get_genbank_fastas.benchmark"
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"]
+        genbanks=lambda wildcards: [genbank_path(wildcards, plot_annotator(wildcards)), genbank_path(wildcards, plot_annotator(wildcards), rotated=True)],
+        dir=output_dir
     shell:
         """
-        python workflow/scripts/images.py --assembler 'novoplasty' --sample {wildcards.sample} \
-            --kmer {wildcards.kmer} --seed {wildcards.seed} --parse_gb --organelle {params.organelle} >> {log} 2>&1 && \
+        python workflow/scripts/images.py --parse_gb --genbanks {params.genbanks} --fasta_dir {params.dir} >> {log} 2>&1 && \
         touch {output}
         """
 
-rule run_blastn_novoplasty:
+rule run_blastn:
     input:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas_novoplasty.check"
+        unpack(assembled_reads),
+        check = "results/{sample}/images/{assembler}/{run}/{assembly}/get_genbank_fastas.check"
     output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/blastn.check"
     log:
-        "logs/{sample}/images/novoplasty/{seed}_{kmer}_run_blastn_novoplasty.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_blastn.log"
     benchmark:
-        "benchmarks/{sample}/images/novoplasty/{seed}_{kmer}_run_blastn_novoplasty.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_blastn.benchmark"
     singularity:
-        f"{config["sif_dir"]}/blast.sif"
+        sif("blast")
+    params:
+        dir=output_dir
     shell:
         """
-        cat results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R1.fasta \
-        results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R2.fasta >> \
-        results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/Assembled_reads_{wildcards.seed}_kmer{wildcards.kmer}.fa && \
-        for fasta_file in results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            makeblastdb -in "$fasta_file" -dbtype nucl >> {log} 2>&1 && \
+        shopt -s nullglob
+        reads={params.dir}/assembled_reads.fa
+        if [ {wildcards.assembler} = getorganelle ]; then
+            perl workflow/scripts/get_fastq.pl -1 {input.r1} -2 {input.r2} -out "$reads"
+        else
+            cat {input.r1} {input.r2} > "$reads"
+        fi
+        for fasta_file in {params.dir}/*.fasta; do
+            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//')
+            makeblastdb -in "$fasta_file" -dbtype nucl >> {log} 2>&1
             blastn -db "$fasta_file" -max_target_seqs 1 \
-            -query results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/Assembled_reads_{wildcards.seed}_kmer{wildcards.kmer}.fa \
-            -out results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header".blastn.out \
+            -query "$reads" \
+            -out {params.dir}/"$fasta_header".blastn.out \
             -outfmt 6 -evalue 0.00001 -task blastn -num_threads {threads} >> {log} 2>&1
         done
-        rm results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/Assembled_reads_{wildcards.seed}_kmer{wildcards.kmer}.fa && \
+        rm "$reads"
         touch {output}
         """
 
-rule run_recruitment_plot_novoplasty:
+rule run_recruitment_plot:
     input:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.blastn.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/blastn.check"
     output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.recruitment_plot.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/recruitment_plot.check"
     log:
-        "logs/{sample}/images/novoplasty/{seed}_{kmer}_run_recruitment_plot_novoplasty.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_recruitment_plot.log"
     benchmark:
-        "benchmarks/{sample}/images/novoplasty/{seed}_{kmer}_run_recruitment_plot_novoplasty.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_recruitment_plot.benchmark"
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"]
+        dir=output_dir
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            python workflow/scripts/images.py --assembler 'novoplasty' --sample {wildcards.sample} \
-            --kmer {wildcards.kmer} --seed {wildcards.seed} --organelle {params.organelle} \
-            --recruitment_plot --blastn_fasta "$fasta_file" \
-            --blastn_out results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header".blastn.out >> {log} 2>&1
+        shopt -s nullglob
+        for fasta_file in {params.dir}/*.fasta; do
+            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//')
+            python workflow/scripts/images.py --recruitment_plot --blastn_fasta "$fasta_file" \
+            --blastn_out {params.dir}/"$fasta_header".blastn.out >> {log} 2>&1
         done
         touch {output}
         """
 
-rule run_bwa_index_rotated_novoplasty:
+rule run_bwa_index_rotated:
     input:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.get_genbank_fastas_novoplasty.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/get_genbank_fastas.check"
     output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/bwa_index.check"
     log:
-        "logs/{sample}/images/novoplasty/{kmer}_{seed}_run_bwa_index_rotated_novoplasty.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_bwa_index_rotated.log"
     benchmark:
-        "benchmarks/{sample}/images/novoplasty/{kmer}_{seed}_run_bwa_index_rotated_novoplasty.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_bwa_index_rotated.benchmark"
     singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [[ "$fasta_header" == *.rotated ]]; then
-                bwa-mem2.avx index $fasta_file >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule run_bwa_mem_rotated_novoplasty:
-    input:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_index.check"
-    output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check"
-    log:
-        "logs/{sample}/images/novoplasty/{kmer}_{seed}_run_bwa_mem_rotated_novoplasty.log"
-    benchmark:
-        "benchmarks/{sample}/images/novoplasty/{kmer}_{seed}_run_bwa_mem_rotated_novoplasty.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [[ "$fasta_header" == *.rotated ]]; then
-                {{ bwa-mem2.avx mem -t {threads} "$fasta_file" \
-                results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R1.fasta \
-                results/{wildcards.sample}/novoplasty/{wildcards.seed}/kmer{wildcards.kmer}/Assembled_reads_{wildcards.sample}_R2.fasta 2>> {log}
-                }} | samtools view - -Sb | samtools sort - -@ {threads} \
-                -o results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header"_mapping.bam >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule run_samtools_depth_novoplasty:
-    input:
-        "results/{sample}/pilon/novoplasty/{seed}_kmer{kmer}.bwa_mem.check"
-    output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check"
-    log:
-        "logs/{sample}/images/novoplasty/{kmer}_{seed}_run_samtools_depth_novoplasty.log"
-    benchmark:
-        "benchmarks/{sample}/images/novoplasty/{kmer}_{seed}_run_samtools_depth_novoplasty.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ "$fasta_header" != "INVALIDSEED_1" ]; then
-                samtools depth results/{wildcards.sample}/pilon/novoplasty/$fasta_header/"$fasta_header"_mapping.bam \
-                > results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header".depth 2>{log}
-            fi
-        done
-        touch {output}
-        """
-
-rule run_samtools_depth_novoplasty_rotated:
-    input:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.bwa_mem.check"
-    output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check"
-    log:
-        "logs/{sample}/images/novoplasty/{kmer}_{seed}_run_samtools_depth_novoplasty_rotated.log"
-    benchmark:
-        "benchmarks/{sample}/images/novoplasty/{kmer}_{seed}_run_samtools_depth_novoplasty_rotated.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [[ "$fasta_header" == *.rotated ]]; then
-                samtools depth results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header"_mapping.bam \
-                > results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/"$fasta_header".depth 2>{log}
-            fi
-        done
-        touch {output}
-        """
-
-rule run_depth_plot_novoplasty:
-    input:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth.check",
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.samtools_depth_rotated.check"
-    output:
-        "results/{sample}/images/novoplasty/{seed}_kmer{kmer}/{seed}_kmer{kmer}.depth_plot.check"
-    log:
-        "logs/{sample}/images/novoplasty/{seed}_{kmer}_run_depth_plot_novoplasty.log"
-    benchmark:
-        "benchmarks/{sample}/images/novoplasty/{seed}_{kmer}_run_depth_plot_novoplasty.benchmark"
+        sif("hic_mapping")
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"]
+        rotated=lambda wildcards, output: f"{os.path.dirname(output[0])}/{plot_base(wildcards)}.rotated"
     shell:
         """
-        for depth_file in results/{wildcards.sample}/images/novoplasty/{wildcards.seed}_kmer{wildcards.kmer}/*.depth; do
-            python workflow/scripts/images.py --assembler 'novoplasty' --depth --depth_bam "$depth_file" --organelle {params.organelle} >> {log} 2>&1
-        done
+        if [ -f {params.rotated}.fasta ]; then
+            bwa-mem2.avx index {params.rotated}.fasta >> {log} 2>&1
+        fi
         touch {output}
         """
 
-rule run_ogdraw_mito_novoplasty:
+rule run_bwa_mem_rotated:
     input:
-        lambda wildcards: expand("results/{{sample}}/genbanks/novoplasty/{seed}_kmer{kmer}.mitos2.genbank.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/novoplasty/{seed}_kmer{kmer}.mitos2.genbank.rotated.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
+        unpack(assembled_reads),
+        check = "results/{sample}/images/{assembler}/{run}/{assembly}/bwa_index.check"
     output:
-        "results/{sample}/images/novoplasty/{sample}.mito.ogdraw.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/bwa_mem.check"
     log:
-        "logs/{sample}/images/novoplasty/{sample}_run_ogdraw.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_bwa_mem_rotated.log"
     benchmark:
-        "benchmarks/{sample}/images/novoplasty/{sample}_run_ogdraw.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_bwa_mem_rotated.benchmark"
     singularity:
-        f"{config["sif_dir"]}/ogdraw.sif"
-    shell:
-        """
-        for gb_file in results/{wildcards.sample}/genbanks/novoplasty/*.gb; do
-            sed -i 's/DEFINITION  ./DEFINITION  Mitochondrion, complete genome./g' $gb_file && \
-            base_name=$(basename "$gb_file" .gb) && \
-            drawgenemap --infile "$gb_file" --format png --outfile results/{wildcards.sample}/images/novoplasty/"$base_name".png --tidy --useconfig resources/ogd_xml_mitochondrion.xml >> {log} 2>&1
-        done
-        touch {output}
-        """
-
-rule run_ogdraw_chloro_novoplasty:
-    input:
-        lambda wildcards: expand("results/{{sample}}/genbanks/novoplasty/{seed}_kmer{kmer}.chloe.genbank.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/novoplasty/{seed}_kmer{kmer}.chloe.genbank.rotated.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/novoplasty/{seed}_kmer{kmer}.cpgavas2.genbank.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/novoplasty/{seed}_kmer{kmer}.cpgavas2.genbank.rotated.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-    output:
-        "results/{sample}/images/novoplasty/{sample}.chloro.ogdraw.check"
-    log:
-        "logs/{sample}/images/novoplasty/{sample}_run_ogdraw.log"
-    benchmark:
-        "benchmarks/{sample}/images/novoplasty/{sample}_run_ogdraw.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/ogdraw.sif"
-    shell:
-        """
-        for gb_file in results/{wildcards.sample}/genbanks/novoplasty/*.gb; do
-            sed -i 's/DEFINITION  Arabidopsis thaliana chloroplast, complete genome./DEFINITION  Chloroplast, complete genome./g' $gb_file >> {log} 2>&1 && \
-            base_name=$(basename "$gb_file" .gb) && \
-            drawgenemap --infile "$gb_file" --format png --outfile results/{wildcards.sample}/images/novoplasty/"$base_name".png --tidy --useconfig resources/ogd_xml_plastid.xml >> {log} 2>&1
-        done
-        touch {output}
-        """
-
-
-rule get_genbank_fastas_getorganelle:
-    input:
-        lambda wildcards: [
-            f"results/{wildcards.sample}/genbanks/getorganelle/mitos2.genbank.rotated.check"
-        ] if config["samples"][wildcards.sample]["organelle"] == "mito" else [
-            f"results/{wildcards.sample}/genbanks/getorganelle/cpgavas2.genbank.rotated.check",
-            f"results/{wildcards.sample}/genbanks/getorganelle/chloe.genbank.rotated.check"
-        ]
-    output:
-        "results/{sample}/images/getorganelle/get_genbank_fastas_getorganelle.check"
-    log:
-        "logs/{sample}/images/getorganelle/get_genbank_fastas_getorganelle.log"
-    benchmark:
-        "benchmarks/{sample}/images/getorganelle/get_genbank_fastas_getorganelle.benchmark"
+        sif("hic_mapping")
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"]
+        rotated=lambda wildcards, output: f"{os.path.dirname(output[0])}/{plot_base(wildcards)}.rotated"
     shell:
         """
-        python workflow/scripts/images.py --sample {wildcards.sample} \
-            --assembler 'getorganelle' --parse_gb --organelle {params.organelle} >> {log} 2>&1 && \
+        if [ -f {params.rotated}.fasta ]; then
+            {{ bwa-mem2.avx mem -t {threads} {params.rotated}.fasta {input.r1} {input.r2} 2>> {log}
+            }} | samtools view - -Sb | samtools sort - -@ {threads} \
+            -o {params.rotated}_mapping.bam >> {log} 2>&1
+        fi
         touch {output}
         """
 
-rule run_blastn_getorganelle:
+rule run_samtools_depth:
     input:
-        "results/{sample}/images/getorganelle/get_genbank_fastas_getorganelle.check"
+        "results/{sample}/pilon/{assembler}/{run}/{assembly}/{assembly}_mapping.bam"
     output:
-        "results/{sample}/images/getorganelle/blastn.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/{assembly}.depth"
     log:
-        "logs/{sample}/images/getorganelle/run_blastn_getorganelle.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_samtools_depth.log"
     benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_blastn_getorganelle.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_samtools_depth.benchmark"
     singularity:
-        f"{config["sif_dir"]}/blast.sif"
+        sif("hic_mapping")
     shell:
         """
-        perl workflow/scripts/get_fastq.pl -1 results/{wildcards.sample}/getorganelle/extended_1_paired.fq \
-        -2 results/{wildcards.sample}/getorganelle/extended_2_paired.fq \
-        -out results/{wildcards.sample}/images/getorganelle/concat_reads.fa && \
-        for fasta_file in results/{wildcards.sample}/images/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            makeblastdb -in "$fasta_file" -dbtype nucl >> {log} 2>&1 && \
-            blastn -db "$fasta_file" -max_target_seqs 1 \
-            -query results/{wildcards.sample}/images/getorganelle/concat_reads.fa \
-            -out results/{wildcards.sample}/images/getorganelle/"$fasta_header".blastn.out \
-            -outfmt 6 -evalue 0.00001 -task blastn -num_threads {threads} >> {log} 2>&1
-        done
-        rm results/{wildcards.sample}/images/getorganelle/concat_reads.fa && \
-        touch {output}
+        samtools depth {input} > {output} 2>> {log}
         """
 
-rule run_recruitment_plot_getorganelle:
+rule run_samtools_depth_rotated:
     input:
-        "results/{sample}/images/getorganelle/blastn.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/bwa_mem.check"
     output:
-        "results/{sample}/images/getorganelle/recruitment_plot.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/samtools_depth_rotated.check"
     log:
-        "logs/{sample}/images/getorganelle/run_recruitment_plot_getorganelle.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_samtools_depth_rotated.log"
     benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_recruitment_plot_getorganelle.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_samtools_depth_rotated.benchmark"
+    singularity:
+        sif("hic_mapping")
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"]
+        rotated=lambda wildcards, output: f"{os.path.dirname(output[0])}/{plot_base(wildcards)}.rotated"
     shell:
         """
-        for fasta_file in results/{wildcards.sample}/images/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            python workflow/scripts/images.py --sample {wildcards.sample} \
-            --assembler 'getorganelle' --organelle {params.organelle} \
-            --recruitment_plot --blastn_fasta "$fasta_file" \
-            --blastn_out results/{wildcards.sample}/images/getorganelle/"$fasta_header".blastn.out >> {log} 2>&1
-        done
+        if [ -f {params.rotated}_mapping.bam ]; then
+            samtools depth {params.rotated}_mapping.bam > {params.rotated}.depth 2>> {log}
+        fi
         touch {output}
         """
 
-rule run_bwa_index_rotated_getorganelle:
+rule run_depth_plot:
     input:
-        "results/{sample}/images/getorganelle/get_genbank_fastas_getorganelle.check"
+        depth = "results/{sample}/images/{assembler}/{run}/{assembly}/{assembly}.depth",
+        rotated = "results/{sample}/images/{assembler}/{run}/{assembly}/samtools_depth_rotated.check"
     output:
-        "results/{sample}/images/getorganelle/bwa_index.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/depth_plot.check"
     log:
-        "logs/{sample}/images/getorganelle/run_bwa_index_rotated_getorganelle.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_depth_plot.log"
     benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_bwa_index_rotated_getorganelle.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/images/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [[ "$fasta_header" == *.rotated ]]; then
-                bwa-mem2.avx index $fasta_file >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule run_bwa_mem_rotated_getorganelle:
-    input:
-        "results/{sample}/images/getorganelle/bwa_index.check"
-    output:
-        "results/{sample}/images/getorganelle/bwa_mem.check"
-    log:
-        "logs/{sample}/images/getorganelle/run_bwa_mem_rotated_getorganelle.log"
-    benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_bwa_mem_rotated_getorganelle.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/images/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [[ "$fasta_header" == *.rotated ]]; then
-                {{ bwa-mem2.avx mem -t {threads} "$fasta_file" \
-                results/{wildcards.sample}/getorganelle/extended_1_paired.fq \
-                results/{wildcards.sample}/getorganelle/extended_2_paired.fq 2>> {log}
-                }} | samtools view - -Sb | samtools sort - -@ {threads} \
-                -o results/{wildcards.sample}/images/getorganelle/"$fasta_header"_mapping.bam >> {log} 2>&1
-            fi
-        done
-        touch {output}
-        """
-
-rule run_samtools_depth_getorganelle:
-    input:
-        "results/{sample}/pilon/getorganelle/getorganelle_bwa_mem.check"
-    output:
-        "results/{sample}/images/getorganelle/samtools_depth.check"
-    log:
-        "logs/{sample}/images/getorganelle/run_samtools_depth_getorganelle.log"
-    benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_samtools_depth_getorganelle.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/assemblies/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [ "$fasta_header" != "INVALIDSEED_1" ]; then
-                samtools depth results/{wildcards.sample}/pilon/getorganelle/$fasta_header/"$fasta_header"_mapping.bam \
-                > results/{wildcards.sample}/images/getorganelle/"$fasta_header".depth 2>{log}
-            fi
-        done
-        touch {output}
-        """
-
-rule run_samtools_depth_getorganelle_rotated:
-    input:
-        "results/{sample}/images/getorganelle/bwa_mem.check"
-    output:
-        "results/{sample}/images/getorganelle/samtools_depth_rotated.check"
-    log:
-        "logs/{sample}/images/getorganelle/run_samtools_depth_getorganelle_rotated.log"
-    benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_samtools_depth_getorganelle_rotated.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/hic_mapping.sif"
-    shell:
-        """
-        for fasta_file in results/{wildcards.sample}/images/getorganelle/*.fasta; do
-            fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//') && \
-            if [[ "$fasta_header" == *.rotated ]]; then
-                samtools depth results/{wildcards.sample}/images/getorganelle/"$fasta_header"_mapping.bam \
-                > results/{wildcards.sample}/images/getorganelle/"$fasta_header".depth 2>{log}
-            fi
-        done
-        touch {output}
-        """
-
-rule run_depth_plot_getorganelle:
-    input:
-        "results/{sample}/images/getorganelle/samtools_depth.check",
-        "results/{sample}/images/getorganelle/samtools_depth_rotated.check"
-    output:
-        "results/{sample}/images/getorganelle/depth_plot.check"
-    log:
-        "logs/{sample}/images/getorganelle/run_depth_plot_getorganelle.log"
-    benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_depth_plot_getorganelle.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_depth_plot.benchmark"
     params:
-        organelle=lambda wildcards: config["samples"][wildcards.sample]["organelle"]
+        base=lambda wildcards, output: f"{os.path.dirname(output[0])}/{plot_base(wildcards)}"
     shell:
         """
-        for depth_file in results/{wildcards.sample}/images/getorganelle/*.depth; do
-            python workflow/scripts/images.py --assembler 'getorganelle' --depth --depth_bam "$depth_file" --organelle {params.organelle} >> {log} 2>&1
-        done
+        python workflow/scripts/images.py --depth --depth_bam {input.depth} --depth_fasta {params.base}.fasta >> {log} 2>&1
+        if [ -f {params.base}.rotated.depth ]; then
+            python workflow/scripts/images.py --depth --depth_bam {params.base}.rotated.depth --depth_fasta {params.base}.rotated.fasta >> {log} 2>&1
+        fi
         touch {output}
         """
 
-rule run_ogdraw_mito_getorganelle:
+rule run_ogdraw:
     input:
-        lambda wildcards: expand("results/{{sample}}/genbanks/getorganelle/mitos2.genbank.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/getorganelle/mitos2.genbank.rotated.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
+        lambda wildcards: expand("results/{{sample}}/genbanks/{{assembler}}/{{run}}/{{assembly}}.{annotator}.genbank.rotated.check", annotator=annotators(wildcards.sample))
     output:
-        "results/{sample}/images/getorganelle/mito.ogdraw.check"
+        "results/{sample}/images/{assembler}/{run}/{assembly}/ogdraw.check"
     log:
-        "logs/{sample}/images/getorganelle/run_ogdraw.log"
+        "logs/{sample}/images/{assembler}/{run}/{assembly}_run_ogdraw.log"
     benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_ogdraw.benchmark"
+        "benchmarks/{sample}/images/{assembler}/{run}/{assembly}_run_ogdraw.benchmark"
     singularity:
-        f"{config["sif_dir"]}/ogdraw.sif"
+        sif("ogdraw")
+    params:
+        genbanks=ogdraw_genbanks,
+        ogdraw_config=lambda wildcards: "resources/ogd_xml_mitochondrion.xml" if config["samples"][wildcards.sample]["organelle"] == "mito" else "resources/ogd_xml_plastid.xml",
+        definition=lambda wildcards: "'s/DEFINITION  ./DEFINITION  Mitochondrion, complete genome./g'" if config["samples"][wildcards.sample]["organelle"] == "mito" else "'s/DEFINITION  Arabidopsis thaliana chloroplast, complete genome./DEFINITION  Chloroplast, complete genome./g'",
+        dir=output_dir
     shell:
         """
-        for gb_file in results/{wildcards.sample}/genbanks/getorganelle/*.gb; do
-            sed -i 's/DEFINITION  ./DEFINITION  Mitochondrion, complete genome./g' $gb_file && \
-            base_name=$(basename "$gb_file" .gb) && \
-            drawgenemap --infile "$gb_file" --format png --outfile results/{wildcards.sample}/images/getorganelle/"$base_name".png --tidy --useconfig resources/ogd_xml_mitochondrion.xml >> {log} 2>&1
-        done
-        touch {output}
-        """
-
-rule run_ogdraw_chloro_getorganelle:
-    input:
-        lambda wildcards: expand("results/{{sample}}/genbanks/getorganelle/chloe.genbank.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/getorganelle/chloe.genbank.rotated.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/getorganelle/cpgavas2.genbank.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-        lambda wildcards: expand("results/{{sample}}/genbanks/getorganelle/cpgavas2.genbank.rotated.check",
-            kmer=[kmer for kmer in config["samples"][wildcards.sample]["kmers"]],
-            seed=[seed for seed in config["samples"][wildcards.sample]["seeds"]]),
-    output:
-        "results/{sample}/images/getorganelle/chloro.ogdraw.check"
-    log:
-        "logs/{sample}/images/getorganelle/run_ogdraw.log"
-    benchmark:
-        "benchmarks/{sample}/images/getorganelle/run_ogdraw.benchmark"
-    singularity:
-        f"{config["sif_dir"]}/ogdraw.sif"
-    shell:
-        """
-        for gb_file in results/{wildcards.sample}/genbanks/getorganelle/*.gb; do
-            sed -i 's/DEFINITION  Arabidopsis thaliana chloroplast, complete genome./DEFINITION  Chloroplast, complete genome./g' $gb_file >> {log} 2>&1 && \
-            base_name=$(basename "$gb_file" .gb) && \
-            drawgenemap --infile "$gb_file" --format png --outfile results/{wildcards.sample}/images/getorganelle/"$base_name".png --tidy --useconfig resources/ogd_xml_plastid.xml >> {log} 2>&1
+        for gb_file in {params.genbanks}; do
+            if [ -f "$gb_file" ]; then
+                sed -i {params.definition} "$gb_file"
+                base_name=$(basename "$gb_file" .gb)
+                drawgenemap --infile "$gb_file" --format png --outfile {params.dir}/"$base_name".png --tidy --useconfig {params.ogdraw_config} >> {log} 2>&1
+            fi
         done
         touch {output}
         """

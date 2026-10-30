@@ -56,6 +56,9 @@ Options:
   -nbatch <int>       Number of batches used with -batch (default: 3)
   -sifdir <path>      Directory for the Singularity images (default: resources/sif_dir)
   -nhmmer_db <path>   HMM database used by HMMER (default: resources/rfam.hmm)
+  -mitos_db <path>    MITOS2 reference directory, inside the working directory
+                      (default: resources/refseq89m)
+  -mem <int>          Local mode: memory (GB) that NOVOPlasty jobs may use at once
   -h, --help          Show this help and exit
   -v, --version       Show the OrganPipe version and exit
 
@@ -88,6 +91,7 @@ NBATCH=3
 RERUN=false
 SETSLURM="false"
 PARTITION=""
+MEM=""
 
 USED_T=false
 USED_J=false
@@ -159,6 +163,16 @@ while [ "$1" != "" ]; do
         shift
         NHMMER_DB=$1
         ;;
+    -mitos_db)
+        require_value "$1" "$2"
+        shift
+        MITOS_DB=$1
+        ;;
+    -mem)
+        require_value "$1" "$2"
+        shift
+        MEM=$1
+        ;;
     -nbatch)
         require_value "$1" "$2"
         shift
@@ -181,6 +195,7 @@ if [ "$SETSLURM" = true ]; then
     [ "$USED_T" = true ] && fail "-t is not allowed with -slurm. Use -j instead."
     [ "$USED_J" = false ] && fail "When using -slurm, you must use -j (not -t) to set the number of jobs submitted to the queue."
     [ -z "$PARTITION" ] && fail "-partition is required when using -slurm."
+    [ -n "$MEM" ] && fail "-mem is not allowed with -slurm. Set the memory of each rule in config/resources.yaml."
 fi
 
 print_banner
@@ -188,6 +203,24 @@ print_banner
 CONFIGFILE=$(realpath "$CONFIGFILE")
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
 WORKDIR=$(realpath "$WORKDIR")
+
+# Paths given on the command line are relative to where OrganPipe.sh was called from
+[ -n "$SIFDIR" ] && SIFDIR=$(realpath "$SIFDIR")
+[ -n "$NHMMER_DB" ] && NHMMER_DB=$(realpath "$NHMMER_DB")
+[ -n "$MITOS_DB" ] && MITOS_DB=$(realpath "$MITOS_DB")
+
+# The scripts and the rules use paths relative to the working directory
+[ -d "$WORKDIR" ] || fail "Working directory not found: $WORKDIR"
+cd "$WORKDIR"
+
+# MITOS2 runs in a container that only sees the working directory
+if [ -n "$MITOS_DB" ]; then
+    [[ "$MITOS_DB" == "$WORKDIR"/* ]] || fail "-mitos_db must be inside the working directory ($WORKDIR)."
+    MITOS_DB=${MITOS_DB#"$WORKDIR"/}
+else
+    MITOS_DB="resources/refseq89m"
+fi
+[ -d "$MITOS_DB" ] || fail "MITOS2 reference directory not found: $MITOS_DB"
 
 if [[ "$CONFIGFILE" == *.csv ]]; then
     CONFIGTYPE="csv"
@@ -211,7 +244,6 @@ python "$SCRIPTDIR"/workflow/scripts/create_snakemake_config.py \
         --configfile "$CONFIGFILE"
 
 if [ -n "$SIFDIR" ]; then
-    SIFDIR=$(realpath "$SIFDIR")
     python $WORKDIR/workflow/scripts/singularity.py --sifdir $SIFDIR
     grep -qxF "sif_dir: '$SIFDIR'" config/snakemake_config.yaml || echo "sif_dir: '$SIFDIR'" >> config/snakemake_config.yaml
 
@@ -221,12 +253,13 @@ else
 fi
 
 if [ -n "$NHMMER_DB" ]; then
-    NHMMER_DB=$(realpath "$NHMMER_DB")
     grep -qxF "nhmmer_db: '$NHMMER_DB'" config/snakemake_config.yaml || echo "nhmmer_db: '$NHMMER_DB'" >> config/snakemake_config.yaml
 
 else
     grep -qxF "nhmmer_db: 'resources/rfam.hmm'" config/snakemake_config.yaml || echo "nhmmer_db: 'resources/rfam.hmm'" >> config/snakemake_config.yaml
 fi
+
+grep -qxF "mitos_db: '$MITOS_DB'" config/snakemake_config.yaml || echo "mitos_db: '$MITOS_DB'" >> config/snakemake_config.yaml
 
 mkdir -p $WORKDIR/tmp $WORKDIR/singularity
 
@@ -243,6 +276,7 @@ if [ "$SETSLURM" = true ]; then
 else
     PROFILE=$WORKDIR/profiles/local
     CORES="--cores $THREADS --use-singularity"
+    [ -n "$MEM" ] && CORES="$CORES --resources mem_mb=$((MEM * 1000))"
     cat $WORKDIR/config/local_params.yaml $WORKDIR/config/threads.yaml | \
         sed "s|{WORKDIR}|$WORKDIR|g; s|{THREADS}|$THREADS|g" > $PROFILE/config.yaml
 fi

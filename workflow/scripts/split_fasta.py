@@ -30,12 +30,13 @@ def split_novoplasty_fasta(input_file, output_dir):
             index += 1  # Increment the index for the next sequence
 
 def write_sequence_to_file(header, sequence, output_dir, index):
-    # Create a safe filename by replacing invalid characters
+    # The file name and the header must match: the next steps use the name as the assembly name
     safe_header = header.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("+", "_")
-    filename = os.path.join(output_dir, "{}_{}.fasta".format(safe_header, index))
+    name = "{}_{}".format(safe_header, index)
+    filename = os.path.join(output_dir, "{}.fasta".format(name))
 
     with open(filename, "w") as output_file:
-        output_file.write(">{}_{}\n".format(header, index))  # Write the header
+        output_file.write(">{}\n".format(name))  # Write the header
         output_file.write("{}\n".format(sequence))  # Write the sequence
 
 def split_getorganelle_fasta(input_fasta, output_dir):

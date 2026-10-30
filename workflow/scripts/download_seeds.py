@@ -156,10 +156,9 @@ def find_seed(organism, gene, max_n, outpath, organelle):
                 continue
 
             if taxon_id not in organisms:
-                organisms.append(taxon_id)
-
                 fasta_file = f"{outpath}/{gene}_{taxon_id}.fasta"
                 sequence = str(record.seq)
+                seed_sequence = None
 
                 if len(sequence) > 3000:
                     for feature in record.features:
@@ -168,17 +167,19 @@ def find_seed(organism, gene, max_n, outpath, organelle):
                         if feature.type == "gene" and (
                             gene.lower() in gene_name.lower()
                         ):
-                            gene_sequence = str(feature.location.extract(record).seq)
-                            with open(fasta_file, "w") as output:
-                                output.write(f">{gene}_{taxon_id}\n")
-                                output.write(gene_sequence)
+                            seed_sequence = str(feature.location.extract(record).seq)
                             break
                 else:
+                    seed_sequence = sequence
+
+                # A long record without the gene does not count: the next one of this taxon may have it
+                if seed_sequence:
                     with open(fasta_file, "w") as output:
                         output.write(f">{gene}_{taxon_id}\n")
-                        output.write(sequence)
+                        output.write(seed_sequence)
 
-                n += 1
+                    organisms.append(taxon_id)
+                    n += 1
 
             if n == max_n:
                 return logging.info(
@@ -194,7 +195,8 @@ def main(taxon, outpath, maxcount, genes, organelle):
     # args = parse_arguments()
 
     Entrez.email = "ncbi.itvds@pq.itv.org"
-    Entrez.api_key = "f178b74aee7a97072b0dc4e10fc75b3b5508"
+    # Optional: with a key, NCBI allows 10 requests per second instead of 3
+    Entrez.api_key = os.environ.get("NCBI_API_KEY")
 
     FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 

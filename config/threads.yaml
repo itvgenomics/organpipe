@@ -14,31 +14,20 @@
 
 set-threads:
   # Trimming
-  run_fastp:                                  4
-  run_cutadapt:                               4
+  run_fastp:            4
+  run_cutadapt:         4
 
   # Assembly
-  run_getorganelle:                           8
-  run_mitohifi:                               8
+  run_getorganelle:     8
+  run_mitohifi:         8
 
   # Error correction (read mapping + Pilon)
-  run_novoplasty_bwa_mem:                     4
-  run_getorganelle_bwa_mem:                   4
-  run_novoplasty_pilon:                       2
-  run_getorganelle_pilon:                     2
+  run_bwa_mem:          4
+  run_pilon:            2
 
-  # Images (read mapping for the depth plots)
-  run_bwa_mem_rotated_novoplasty:             4
-  run_bwa_mem_rotated_getorganelle:           4
+  # Images (BLAST and read mapping for the plots)
+  run_blastn:           4
+  run_bwa_mem_rotated:  4
 
   # nhmmer (ncRNA and intergenic region search)
-  run_ncRNA_nhmmer_novoplasty:                4
-  run_intergenes_nhmmer_novoplasty:           4
-  run_ncRNA_nhmmer_chloro_novoplasty:         4
-  run_intergenes_nhmmer_chloro_novoplasty:    4
-  run_ncRNA_nhmmer_getorganelle:              4
-  run_intergenes_nhmmer_getorganelle:         4
-  run_ncRNA_nhmmer_chloro_getorganelle:       4
-  run_intergenes_nhmmer_chloro_getorganelle:  4
-  run_ncRNA_nhmmer_long:                      4
-  run_intergenes_nhmmer_long:                 4
+  run_nhmmer:           4

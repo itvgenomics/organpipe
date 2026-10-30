@@ -8,10 +8,10 @@
 # The total number of cores is set with `OrganPipe.sh -t <N>`. A job never uses
 # more threads than that, even if a higher value is set in config/threads.yaml.
 #
-# Memory note: in local mode, Snakemake does not limit memory. The NOVOPlasty
-# and GetOrganelle steps use up to `max_memory` (GB, from your config file) per
-# job. Keep `-t` x `max_memory` within the RAM of your machine (see the README
-# warning about parallelization).
+# Memory note: in local mode, Snakemake does not limit memory by default. The
+# NOVOPlasty steps use up to `max_memory` (GB, from your config file) per job.
+# Use `OrganPipe.sh -mem <GB>` to limit them, or keep `-t` x `max_memory` within
+# the RAM of your machine.
 ###############################################################################
 
 # ── General settings ─────────────────────────────────────────────────────────

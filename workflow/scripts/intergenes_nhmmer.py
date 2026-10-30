@@ -1,75 +1,28 @@
 from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
-from collections import defaultdict
-import warnings
 import os
 import argparse
-from timeit import default_timer as timer
 import pandas as pd
-import sys
-import subprocess
 import logging
-import glob
+from naming import warn
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Uses NHMMER to recheck the MITOS2 annotation"
+        description="Get the intergenic sequences of an annotated assembly."
     )
     parser.add_argument(
-        "--organelle", help="Organelle type: mito or chloro", required=True
+        "--mitos_dir", help="MITOS2 output directory of the assembly", nargs="?"
     )
     parser.add_argument(
-        "--sequencing_type",
-        help="Equipment used in the sequencing (e.g. short or long)",
-        required=True,
+        "--genbank", help="GenBank file of the assembly (CPGAVAS2 or MitoHiFi)", nargs="?"
     )
     parser.add_argument(
-        "--sample",
-        help="Sample dir",
-        required=False,
-        nargs="?",
+        "--output_dir", help="Directory for intergenes_filter.fasta", required=True
     )
-    parser.add_argument(
-        "--kmer",
-        help="kmer used",
-        nargs="?",
-    )
-    parser.add_argument(
-        "--seed",
-        help="Seed used",
-        nargs="?",
-    )
-    parser.add_argument("--assembler", help="Assembler used (e.g. getorganelle or novoplasty)", nargs="?")
 
     args = parser.parse_args()
 
     return args
-
-
-# Function to create the HMMER output directory
-def create_dirs(outpath):
-    if not os.path.exists(f"{outpath}/nhmmer"):
-        logging.info(f"Creating {outpath}/nhmmer")
-        os.makedirs(f"{outpath}/nhmmer")
-    else:
-        logging.info(f"{outpath}/nhmmer exists")
-
-
-def list_directories(path):
-    # List to hold directories
-    directories = []
-
-    # Iterate through the items in the specified path
-    for item in os.listdir(path):
-        # Create the full path
-        full_path = os.path.join(path, item)
-        # Check if it is a directory
-        if os.path.isdir(full_path):
-            directories.append(item)
-
-    return directories
 
 
 # Function to parse Fasta file
@@ -261,128 +214,30 @@ def extract_unannotated_regions_gb(genbank_file, padding=10):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    if args.organelle == "mito":
-        if args.sequencing_type == "short":
-            if args.assembler == "novoplasty":
-                annotations_path = (
-                    f"results/{args.sample}/mitos2/novoplasty/{args.seed}_kmer{args.kmer}"
-                )
-                annotations_dir = list_directories(annotations_path)
 
-                for annotation in annotations_dir:
-                    output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation}"
+    intergenes_file = f"{args.output_dir}/intergenes.fasta"
+    filtered_file = f"{args.output_dir}/intergenes_filter.fasta"
+    os.makedirs(args.output_dir, exist_ok=True)
 
-                    if not os.path.exists(output_path):
-                        os.makedirs(output_path)
+    if args.mitos_dir and os.path.exists(f"{args.mitos_dir}/result.bed"):
+        positions, positions_list = get_positions(f"{args.mitos_dir}/result.bed")
+        extract_intergenes_sequences(
+            f"{args.mitos_dir}/mitos2.fasta",
+            positions,
+            intergenes_file,
+            positions_list,
+        )
+        filter_fasta_by_size(intergenes_file, filtered_file, 30, 10000)
 
-                    bed_file = f"{annotations_path}/{annotation}/result.bed"
-                    if os.path.exists(bed_file):
-                        positions, positions_list = get_positions(bed_file)
-                        extract_intergenes_sequences(
-                            f"{annotations_path}/{annotation}/mitos2.fasta",
-                            positions,
-                            f"{output_path}/intergenes.fasta",
-                            positions_list,
-                        )
-                        filter_fasta_by_size(
-                            f"{output_path}/intergenes.fasta",
-                            f"{output_path}/intergenes_filter.fasta",
-                            30, 10000
-                        )
-            elif args.assembler == "getorganelle":
-                annotations_path = (
-                    f"results/{args.sample}/mitos2/getorganelle"
-                )
-                annotations_dir = list_directories(annotations_path)
+    elif args.genbank and os.path.exists(args.genbank):
+        unannotated_regions = extract_unannotated_regions_gb(args.genbank)
 
-                for annotation in annotations_dir:
-                    output_path = f"results/{args.sample}/nhmmer/getorganelle/{annotation}"
+        with open(intergenes_file, "w") as output:
+            for left_gene, right_gene, seq in unannotated_regions:
+                output.write(f">{left_gene}-{right_gene}\n{seq}\n")
 
-                    if not os.path.exists(output_path):
-                        os.makedirs(output_path)
+        filter_fasta_by_size(intergenes_file, filtered_file, 30)
 
-                    bed_file = f"{annotations_path}/{annotation}/result.bed"
-                    if os.path.exists(bed_file):
-                        positions, positions_list = get_positions(bed_file)
-                        extract_intergenes_sequences(
-                            f"{annotations_path}/{annotation}/mitos2.fasta",
-                            positions,
-                            f"{output_path}/intergenes.fasta",
-                            positions_list,
-                        )
-                        filter_fasta_by_size(
-                            f"{output_path}/intergenes.fasta",
-                            f"{output_path}/intergenes_filter.fasta",
-                            30, 10000
-                        )
-
-        else:
-            output_path = f"results/{args.sample}/nhmmer/{args.seed}"
-
-            genbank_file = (
-                f"results/{args.sample}/mitohifi/{args.seed}/final_mitogenome.gb"
-            )
-
-            if os.path.exists(genbank_file):
-                unannotated_regions = extract_unannotated_regions_gb(genbank_file)
-
-                with open(f"{output_path}/intergenes.fasta", "w") as output:
-                    for left_gene, right_gene, seq in unannotated_regions:
-                        output.write(f">{left_gene}-{right_gene}\n{seq}\n")
-
-                filter_fasta_by_size(
-                    f"{output_path}/intergenes.fasta",
-                    f"{output_path}/intergenes_filter.fasta",
-                    30,
-                )
-
-    elif args.organelle == "chloro":
-        if args.sequencing_type == "short":
-            if args.assembler == "novoplasty":
-                annotations_path = f"results/{args.sample}/genbanks/novoplasty"
-
-                for annotation in os.listdir(annotations_path):
-                    output_path = f"results/{args.sample}/nhmmer/novoplasty/{args.seed}_kmer{args.kmer}/{annotation.replace(".cpgavas2.gb", "")}"
-
-                    if annotation.endswith(".cpgavas2.gb") and (
-                        "Circularized_assembly_1" in annotation or "Option_1" in annotation
-                    ) and args.kmer in annotation and args.seed in annotation:
-
-                        os.makedirs(output_path, exist_ok=True)
-
-                        unannotated_regions = extract_unannotated_regions_gb(
-                            os.path.join(annotations_path, annotation)
-                        )
-
-                        with open(f"{output_path}/intergenes.fasta", "w") as output:
-                            for left_gene, right_gene, seq in unannotated_regions:
-                                output.write(f">{left_gene}-{right_gene}\n{seq}\n")
-
-                        filter_fasta_by_size(
-                            f"{output_path}/intergenes.fasta",
-                            f"{output_path}/intergenes_filter.fasta",
-                            30,
-                        )
-            elif args.assembler == "getorganelle":
-                annotations_path = f"results/{args.sample}/genbanks/getorganelle"
-
-                for annotation in os.listdir(annotations_path):
-                    output_path = f"results/{args.sample}/nhmmer/getorganelle/{annotation.replace(".cpgavas2.gb", "")}"
-
-                    if annotation.endswith(".cpgavas2.gb"):
-
-                        os.makedirs(output_path, exist_ok=True)
-
-                        unannotated_regions = extract_unannotated_regions_gb(
-                            os.path.join(annotations_path, annotation)
-                        )
-
-                        with open(f"{output_path}/intergenes.fasta", "w") as output:
-                            for left_gene, right_gene, seq in unannotated_regions:
-                                output.write(f">{left_gene}-{right_gene}\n{seq}\n")
-
-                        filter_fasta_by_size(
-                            f"{output_path}/intergenes.fasta",
-                            f"{output_path}/intergenes_filter.fasta",
-                            30,
-                        )
+    else:
+        warn(f"No annotation found for {args.output_dir}, so there are no intergenic sequences to search.")
+        open(filtered_file, "w").close()

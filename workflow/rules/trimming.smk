@@ -13,17 +13,17 @@ rule run_fastp:
     benchmark:
         "benchmarks/{sample}/trimming/{sample}_run_fastp.benchmark"
     params:
-        minquality=lambda wildcards: config["samples"][wildcards.sample]["minquality"],
-        minlength=lambda wildcards: config["samples"][wildcards.sample]["minlength"],
+        minquality=sample_param("minquality"),
+        minlength=sample_param("minlength"),
         adapters=lambda wildcards: f"--adapter_fasta resources/{wildcards.sample}/adapters.fasta" if config["samples"][wildcards.sample].get("adapters", "") else " --detect_adapter_for_pe "
     singularity:
-        f"{config["sif_dir"]}/fastp.sif"
+        sif("fastp")
     shell:
         """
         fastp --in1 {input.r1} --in2 {input.r2} {params.adapters} \
-        --length_required {params.minlength} --cut_mean_quality {params.minquality} --thread {threads} \
-        --html resources/{wildcards.sample}/rawreads/fastp.html \
-        --json resources/{wildcards.sample}/rawreads/fastp.json \
+        --length_required {params.minlength} --cut_front --cut_tail --cut_mean_quality {params.minquality} --thread {threads} \
+        --html {output.html} \
+        --json {output.json} \
         --out1 {output.r1} --out2 {output.r2} >> {log} 2>&1
         """
 
@@ -34,13 +34,13 @@ rule run_cutadapt:
         reads=temp("resources/{sample}/rawreads/{sample}.trimmed.fastq.gz"),
         check="resources/{sample}/rawreads/{sample}.trimmed.check"
     log:
-        "logs/{sample}.run_cutadapt.log"
+        "logs/{sample}/trimming/{sample}_run_cutadapt.log"
     benchmark:
-        "benchmarks/{sample}.run_cutadapt.txt"
+        "benchmarks/{sample}/trimming/{sample}_run_cutadapt.benchmark"
     params:
-        adapters=lambda wildcards: config["samples"][wildcards.sample]["pacbio_adapters"]
+        adapters=sample_param("pacbio_adapters")
     singularity:
-        f"{config["sif_dir"]}/cutadapt.sif"
+        sif("cutadapt")
     shell:
         """
         cutadapt -j {threads} --discard -O 35 --rc \
@@ -52,19 +52,17 @@ rule run_cutadapt:
 rule run_seqtk:
     input:
         lambda wildcards:
-            "resources/{sample}/rawreads/{sample}.trimmed.fastq.gz" if config["samples"][wildcards.sample].get("run_trimming", "").lower() == "yes"
+            "resources/{sample}/rawreads/{sample}.trimmed.fastq.gz" if is_yes(wildcards.sample, "run_trimming")
             else "resources/{sample}/rawreads/{sample}.fastq.gz",
     output:
-        temp("resources/{sample}/rawreads/{sample}.trimmed.fasta")
+        temp("resources/{sample}/rawreads/{sample}.converted.fasta")
     log:
-        "logs/{sample}.run_seqtk.log"
+        "logs/{sample}/trimming/{sample}_run_seqtk.log"
     benchmark:
-        "benchmarks/{sample}.run_seqtk.txt"
-    params:
-        adapters=lambda wildcards: config["samples"][wildcards.sample]["pacbio_adapters"]
+        "benchmarks/{sample}/trimming/{sample}_run_seqtk.benchmark"
     singularity:
-        f"{config["sif_dir"]}/seqtk.sif"
+        sif("seqtk")
     shell:
         """
-        seqtk seq -a {input} > {output} 2>&1
+        seqtk seq -a {input} > {output} 2> {log}
         """

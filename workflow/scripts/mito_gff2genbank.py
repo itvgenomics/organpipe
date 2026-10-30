@@ -4,10 +4,9 @@ from Bio.SeqRecord import SeqRecord
 import argparse
 from Bio.Seq import Seq
 import os
-import re
 import logging
 import sys
-import subprocess
+from naming import warn
 
 
 def parse_arguments():
@@ -15,35 +14,14 @@ def parse_arguments():
         description="Create GenBank file from the circularized mtGenome"
     )
     parser.add_argument("--code", help="Genetic code", required=True)
-    parser.add_argument("--sample", help="Sample code", required=True)
     parser.add_argument(
-        "--seed", help="Seed used to assemble the mitogenome", required=False, nargs="?"
+        "--annotation_dir", help="MITOS2 output directory of the assembly", required=True
     )
-    parser.add_argument(
-        "--kmer", help="kmer used to assemble the mitogenome", required=False, nargs="?"
-    )
-    parser.add_argument(
-        "--assembler", help="Assembler used to assemble the mitogenome", required=True
-    )
+    parser.add_argument("--output", help="GenBank file to write", required=True)
 
     args = parser.parse_args()
 
     return args
-
-
-def list_directories(path):
-    # List to hold directories
-    directories = []
-
-    # Iterate through the items in the specified path
-    for item in os.listdir(path):
-        # Create the full path
-        full_path = os.path.join(path, item)
-        # Check if it is a directory
-        if os.path.isdir(full_path):
-            directories.append(item)
-
-    return directories
 
 
 def create_genbank(fasta_file, gff_file, output_file, code):
@@ -127,7 +105,8 @@ def create_genbank(fasta_file, gff_file, output_file, code):
             elif feature_type == "exon":
                 attr_parts = attributes.split(";")
                 gene = attr_parts[1].replace("Name=", "")
-                if gene in ["nad1", "nad2","cox1", "cox2", "atp8", "atp6", "cox3", "nad3", "nad4l", "nad4", "nad5", "nad6", "cob"]:
+                # tRNA and rRNA features are written above; every other exon is a coding gene
+                if not gene.startswith(("trn", "rrn")):
                     if int(start) > int(end):
                         f1 = FeatureLocation(int(start) - 1, len(str(fasta_seq.seq)))
                         f2 = FeatureLocation(0, int(end))
@@ -186,57 +165,19 @@ if __name__ == "__main__":
     logging.info(
         f"""
 -   GENETIC CODE: {args.code}
--   SAMPLE: {args.sample}
--   SEED: {args.seed}
--   KMER: {args.kmer}
+-   ANNOTATION: {args.annotation_dir}
 """
     )
 
-    sample = args.sample
-    seed = args.seed
-    kmer = args.kmer
-    code = args.code
+    fasta_file = f"{args.annotation_dir}/mitos2.fasta"
+    gff_file = f"{args.annotation_dir}/result.gff"
 
-    if args.assembler == "novoplasty":
-        annotations_path = f"results/{sample}/mitos2/novoplasty/{seed}_kmer{kmer}"
-
-        if not os.path.exists(f"results/{sample}/genbanks/novoplasty"):
-            os.makedirs(f"results/{sample}/genbanks/novoplasty")
-
-        annotations_dir = list_directories(annotations_path)
-        for annotation in annotations_dir:
-            gb_output_file = f"results/{sample}/genbanks/novoplasty/{annotation}.gb"
-            fasta_output_file = f"results/{sample}/genbanks/novoplasty/{annotation}.fasta"
-
-            if os.path.exists(
-                f"{annotations_path}/{annotation}/mitos2.fasta"
-            ) and os.path.exists(f"{annotations_path}/{annotation}/result.gff"):
-
-                create_genbank(
-                    fasta_file=f"{annotations_path}/{annotation}/mitos2.fasta",
-                    gff_file=f"{annotations_path}/{annotation}/result.gff",
-                    output_file=gb_output_file,
-                    code=code,
-                )
-
-    elif args.assembler == "getorganelle":
-        annotations_path = f"results/{sample}/mitos2/getorganelle"
-
-        if not os.path.exists(f"results/{sample}/genbanks/getorganelle"):
-            os.makedirs(f"results/{sample}/genbanks/getorganelle")
-
-        annotations_dir = list_directories(annotations_path)
-        for annotation in annotations_dir:
-            gb_output_file = f"results/{sample}/genbanks/getorganelle/{annotation}.gb"
-            fasta_output_file = f"results/{sample}/genbanks/getorganelle/{annotation}.fasta"
-
-            if os.path.exists(
-                f"{annotations_path}/{annotation}/mitos2.fasta"
-            ) and os.path.exists(f"{annotations_path}/{annotation}/result.gff"):
-
-                create_genbank(
-                    fasta_file=f"{annotations_path}/{annotation}/mitos2.fasta",
-                    gff_file=f"{annotations_path}/{annotation}/result.gff",
-                    output_file=gb_output_file,
-                    code=code,
-                )
+    if os.path.exists(fasta_file) and os.path.exists(gff_file):
+        create_genbank(
+            fasta_file=fasta_file,
+            gff_file=gff_file,
+            output_file=args.output,
+            code=args.code,
+        )
+    else:
+        warn(f"MITOS2 produced no annotation in {args.annotation_dir}, so there is no GenBank file.")

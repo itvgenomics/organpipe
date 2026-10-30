@@ -121,5 +121,5 @@ def main(species, email, outfolder, min_length, n):
                 g, outfolder, min_length, considered, org_type, n
             )
 
-    if n == 1:  # Assuming n was originally set to 1
-        logging.info("No appropriate mitogenome found")
+    if n > 0:
+        logging.warning(f"{n} of the requested mitogenomes were not found")

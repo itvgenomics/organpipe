@@ -247,6 +247,14 @@ def detect_assembler(text):
     return "Shared"
 
 
+def expand_run(wildcards):
+    """Add the seed and k-mer of a NOVOPlasty run ({seed}_kmer{kmer}) to the wildcards."""
+    seed, separator, kmer = wildcards.get("run", "").rpartition("_kmer")
+    if separator:
+        wildcards.update(seed=seed, kmer=kmer)
+    return wildcards
+
+
 def classify(relpath, patterns, organelles, known_samples):
     """Return (sample, rule, stage, wildcards) for a benchmark path."""
     candidates = []
@@ -259,14 +267,14 @@ def classify(relpath, patterns, organelles, known_samples):
 
     if candidates:
         pattern, match = candidates[0]
-        wildcards = match.groupdict()
+        wildcards = expand_run(match.groupdict())
         sample = wildcards.get("sample") or relpath.split("/")[0]
         # Rules that share a benchmark path (e.g. mito/chloro variants): use the organelle.
         organelle = organelles.get(sample, "")
         if len(candidates) > 1 and organelle:
             for cand, cand_match in candidates:
                 if organelle in cand["rule"].lower():
-                    pattern, wildcards = cand, cand_match.groupdict()
+                    pattern, wildcards = cand, expand_run(cand_match.groupdict())
                     break
         return sample, pattern["rule"], pattern["stage"], wildcards
 
@@ -408,7 +416,9 @@ def coverage_gaps(jobs):
     same sample and assembler, which points to missing or failed jobs."""
     gaps = []
     seeded = [j for j in jobs if j["wildcards"].get("seed")]
-    for (sample, _), group in group_by(seeded, lambda j: (j["sample"], j["assembler"])).items():
+    # A run without assemblies has no jobs after assembly: only compare rules of the same side
+    sides = lambda j: (j["sample"], j["assembler"], j["stage"] == "assembly")
+    for (sample, _, _), group in group_by(seeded, sides).items():
         combos = {
             rule: {(j["wildcards"]["seed"], j["wildcards"].get("kmer", "")) for j in rule_jobs}
             for rule, rule_jobs in group_by(group, lambda j: j["rule"]).items()

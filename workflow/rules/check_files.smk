@@ -1,27 +1,8 @@
-import os
-import subprocess
-
 def get_shortreads(sample):
-    files_list = []
-    for root, dirs, files in os.walk(config["samples"][sample]["reads_path"]):
-        for file in files:
-            file_path = os.path.join(root, file)
-            files_list.append(file_path)
-
-    reads = [file for file in files_list if sample in file]
-    forward_reads = [file for file in reads if "_R1" in file or "pair1" in file]
-    reverse_reads = [file for file in reads if "_R2" in file or "pair2" in file]
-    return {"forward": forward_reads[0], "reverse": reverse_reads[0]}
+    return find_short_reads(sample, config["samples"][sample]["reads_path"])
 
 def get_longreads(sample):
-    files_list = []
-    for root, dirs, files in os.walk(config["samples"][sample]["reads_path"]):
-        for file in files:
-            file_path = os.path.join(root, file)
-            files_list.append(file_path)
-
-    long_reads = [file for file in files_list if sample in file]
-    return {"long_reads": long_reads[0]}
+    return find_long_reads(sample, config["samples"][sample]["reads_path"])
 
 rule check_shortreads_files:
     input:
@@ -38,7 +19,7 @@ rule check_shortreads_files:
 
 rule check_fastq_longreads:
     input:
-        long_reads=lambda wildcards: get_longreads(wildcards.sample)["long_reads"],
+        long_reads=lambda wildcards: get_longreads(wildcards.sample),
     output:
         temp("resources/{sample}/rawreads/{sample}.fastq.gz")
     shell:
@@ -52,7 +33,7 @@ rule check_fastq_longreads:
 
 rule check_fasta_longreads:
     input:
-        long_reads=lambda wildcards: get_longreads(wildcards.sample)["long_reads"],
+        long_reads=lambda wildcards: get_longreads(wildcards.sample),
     output:
         temp("resources/{sample}/rawreads/{sample}.fasta")
     shell:
@@ -66,7 +47,7 @@ rule check_fasta_longreads:
 
 rule check_adapters:
     input:
-        lambda wildcards: f"resources/{wildcards.sample}/adapters.fasta" if config["samples"][wildcards.sample].get("adapters", "") else "test_data/adapters.fasta"
+        lambda wildcards: config["samples"][wildcards.sample]["adapters"] or "test_data/adapters.fasta"
     output:
         "resources/{sample}/adapters.fasta"
     shell:
@@ -96,7 +77,7 @@ rule extract_table2asn:
         "resources/table2asn.linux64"
     shell:
         """
-        cd resources && gunzip table2asn.linux64.gz && chmod +x table2asn.linux64
+        gunzip -c {input} > {output} && chmod +x {output}
         """
 
 rule index_hmmer_db:
@@ -105,7 +86,7 @@ rule index_hmmer_db:
     output:
         expand("resources/nhmmer_db.hmm.{ext}", ext=['h3f', 'h3i', 'h3m', 'h3p'])
     singularity:
-        f"{config["sif_dir"]}/hmmer.sif"
+        sif("hmmer")
     shell:
         """
         hmmpress {input}
@@ -113,7 +94,7 @@ rule index_hmmer_db:
 
 rule check_reference:
     input:
-        lambda wildcards: config["samples"][wildcards.sample]["reference"] if config["samples"][wildcards.sample].get("reference", "") else "test_data/reference.fasta"
+        lambda wildcards: config["samples"][wildcards.sample]["reference"] or "test_data/reference.fasta"
     output:
         "resources/{sample}/reference.fasta"
     shell:
@@ -131,7 +112,7 @@ rule download_getorganelle_db:
     log:
         "logs/getorganelle/download_getorganelle_db.log"
     singularity:
-        f"{config["sif_dir"]}/getorganelle.sif"
+        sif("getorganelle")
     shell:
         """
         export PATH=/opt/conda/bin:$PATH && \
