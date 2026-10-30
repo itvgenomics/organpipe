@@ -29,6 +29,8 @@
 - The ncRNA and intergenic search now uses `nhmmscan`, the HMMER tool for nucleotide databases, instead of `hmmscan`. The columns of `nhmmer_ncRNA.csv` and `nhmmer_intergenes.csv` changed accordingly.
 - The NCBI API key is now read from the `NCBI_API_KEY` environment variable, and is optional.
 - `OrganPipe.sh` can now be called from any directory.
+- `sample: "all"` now also works for long reads and ignores `Undetermined` files in `.fastq.gz`, as documented. The run stops if it finds no samples.
+- Completed `.gitignore`, so a run leaves the repository clean. Removed the compiled Python files from the repository and `workflow/scripts/create_hmmdb.py`, which no step used.
 - Reorganized `config/local_params.yaml` and `config/slurm_params.yaml`, with comments explaining each setting:
   - Threads moved to `config/threads.yaml`, shared by the local and SLURM modes. It lists only the rules that use more than 1 thread.
   - Memory per rule moved to `config/resources.yaml`. It lists only the rules that need more than the defaults.
@@ -44,17 +46,21 @@
 - Bases other than A, C, G and T were deleted from NOVOPlasty assemblies, which shifted the coordinates. They are now replaced with `N` and reported in `warnings.txt`.
 - The ncRNA and intergenic search found nothing for chloroplast assemblies of NOVOPlasty, because it looked for the old assembly names.
 - `run_nhmmer: "Yes"` failed for long reads.
+- `sequencing_type: "Short"` and other values with capital letters failed in the ncRNA and intergenic search. `organelle` and `sequencing_type` are now case-insensitive in every step.
 - CPGAVAS2 could no longer be downloaded, because the Sylabs library (`library.sylabs.io`) is offline. The image now comes from Docker Hub (`brunomsilva/cpgavas2:latest`).
 - Chloroplast samples failed on a new installation, because `resources/table2asn.linux64` was never extracted. Extracting it no longer deletes the `.gz` file.
 - CPGAVAS2 and Chloë could overwrite each other's temporary files when running at the same time.
 - `adapters` failed with a cyclic dependency error whenever it was set.
 - Long reads in `.fastq.gz` without trimming were given to MitoHiFi as a compressed file named `.fasta`.
 - Genes with the same product (e.g. two `tRNA-Leu`) were lost in the ncRNA search.
+- A MITOS2 run without annotation stopped the report of the sample. It is now listed in `warnings.txt`.
+- A NOVOPlasty run could mix circularized assemblies with options, depending on the order of the files in its folder.
+- Messages of `seqtk` could end up in the FASTA file given to MitoHiFi, and repeating a `run_blastn` job duplicated its reads.
 - `kmers` with a single value, a list in `target_size` and blank GetOrganelle fields no longer fail.
 - `cpgavas2_codon_usage.csv`, `cpgavas2_gene_composition.csv`, `cpgavas2_intron_exon.csv` and `cpgavas2_problems.csv` were never written.
 - A long-read sample without references on NCBI now stops with an error, instead of finishing without results.
 - Seeds that were counted without being written no longer reduce the number of seeds downloaded from NCBI.
-- `check_config.py` now stops the run for an invalid YAML file or invalid `pacbio_adapters`, and checks `max_memory` and the sample names.
+- `check_config.py` now stops the run for an invalid YAML file, invalid `pacbio_adapters` or a long-read `.fasta` file with trimming, and checks `max_memory` and the sample names.
 - Logs are no longer overwritten when a step processes several files, and rules no longer share log files.
 - `OrganPipe.sh` now prints a clear error for unknown options, options missing their value and missing required options (`-c`, `-d`, `-t`), instead of exiting silently. The SLURM option checks run before the banner is printed.
 - Fixed the benchmark path of `run_getorganelle_pilon`, which was written to a file literally named `{run_pilon.benchmark`.

@@ -50,10 +50,10 @@ The last command runs the bundled test dataset (see [Testing with the sample dat
   - pull the Singularity images on the first run;
   - search NCBI for seeds (`search_ncbi: "Yes"`) and for MitoHiFi references (long reads);
   - download the GetOrganelle databases (`run_getorganelle: "Yes"`).
-- **Disk space** for the Singularity images (stored once in `resources/sif_dir`, or in the directory given with `-sifdir`), plus the intermediate files of your samples.
+- **Disk space** for the Singularity images (about 9 GB, stored once in `resources/sif_dir`, or in the directory given with `-sifdir`), plus the intermediate files of your samples. While a job runs, its image is unpacked into `tmp/`, so the peak grows with the number of jobs running at once: lower `-t` if disk space is short.
 - **Enough RAM** for the assembly step. See [Threads, memory and SLURM resources](#threads-memory-and-slurm-resources).
 
-Docker is **not** required to run OrganPipe. Singularity pulls the images directly from Docker Hub. Docker is only needed if you want to rebuild the images from the `dockerfiles/` directory.
+Docker is **not** required to run OrganPipe. Singularity pulls the images directly from their registries (Docker Hub and, for MitoHiFi, the GitHub Container Registry). Docker is only needed if you want to rebuild the images from the `dockerfiles/` directory.
 
 ### Install
 
@@ -111,7 +111,7 @@ Before running the pipeline, describe your samples in a configuration file. Temp
 
 > **Keep every key/column.** If you don't need a field, leave its value blank instead of removing it (e.g. `reference: ''`).
 
-`Yes`/`No` values are case-insensitive. The configuration is validated by `workflow/scripts/check_config.py` before every run, and the run stops with an explanatory error if a required field is missing or invalid. The online [config generator](https://itvgenomics.github.io/config_generator/) creates a valid file for you.
+`Yes`/`No`, `organelle` and `sequencing_type` values are case-insensitive. The configuration is validated by `workflow/scripts/check_config.py` before every run, and the run stops with an explanatory error if a required field is missing or invalid. The online [config generator](https://itvgenomics.github.io/config_generator/) creates a valid file for you.
 
 ### General
 
@@ -122,7 +122,7 @@ Before running the pipeline, describe your samples in a configuration file. Temp
 | `organelle` | `"mito"` | `"mito"` for mitochondrial or `"chloro"` for chloroplast genomes. Chloroplast assembly is only supported for short reads. | Required |
 | `genetic_code` | `2` | NCBI genetic code used for annotation (e.g. `2` for the vertebrate mitochondrial code, `11` for plastids). | Required |
 | `sequencing_type` | `"Short"` | `"Short"` for Illumina or `"Long"` for PacBio/ONT reads. | Required |
-| `genome_range` | `"12000-22000"` | Expected genome size range, **in base pairs** (`min-max`). Assemblies within this range are kept and annotated. | Required |
+| `genome_range` | `"12000-22000"` | Expected genome size range, **in base pairs** (`min-max`). NOVOPlasty options and contigs outside this range are discarded; circularized assemblies are always kept. | Required if `run_novoplasty` is `Yes` |
 
 ### Pipeline steps
 
@@ -132,7 +132,7 @@ For short reads, each of these fields must be set to `Yes` or `No`. At least one
 |:------|:--------|:------------|:------------|
 | `run_trimming` | `"Yes"` | Trim adapters and low-quality bases: fastp for short reads, cutadapt (with `pacbio_adapters`) for long reads. | Required (short reads) |
 | `annotation` | `"Yes"` | Annotate the assemblies. Must be `"Yes"` for long reads. | Required |
-| `run_nhmmer` | `"No"` | Search ncRNA and intergenic regions with HMMER. **Note:** this can slow down the pipeline. | Required (short reads) |
+| `run_nhmmer` | `"No"` | Search ncRNA and intergenic regions with HMMER. On chloroplasts assembled with NOVOPlasty, only the first assembly (`CA_1` or `OPT_1`) is searched, not the contigs. **Note:** this can slow down the pipeline. | Required (short reads), optional (long reads) |
 | `run_images` | `"No"` | Generate OGDRAW maps, read recruitment and depth plots. Not supported for long reads. **Note:** this can slow down the pipeline. | Required (short reads) |
 | `run_novoplasty` | `"Yes"` | Assemble with NOVOPlasty. Can be combined with `run_getorganelle`. | Required (short reads) |
 | `run_getorganelle` | `"No"` | Assemble with GetOrganelle. Can be combined with `run_novoplasty`. | Required (short reads) |
@@ -181,14 +181,14 @@ Provide a seed file **or** let OrganPipe search NCBI for seeds.
 | `database` | `"animal_mt"` | GetOrganelle organelle type (`embplant_pt`, `other_pt`, `embplant_mt`, `embplant_nr`, `animal_mt`, `fungus_mt`, `fungus_nr`). Several types can be combined with commas. | Required if `run_getorganelle` is `Yes` |
 | `n_rounds` | `10` | Maximum number of extension rounds (suggested ≥ 2). Defaults depend on the organelle type (e.g. 15 for `embplant_pt`, 10 for `animal_mt`). | Optional |
 | `target_size` | `13000` | Expected genome size used to estimate the word size. Defaults depend on the organelle type. Comma-separated list in multi-organelle mode. | Optional |
-| `spades_kmers` | `"21,55,85,115"` | SPAdes k-mers passed to GetOrganelle. | Optional |
-| `extra_flags` | `"--overwrite"` | Additional flags passed directly to GetOrganelle. | Optional |
+| `spades_kmers` | `"21,55,85,115"` | SPAdes k-mers passed to GetOrganelle. A blank value uses the GetOrganelle default. | Optional |
+| `extra_flags` | `"--random-seed 12345"` | Additional flags passed directly to GetOrganelle. | Optional |
 
 ### Long reads (MitoHiFi)
 
 | Field | Example | Description | Requirement |
 |:------|:--------|:------------|:------------|
-| `search_species` | `"Amphisbaena"` | Taxon used to search NCBI for complete mitogenome references. | Required for long reads |
+| `search_species` | `"Amphisbaena"` | Taxon used to search NCBI for complete mitogenome references. If no reference is found, the run stops with an error. | Required for long reads |
 | `n_references` | `5` | Maximum number of references downloaded from NCBI. | Required for long reads |
 
 ## Running OrganPipe
@@ -252,7 +252,7 @@ bash OrganPipe.sh -d . -t 4 -c test_data/config.csv
 | `SRR1328237` | The whole chloroplast chain with NOVOPlasty and GetOrganelle, and `extra_flags`. |
 | `hifi` | Long reads: cutadapt, MitoHiFi and HMMER. |
 
-It needs internet access for the NCBI searches and the image downloads. When it finishes, each test sample has its own folder in `workflow/reports/`. Other test configurations are available in `test_data/` (single sample, two samples, `sample: all` and long reads).
+It needs internet access for the NCBI searches and the image downloads. As a reference, the first run with `-t 8` took about 46 minutes, including about 18 minutes to download the images, and used up to 45 GB of disk at its peak; about 12 GB remained at the end, images included. When it finishes, each test sample has its own folder in `workflow/reports/`. Other test configurations are available in `test_data/` (single sample, two samples, `sample: all` and long reads).
 
 ### Automated tests
 
@@ -262,7 +262,7 @@ The tests need only the conda environment, not the containers or the test reads:
 python -m unittest discover -s tests
 ```
 
-`tests/test_scripts.py` checks the workflow scripts. `tests/test_workflow.py` uses stand-ins for the tools to check that every combination of assembler, organelle and pipeline steps builds the expected jobs. GitHub Actions runs them on every push and pull request.
+`tests/test_scripts.py` checks the workflow scripts. `tests/test_workflow.py` uses stand-ins for the tools to check that the main combinations of assembler, organelle and pipeline steps build the expected jobs. GitHub Actions runs them on every push and pull request.
 
 ### Re-running samples with new parameters
 
@@ -456,6 +456,9 @@ Snakemake does not re-run jobs whose outputs already exist. Use `-rerun` (read t
 
 **A sample finished without some results.**
 Check `workflow/reports/<sample>/warnings.txt`, which lists the problems that did not stop the run.
+
+**Finished jobs run again, or the times in the benchmark report look wrong (WSL).**
+Snakemake compares file times, so a clock that jumps can make an output look older than its input. This can happen in WSL when the Windows clock is off: sync it in the Windows date and time settings.
 
 **The DAG takes too long to build.**
 With many samples, use `-batch` (and `-nbatch` to set the number of batches).

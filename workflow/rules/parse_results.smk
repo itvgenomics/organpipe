@@ -19,7 +19,8 @@ def assembly_targets(sample, assembler, run, assembly):
             f"results/{sample}/images/{prefix}/ogdraw.check",
         ]
 
-    # Chloroplast assemblies of NOVOPlasty are isomers of the same genome: only the first is searched
+    # The search is slow on the long chloroplast genome. The options of NOVOPlasty are isomers of the
+    # same genome, so only the first one is searched, and the contigs are not
     first_isomer = re.match(r"(CA|OPT)_1_", assembly)
     if is_yes(sample, "run_nhmmer") and (
         sample_config["organelle"] == "mito" or assembler == "getorganelle" or first_isomer

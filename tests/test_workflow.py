@@ -46,7 +46,10 @@ if [ "$(value "Store Hash")" = "yes" ]; then
     touch "$out/HASH2B_$project.txt" "$out/HASH2C_$project.txt" "$out/HASH_$project.txt"
 else
     echo "Total contigs : 1" > "$out/log_$project.txt"
-    if [ -z "${{MOCK_NO_ASSEMBLY:-}}" ]; then
+    if [ -n "${{MOCK_CONTIGS:-}}" ]; then
+        # A sample that does not circularize: two contigs in the genome range and a short one
+        printf '>Contig1\\n{GENOME}\\n>Contig2\\n{GENOME}\\n>Contig3\\nACGTACGT\\n' > "$out/Contigs_1_$project.fasta"
+    elif [ -z "${{MOCK_NO_ASSEMBLY:-}}" ]; then
         printf '>Contig1\\n{GENOME}\\n' > "$out/Circularized_assembly_1_$project.fasta"
     fi
     printf '>r\\nACGT\\n' | tee "$out/Assembled_reads_${{project}}_R1.fasta" > "$out/Assembled_reads_${{project}}_R2.fasta"
@@ -218,14 +221,19 @@ class WorkflowScenarios(unittest.TestCase):
         cls.bin.cleanup()
 
     def prepare(self, workdir, base, fields):
+        # Only the files of the project: what a real run left in the repository can be very large
+        listing = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+            cwd=ROOT, capture_output=True, text=True, check=True,
+        ).stdout
         # Large inputs that the jobs only read are linked, so each scenario takes little disk space
         linked = ["resources/refseq89m", "resources/table2asn.linux64.gz", "test_data/rawreads"]
-        ignore = shutil.ignore_patterns(
-            ".git", "__pycache__", "results", "logs", ".snakemake", "sif_dir", "table2asn.linux64",
-            *(Path(path).name for path in linked),
-        )
-        shutil.copytree(ROOT, workdir, ignore=ignore)
+        for path in listing.splitlines():
+            if (ROOT / path).exists() and not any(path == link or path.startswith(f"{link}/") for link in linked):
+                (workdir / path).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / path, workdir / path)
         for path in linked:
+            (workdir / path).parent.mkdir(parents=True, exist_ok=True)
             (workdir / path).symlink_to(ROOT / path)
 
         data = yaml.safe_load((workdir / base).read_text())
@@ -353,6 +361,38 @@ class WorkflowScenarios(unittest.TestCase):
         # config_1sample.yaml has 3 k-mers and max_memory: 2, so each job takes 2.2 GB
         self.assertEqual(self.peak_novoplasty_jobs("-mem", "7"), 3)
         self.assertEqual(self.peak_novoplasty_jobs("-mem", "3"), 1)
+
+    def jobs_for_contigs(self, fields):
+        """Return the jobs after the assembly step, and the assemblies, of a sample that does not circularize."""
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp) / "organpipe"
+            config = self.prepare(workdir, SHORT, {**NOVOPLASTY_ONLY, **ALL_STEPS, "kmers": "33", **fields})
+            result = self.run_tool(workdir, "bash", "OrganPipe.sh", "-d", ".", "-c", str(config), "-t", "2", "-np")
+            self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
+
+            snakemake = ["snakemake", "-d", ".", "-s", "workflow/Snakefile", "--profile", "profiles/local", "--cores", "2"]
+            result = self.run_tool(workdir, *snakemake, "--until", "split_assemblies", MOCK_CONTIGS="1")
+            self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
+            result = self.run_tool(workdir, *snakemake, "-n")
+            self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
+
+            fastas = (workdir / "results" / "hs1" / "assemblies" / "novoplasty").glob("*/*.fasta")
+            return job_counts(result.stdout), sorted(fasta.name for fasta in fastas)
+
+    def test_contigs_in_the_range_are_annotated_on_mitochondria(self):
+        jobs, assemblies = self.jobs_for_contigs({})
+        self.assertEqual(len(assemblies), 2, assemblies)
+        self.assertTrue(all(name.startswith("CTG_1_hs1_") for name in assemblies), assemblies)
+        for rule in ["run_pilon", "run_mitos2", "write_gb_mitos2", "rotate_genbank", "run_ogdraw"]:
+            self.assertEqual(jobs.get(rule), 2, rule)
+        self.assertEqual(jobs.get("run_nhmmer"), 4)
+
+    def test_contigs_in_the_range_are_annotated_on_chloroplasts(self):
+        jobs, assemblies = self.jobs_for_contigs(CHLORO)
+        self.assertEqual(len(assemblies), 2, assemblies)
+        for rule in ["run_pilon", "run_cpgavas2", "run_chloe", "write_gb_cpgavas2", "write_gb_chloe"]:
+            self.assertEqual(jobs.get(rule), 2, rule)
+        self.assertEqual(jobs.get("rotate_genbank"), 4)
 
     def test_seed_without_assembly_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
