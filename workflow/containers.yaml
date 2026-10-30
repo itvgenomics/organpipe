@@ -1,0 +1,44 @@
+###############################################################################
+# OrganPipe - Container images used by the rules
+#
+#   <name>: <image>:<tag>
+#
+# Images are pulled from Docker Hub unless the name says otherwise (e.g.
+# ghcr.io/... or library://...).
+#
+# Each image is pulled once into the -sifdir directory (default:
+# resources/sif_dir) as <name>_<tag>.sif, e.g. hmmer_3.4.sif. The rules refer
+# to it with sif("<name>") (workflow/rules/common.smk), so the version is set
+# only here.
+#
+# To update a tool, change its tag. The rules then use the new file, which
+# OrganPipe.sh pulls on the next run; the old file stays in the directory for
+# runs that still need it. Snakemake re-runs the finished jobs that used the
+# old image and every job that depends on them.
+###############################################################################
+
+# Trimming
+fastp: swglh/fastp:1.0.1
+cutadapt: pipecraft/cutadapt:4.4
+seqtk: nanozoo/seqtk:1.3--dc0d16b
+
+# Assembly
+novoplasty: itvdsbioinfo/novoplasty:4.3.5
+getorganelle: wangjiaqi1/getorganelle:1.7.7.1
+mitohifi: ghcr.io/marcelauliano/mitohifi:master
+
+# Error correction and read mapping
+hic_mapping: itvdsbioinfo/hic_mapping:1.0
+pilon: biocontainers/pilon:v1.23dfsg-1-deb_cv1
+
+# Annotation
+mitos: itvdsbioinfo/mitos:2.1.10
+cpgavas2: library://cliu/default/cpgavas2:0.03
+chloe: itvdsbioinfo/chloe:1.0
+
+# nhmmer
+hmmer: staphb/hmmer:3.4
+
+# Images
+blast: pegi3s/blast:2.13.0
+ogdraw: itvdsbioinfo/ogdraw:1.1.1

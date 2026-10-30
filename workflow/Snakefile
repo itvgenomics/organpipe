@@ -6,6 +6,7 @@ configfile: "config/snakemake_config.yaml"
 
 SAMPLES = list(config["samples"].keys())
 
+include: "rules/common.smk"
 include: "rules/check_files.smk"
 include: "rules/assembly.smk"
 include: "rules/annotation.smk"
@@ -24,6 +25,7 @@ wildcard_constraints:
 rule all:
     input:
         expand("workflow/reports/{sample_id}/parse_results.done", sample_id=SAMPLES)
+
 
 # Benchmark report (workflow/reports/benchmark.html), rebuilt at the end of every
 # run, also when some jobs failed, so it reflects all benchmarks written so far.

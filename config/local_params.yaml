@@ -1,59 +1,25 @@
 ###############################################################################
-# OrganPipe - Snakemake profile for LOCAL execution
+# OrganPipe - Snakemake profile for LOCAL execution (OrganPipe.sh -t <N>)
 #
-# This is a template. OrganPipe.sh replaces {WORKDIR} and writes the result
-# to profiles/local/config.yaml before every run, so edit THIS file, not the
-# generated one.
+# This is a template. OrganPipe.sh joins this file with config/threads.yaml,
+# replaces {WORKDIR}, and writes the result to profiles/local/config.yaml before
+# every run. Edit THESE files, not the generated one.
 #
-# The total number of cores is set with `OrganPipe.sh -t <N>`. A job never
-# uses more threads than that, even if a higher value is set below.
+# The total number of cores is set with `OrganPipe.sh -t <N>`. A job never uses
+# more threads than that, even if a higher value is set in config/threads.yaml.
+#
+# Memory note: in local mode, Snakemake does not limit memory. The NOVOPlasty
+# and GetOrganelle steps use up to `max_memory` (GB, from your config file) per
+# job. Keep `-t` x `max_memory` within the RAM of your machine (see the README
+# warning about parallelization).
 ###############################################################################
 
 # ── General settings ─────────────────────────────────────────────────────────
 executor: local
 use-singularity: true
 singularity-args: "-B {WORKDIR}:/mnt -B {WORKDIR}/tmp:/tmp --pwd /mnt --no-home --writable"
-latency-wait: 30          # seconds to wait for output files on slow file systems
-show-failed-logs: True    # print the log of a failed job
-keep-going: True          # keep running independent jobs when one fails
-printshellcmds: True      # print the shell command of each job
-rerun-incomplete: True    # re-run jobs whose output was left incomplete
-
-
-# ── Threads per rule ─────────────────────────────────────────────────────────
-# Every rule runs with 1 thread unless it is listed here.
-# To give a rule more threads, add a line `<rule_name>: <threads>`.
-#
-# Memory note: the NOVOPlasty and GetOrganelle steps use up to `max_memory`
-# (GB, from your config file) per job. Keep `-t` x `max_memory` within the RAM
-# of your machine (see the README warning about parallelization).
-set-threads:
-  # Trimming
-  run_fastp: 4
-  run_cutadapt: 4
-
-  # Assembly
-  run_getorganelle: 8
-  run_mitohifi: 8
-
-  # Error correction (read mapping + Pilon)
-  run_novoplasty_bwa_mem: 4
-  run_getorganelle_bwa_mem: 4
-  run_novoplasty_pilon: 2
-  run_getorganelle_pilon: 2
-
-  # Images (read mapping for the depth plots)
-  run_bwa_mem_rotated_novoplasty: 4
-  run_bwa_mem_rotated_getorganelle: 4
-
-  # nhmmer (ncRNA and intergenic region search)
-  run_ncRNA_nhmmer_novoplasty: 4
-  run_intergenes_nhmmer_novoplasty: 4
-  run_ncRNA_nhmmer_chloro_novoplasty: 4
-  run_intergenes_nhmmer_chloro_novoplasty: 4
-  run_ncRNA_nhmmer_getorganelle: 4
-  run_intergenes_nhmmer_getorganelle: 4
-  run_ncRNA_nhmmer_chloro_getorganelle: 4
-  run_intergenes_nhmmer_chloro_getorganelle: 4
-  run_ncRNA_nhmmer_long: 4
-  run_intergenes_nhmmer_long: 4
+latency-wait: 30                   # seconds to wait for output files on slow file systems
+show-failed-logs: True             # print the log of a failed job
+keep-going: True                   # keep running independent jobs when one fails
+printshellcmds: True               # print the shell command of each job
+rerun-incomplete: True             # re-run jobs whose output was left incomplete

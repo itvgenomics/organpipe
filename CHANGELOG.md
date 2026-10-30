@@ -5,11 +5,16 @@
 ### New Features
 - Added a benchmark report: an HTML report of runtime, CPU and memory usage (`workflow/reports/benchmark.html`) built from the Snakemake benchmark files at the end of every run, including runs where some jobs failed. It reads the rule definitions, so it works with any combination of samples, assemblers and steps. It can also be built manually with `workflow/scripts/benchmark_report.py`.
 - Added `-h`/`--help` and `-v`/`--version` to `OrganPipe.sh`.
+- Added `workflow/containers.yaml`, which sets the image and version of every tool in one place:
+  - Images are now stored as `<name>_<tag>.sif`, so changing a tag pulls the new version and keeps the old file. Images from earlier versions are pulled once more under the new names; the old `<name>.sif` files can be deleted.
+  - Snakemake re-runs the finished jobs of a tool when its image changes. This includes the first run after this update in a working directory with finished jobs.
+  - Interrupted pulls no longer leave an incomplete `.sif` file. When a pull fails, `OrganPipe.sh` prints the `singularity pull` commands to run on another machine.
 
 ### Improvements
 - Reorganized `config/local_params.yaml` and `config/slurm_params.yaml`, with comments explaining each setting:
-  - SLURM partition, memory and runtime are now set once in `default-resources`; `set-resources` lists only the rules that need more memory.
-  - `set-threads` lists only the rules that use more than 1 thread.
+  - Threads moved to `config/threads.yaml`, shared by the local and SLURM modes. It lists only the rules that use more than 1 thread.
+  - Memory per rule moved to `config/resources.yaml`. It lists only the rules that need more than the defaults.
+  - SLURM partition, memory and runtime are now set once in `default-resources`. The default memory is now 2 GB (it was 1 GB).
   - `run_cutadapt` now uses 4 threads, like `run_fastp`.
   - `max-jobs-per-second` is fixed at 10 instead of the value of `-j`, to avoid flooding the scheduler.
 - Rewrote the README: quick start, table of contents, configuration fields grouped by topic, resource and output sections, troubleshooting, and the changelog moved to this file.

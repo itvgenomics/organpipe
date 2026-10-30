@@ -21,6 +21,7 @@ OrganPipe is a Snakemake workflow that assembles, polishes, annotates and report
 - [Configuration](#configuration)
 - [Running OrganPipe](#running-organpipe)
 - [Threads, memory and SLURM resources](#threads-memory-and-slurm-resources)
+- [Container images](#container-images)
 - [Outputs](#outputs)
 - [Logs and benchmarks](#logs-and-benchmarks)
 - [Troubleshooting](#troubleshooting)
@@ -207,7 +208,7 @@ bash OrganPipe.sh -d </path/to/work/dir> -c </path/to/configfile> -t 1 -np
 | `-d <path>` | All (required) | Working directory, i.e. the OrganPipe directory with the `workflow/` and `config/` folders. |
 | `-c <file>` | All (required) | Configuration file (`.yaml` or `.csv`). |
 | `-t <int>` | Local (required) | Number of CPU cores Snakemake may use at once. Not allowed with `-slurm`. |
-| `-slurm` | SLURM | Submit each job to SLURM, using the resources in `config/slurm_params.yaml`. |
+| `-slurm` | SLURM | Submit each job to SLURM, using the settings in `config/slurm_params.yaml`, `config/threads.yaml` and `config/resources.yaml`. |
 | `-j <int>` | SLURM (required) | Maximum number of jobs queued or running at once. |
 | `-partition <name>` | SLURM (required) | Default SLURM partition (queue) for all jobs. |
 | `-np` | All | Dry run: show the jobs that would run without running them. |
@@ -248,19 +249,21 @@ Snakemake skips jobs whose outputs already exist. To reprocess a sample with dif
 
 As a reference, in a run of 24 amphibian mitochondrial samples with `max_memory: 40`, the NOVOPlasty steps (`create_hash`, `run_novoplasty`) peaked at ~38 GB, while all other steps stayed below 2.5 GB. You can measure your own runs with the [benchmark report](#benchmark-report).
 
-Threads and resources are set in Snakemake profile **templates** in `config/`:
+Threads and resources are set in Snakemake profile **templates** in `config/`, with the rules grouped by pipeline step:
 
-| Mode | Template | What you can set |
-|:-----|:---------|:-----------------|
-| Local | `config/local_params.yaml` | `set-threads`: threads per rule |
-| SLURM | `config/slurm_params.yaml` | `default-resources`: partition, memory and runtime for all rules; `set-threads`: threads (CPUs) per rule; `set-resources`: memory, runtime or partition per rule |
+| File | Used in | What you can set |
+|:-----|:--------|:-----------------|
+| `config/threads.yaml` | Local and SLURM | `set-threads`: threads (CPUs) per rule |
+| `config/local_params.yaml` | Local | General Snakemake settings |
+| `config/slurm_params.yaml` | SLURM | General Snakemake settings and `default-resources`: partition, memory (2 GB) and runtime (72 h) for all rules |
+| `config/resources.yaml` | SLURM | `set-resources`: memory, runtime or partition of the rules that need more than the defaults |
 
-- Rules not listed in `set-threads` run with 1 thread. In local mode a job never uses more than `-t` cores.
-- In SLURM mode, each job is submitted with `--cpus-per-task` = threads, `--mem` = `mem_mb` (MB) and `-t` = `runtime` (minutes).
-- `OrganPipe.sh` copies the template to `profiles/local/config.yaml` or `profiles/slurm/config.yaml` on every run, so **always edit the template in `config/`**. Changes made in `profiles/` are overwritten.
+- Rules not listed in `config/threads.yaml` run with 1 thread. In local mode a job never uses more than `-t` cores.
+- In SLURM mode, each job is submitted with `--cpus-per-task` = threads, `--mem` = `mem_mb` (MB) and `--time` = `runtime` (minutes).
+- `OrganPipe.sh` joins these files into `profiles/local/config.yaml` or `profiles/slurm/config.yaml` on every run, so **always edit the files in `config/`**. Changes made in `profiles/` are overwritten.
 - **Do not change the `{WORKDIR}`, `{THREADS}` and `{PARTITION}` placeholders**. `OrganPipe.sh` fills them in from `-d`, `-j` and `-partition`.
 
-To send a specific rule to another partition, or to give it more memory or time, add or edit its line under `set-resources` in `config/slurm_params.yaml`:
+To send a specific rule to another partition, or to give it more memory or time, add or edit its line in `config/resources.yaml`:
 
 ```yaml
 set-resources:
@@ -268,6 +271,20 @@ set-resources:
 ```
 
 String values such as partition names must be wrapped in single quotes inside double quotes (`"'highmem'"`), so Snakemake reads them as text.
+
+## Container images
+
+`workflow/containers.yaml` lists the image and version of every tool, in one line per tool:
+
+```yaml
+hmmer: staphb/hmmer:3.4
+```
+
+Before each run, `OrganPipe.sh` pulls the missing images into `resources/sif_dir` (or the directory given with `-sifdir`) as `<name>_<tag>.sif`, e.g. `hmmer_3.4.sif`.
+
+To update a tool, change its tag. On the next run the new image is pulled, and Snakemake re-runs the finished jobs that used the old image and every job that depends on them. The old `.sif` file is kept; delete it when no run needs it.
+
+Without internet access, `OrganPipe.sh` stops and prints the `singularity pull` commands to run on another machine. Copy the resulting files to the paths shown. A failed pull of `cpgavas2` only stops the jobs that use it (chloroplast annotation), not the whole run.
 
 ## Outputs
 
@@ -379,13 +396,13 @@ No NCBI record matched `search_term` and `search_genes`. Use a broader taxon (ge
 
 **A job failed with an out-of-memory error.**
 - Local mode: lower `-t` or `max_memory` so that `-t` × `max_memory` fits in your RAM.
-- SLURM mode: increase `mem_mb` for that rule under `set-resources` in `config/slurm_params.yaml`. For NOVOPlasty, keep `mem_mb` above `max_memory` × 1000.
+- SLURM mode: increase `mem_mb` for that rule in `config/resources.yaml`. For NOVOPlasty, keep `mem_mb` above `max_memory` × 1000.
 
 **A SLURM job was killed for exceeding its time limit.**
-Increase `runtime` (minutes) for that rule under `set-resources` in `config/slurm_params.yaml`.
+Increase `runtime` (minutes) for that rule in `config/resources.yaml`.
 
 **A Singularity image failed to download or build.**
-Run the pipeline again; images already in the `-sifdir` directory are not pulled again. Check your internet connection and the free space in that directory.
+Run the pipeline again; images already in the `-sifdir` directory are not pulled again. Check your internet connection and the free space in that directory. Without internet access, `OrganPipe.sh` prints the `singularity pull` commands to run on another machine (see [Container images](#container-images)).
 
 **I changed the parameters, but the sample was not re-processed.**
 Snakemake does not re-run jobs whose outputs already exist. Use `-rerun` (read the warning in [Re-running samples](#re-running-samples-with-new-parameters)), or delete `results/<sample>`, `resources/<sample>` and `workflow/reports/<sample>` manually.

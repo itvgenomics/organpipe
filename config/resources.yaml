@@ -1,0 +1,66 @@
+###############################################################################
+# OrganPipe - Memory per rule (SLURM mode)
+#
+# OrganPipe.sh appends this file to config/slurm_params.yaml and
+# config/threads.yaml to build profiles/slurm/config.yaml. Edit THIS file, not
+# the generated one.
+#
+# Only rules that need more than the defaults in config/slurm_params.yaml
+# (2 GB, 72 h, the -partition queue) are listed. Each rule overrides only the
+# values it sets and inherits the rest. Any default can be overridden, e.g.:
+#
+#   run_novoplasty: {mem_mb: 80000, runtime: 1440, slurm_partition: "'highmem'"}
+###############################################################################
+
+set-resources:
+  # Trimming and read preparation
+  run_fastp:                                  {mem_mb: 4000}
+  run_cutadapt:                               {mem_mb: 4000}
+  run_seqtk:                                  {mem_mb: 4000}
+  check_fastq_longreads:                      {mem_mb: 4000}
+  check_fasta_longreads:                      {mem_mb: 4000}
+
+  # Assembly
+  # NOVOPlasty uses up to `max_memory` (GB, from your config file), so keep
+  # mem_mb for create_hash and run_novoplasty above max_memory x 1000.
+  create_hash:                                {mem_mb: 50000}
+  run_novoplasty:                             {mem_mb: 50000}
+  run_getorganelle:                           {mem_mb: 50000}
+  run_mitohifi:                               {mem_mb: 50000}
+
+  # Error correction
+  run_novoplasty_bwa_mem:                     {mem_mb: 10000}
+  run_getorganelle_bwa_mem:                   {mem_mb: 10000}
+  run_novoplasty_pilon:                       {mem_mb: 80000}
+  run_getorganelle_pilon:                     {mem_mb: 80000}
+
+  # Annotation (MITOS2, CPGAVAS2, Chloë)
+  run_novoplasty_mitos2:                      {mem_mb: 8000}
+  run_getorganelle_mitos2:                    {mem_mb: 8000}
+  run_novoplasty_cpgavas2:                    {mem_mb: 8000}
+  run_getorganelle_cpgavas2:                  {mem_mb: 8000}
+  run_novoplasty_chloe:                       {mem_mb: 8000}
+  run_getorganelle_chloe:                     {mem_mb: 8000}
+
+  # Images (BLAST, recruitment plots and read mapping)
+  run_blastn_novoplasty:                      {mem_mb: 50000}
+  run_blastn_getorganelle:                    {mem_mb: 50000}
+  run_recruitment_plot_novoplasty:            {mem_mb: 50000}
+  run_recruitment_plot_getorganelle:          {mem_mb: 50000}
+  run_bwa_mem_rotated_novoplasty:             {mem_mb: 50000}
+  run_bwa_mem_rotated_getorganelle:           {mem_mb: 50000}
+
+  # nhmmer (ncRNA and intergenic region search)
+  run_ncRNA_nhmmer_novoplasty:                {mem_mb: 8000}
+  run_intergenes_nhmmer_novoplasty:           {mem_mb: 8000}
+  run_ncRNA_nhmmer_chloro_novoplasty:         {mem_mb: 8000}
+  run_intergenes_nhmmer_chloro_novoplasty:    {mem_mb: 8000}
+  run_ncRNA_nhmmer_getorganelle:              {mem_mb: 8000}
+  run_intergenes_nhmmer_getorganelle:         {mem_mb: 8000}
+  run_ncRNA_nhmmer_chloro_getorganelle:       {mem_mb: 8000}
+  run_intergenes_nhmmer_chloro_getorganelle:  {mem_mb: 8000}
+  run_ncRNA_nhmmer_long:                      {mem_mb: 8000}
+  run_intergenes_nhmmer_long:                 {mem_mb: 8000}
+
+  # Results parsing
+  parse_results:                              {mem_mb: 4000}
