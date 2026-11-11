@@ -111,7 +111,7 @@ Before running the pipeline, describe your samples in a configuration file. Temp
 
 > **Keep every key/column.** If you don't need a field, leave its value blank instead of removing it (e.g. `reference: ''`).
 
-`Yes`/`No`, `organelle` and `sequencing_type` values are case-insensitive. The configuration is validated by `workflow/scripts/check_config.py` before every run, and the run stops with an explanatory error if a required field is missing or invalid. The online [config generator](https://itvgenomics.github.io/config_generator/) creates a valid file for you.
+`Yes`/`No`, `organelle` and `sequencing_type` values are case-insensitive. A blank value can be written as `field:`, `field: ""` or an empty CSV cell. The seed, NCBI and NOVOPlasty fields are ignored when `run_novoplasty` is `No`. The configuration is validated by `workflow/scripts/check_config.py` before every run, and the run stops with an explanatory error if a required field is missing or invalid. The online [config generator](https://itvgenomics.github.io/config_generator/) creates a valid file for you.
 
 ### General
 
@@ -120,7 +120,7 @@ Before running the pipeline, describe your samples in a configuration file. Temp
 | `sample` | `"sample1"` | Sample name, with only letters, numbers and underscores. Use `"all"` to process every sample in `reads_path`, or a comma-separated list (`"sample1,sample2"`). In the YAML format all listed samples share the same parameters; use the CSV format to set different values per sample. | Required |
 | `reads_path` | `"/path/to/reads"` | Directory with the read files (see [Input reads](#input-reads)). | Required |
 | `organelle` | `"mito"` | `"mito"` for mitochondrial or `"chloro"` for chloroplast genomes. Chloroplast assembly is only supported for short reads. | Required |
-| `genetic_code` | `2` | NCBI genetic code used for annotation (e.g. `2` for the vertebrate mitochondrial code, `11` for plastids). | Required |
+| `genetic_code` | `2` | NCBI genetic code used for annotation (e.g. `2` for the vertebrate mitochondrial code, `11` for plastids). | Required for long reads and for the annotation of mitochondria |
 | `sequencing_type` | `"Short"` | `"Short"` for Illumina or `"Long"` for PacBio/ONT reads. | Required |
 | `genome_range` | `"12000-22000"` | Expected genome size range, **in base pairs** (`min-max`). NOVOPlasty options and contigs outside this range are discarded; circularized assemblies are always kept. | Required if `run_novoplasty` is `Yes` |
 
@@ -150,14 +150,14 @@ For short reads, each of these fields must be set to `Yes` or `No`. At least one
 
 ### Seeds and reference (NOVOPlasty)
 
-Provide a seed file **or** let OrganPipe search NCBI for seeds.
+Provide a seed file **or** let OrganPipe search NCBI for seeds. These fields are only used, and checked, when `run_novoplasty` is `Yes`.
 
 | Field | Example | Description | Requirement |
 |:------|:--------|:------------|:------------|
 | `seed_format` | `"fasta"` | Format of `seed_file`: `"fasta"` (`.fasta`, `.fa`, `.fna`) or `"genbank"` (`.gb`, `.gbk`, `.genbank`). Leave blank to search NCBI instead. Must be blank for long reads. | Optional |
 | `seed_file` | `"/path/to/seed.fasta"` | Seed file used to start the assembly. | Required if `seed_format` is set |
 | `feature` | `"CDS"` | Features extracted from a GenBank seed: `"CDS"`, `"rRNA"` or `"tRNA"` (case-sensitive). | Required if `seed_format` is `"genbank"` |
-| `search_ncbi` | `"Yes"` | Download seeds from NCBI. Required when no seed file is given and NOVOPlasty is enabled. | Required (short reads) |
+| `search_ncbi` | `"Yes"` | Download seeds from NCBI when no seed file is given. A blank value means `No`. | Must be `Yes` if NOVOPlasty runs without a seed file |
 | `search_genes` | `"COI,16S,ATP6"` | Genes to search on NCBI. | Required if `search_ncbi` is `Yes` |
 | `search_term` | `"Amphisbaena"` | Taxon name used in the NCBI search. If no record is found, the run stops with an error. | Required if `search_ncbi` is `Yes` |
 | `max_references` | `5` | Maximum number of seeds downloaded per gene. | Required if `search_ncbi` is `Yes` |

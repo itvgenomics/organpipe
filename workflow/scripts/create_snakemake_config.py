@@ -10,6 +10,7 @@ import sys
 import get_seeds
 import download_seeds
 import download_references
+from config_values import as_text
 from naming import SHORT_READ_SUFFIXES, LONG_READ_SUFFIXES, mate_marker, read_stem
 
 # Fields written in lowercase, so the rules can compare them directly.
@@ -241,7 +242,7 @@ def read_config_rows(configfile):
         with open(configfile, "r") as file:
             data = yaml.safe_load(file)
 
-        data = {key: "" if value is None else str(value) for key, value in data.items()}
+        data = {key: as_text(value) for key, value in data.items()}
         sequencing_type = data["sequencing_type"].strip().lower()
 
         if data["sample"].strip() == "all":
@@ -253,7 +254,7 @@ def read_config_rows(configfile):
 
     delimiter = detect_delimiter(configfile)
     df = pd.read_csv(configfile, delimiter=delimiter, dtype=str, keep_default_na=False)
-    return df.to_dict("records")
+    return [{key: as_text(value) for key, value in row.items()} for row in df.to_dict("records")]
 
 
 def to_int(value):
@@ -277,6 +278,12 @@ def sample_config(row):
     entry.update({field: row[field] for field in TEXT_FIELDS})
 
     entry["kmers"] = split_list(row["kmers"])
+
+    # Short-read seeds are only used by NOVOPlasty, so they are not prepared (or searched on NCBI) without it
+    if entry["sequencing_type"] == "short" and entry["run_novoplasty"] != "yes":
+        entry["seeds"] = []
+        return entry
+
     entry["seeds"] = prepare_seeds(
         seed_format=row["seed_format"],
         seed_file=row["seed_file"],

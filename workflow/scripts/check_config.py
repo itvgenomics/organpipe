@@ -5,6 +5,7 @@ import pandas as pd
 import re
 import logging
 import sys
+from config_values import as_text
 from naming import find_long_reads, find_short_reads
 
 # Samples must match the `sample` wildcard in workflow/Snakefile.
@@ -58,6 +59,19 @@ def detect_delimiter(file_path):
             return ";"
         else:
             return ","
+
+
+def get_text(config, field):
+    """Return the value of a field as text, with blank values as ""."""
+    return as_text(config.get(field))
+
+
+def runs_novoplasty(config):
+    """NOVOPlasty only runs on short reads. Its fields are ignored when it does not run."""
+    return (
+        get_text(config, "sequencing_type").lower() == "short"
+        and get_text(config, "run_novoplasty").lower() == "yes"
+    )
 
 
 def parse_samples(sample_field):
@@ -189,7 +203,7 @@ def check_reads_path(config):
 
         # Sample validation
         if samples and samples != ["all"]:
-            run_trimming = str(config.get("run_trimming", "")).strip().lower()
+            run_trimming = get_text(config, "run_trimming").lower()
             for sample in samples:
                 try:
                     reads = find_long_reads(sample, path)
@@ -255,7 +269,10 @@ def check_genetic_code(config):
         33,
     }
 
-    code = config.get("genetic_code")
+    code = get_text(config, "genetic_code")
+    sequencing_type = get_text(config, "sequencing_type").lower()
+    organelle = get_text(config, "organelle").lower()
+    annotation = get_text(config, "annotation").lower()
 
     valid_codes_desc = """
         1. The Standard Code
@@ -287,15 +304,19 @@ def check_genetic_code(config):
         33. Cephalodiscidae Mitochondrial UAA-Tyr Code
         """
 
-    try:
-        code_int = int(code)
-        if code_int not in valid_codes:
+    if not code:
+        # Used by MitoHiFi and by the MITOS2 annotation of mitochondria
+        if sequencing_type == "long" or (organelle == "mito" and annotation == "yes"):
             errors.append(
-                f"Invalid `genetic_code`: '{code}'. Must be one of the valid numeric codes {valid_codes_desc}"
+                "`genetic_code` is not set. It is required for long reads and for the annotation of mitochondria."
             )
-    except (ValueError, TypeError):
+    elif not re.fullmatch(r"\d+(\.0)?", code):
         errors.append(
             f"`genetic_code` must be a number (e.g., 1, 5, 11), but got: '{code}'."
+        )
+    elif int(float(code)) not in valid_codes:
+        errors.append(
+            f"Invalid `genetic_code`: '{code}'. Must be one of the valid numeric codes {valid_codes_desc}"
         )
 
     return errors
@@ -303,9 +324,10 @@ def check_genetic_code(config):
 
 def check_reference_file(config):
     errors = []
-    reference = str(config.get("reference", "")).strip()
+    reference = get_text(config, "reference")
 
-    if reference not in ["None", "nan"]:
+    # Only NOVOPlasty uses the reference
+    if reference and runs_novoplasty(config):
         if not os.path.isfile(reference):
             errors.append(
                 f"`reference` is set to '{reference}', but this file does not exist."
@@ -336,77 +358,58 @@ def check_sequencing_type(config):
 
 def check_genome_range(config):
     errors = []
-    genome_range = str(config.get("genome_range", "")).strip()
-    seq_type = config.get("sequencing_type", "").strip().lower()
-
+    genome_range = get_text(config, "genome_range")
 
     pattern = r"^\d+-\d+$"
 
-    if seq_type in {"short", "Short"}:
-        run_novoplasty = config.get("run_novoplasty", "").strip().lower()
-        if run_novoplasty == "yes":
-            if genome_range in ["None", "nan"]:
-                errors.append("`genome_range` field is empty.")
-            elif not re.match(pattern, genome_range):
+    if runs_novoplasty(config):
+        if not genome_range:
+            errors.append("`genome_range` field is empty.")
+        elif not re.match(pattern, genome_range):
+            errors.append(
+                f"Invalid format for `genome_range`: '{genome_range}'. "
+                "Expected format is 'min-max' (e.g., '14000-22000')."
+            )
+        else:
+            min_val, max_val = map(int, genome_range.split("-"))
+            if min_val > max_val:
                 errors.append(
-                    f"Invalid format for `genome_range`: '{genome_range}'. "
-                    "Expected format is 'min-max' (e.g., '14000-22000')."
+                    f"`genome_range` values are invalid: min '{min_val}' is greater than max '{max_val}'."
                 )
-            else:
-                min_val, max_val = map(int, genome_range.split("-"))
-                if min_val > max_val:
-                    errors.append(
-                        f"`genome_range` values are invalid: min '{min_val}' is greater than max '{max_val}'."
-                    )
 
-        return errors
-
-    else:
-        return None
+    return errors
 
 
 def check_yes_no_fields(config):
     errors = []
     fields = ["annotation", "run_trimming", "run_nhmmer", "run_images", "run_novoplasty", "run_getorganelle"]
-    allowed = {"yes", "no", "Yes", "No"}
 
-    sequencing_type = str(config.get("sequencing_type", "")).strip().lower()
+    sequencing_type = get_text(config, "sequencing_type").lower()
 
     for field in fields:
-        if field == "run_trimming":
-            if sequencing_type == "long":
-                allowed = {"None", "nan", "no", "No", "none", "Yes", "yes"}
-                value = str(config.get(field, "")).strip().lower()
-                if value not in allowed:
-                    errors.append(
-                        f"Invalid value for `{field}`: '{config.get(field)}'. "
-                        "Accepted values are: empty, yes or 'no'."
-                    )
+        value = get_text(config, field).lower()
 
-            elif sequencing_type == "short":
-                value = str(config.get(field, "")).strip().lower()
-                if value not in allowed:
-                    errors.append(
-                        f"Invalid value for `{field}`: '{config.get(field)}'. "
-                        "Accepted values are: 'yes' or 'no'."
-                    )
-
-        else:
-            value = str(config.get(field, "")).strip().lower()
-            if value not in allowed:
+        # For long reads only `annotation` is required; the steps of short reads can be left blank
+        if sequencing_type == "long" and field != "annotation":
+            if value not in {"", "yes", "no"}:
                 errors.append(
                     f"Invalid value for `{field}`: '{config.get(field)}'. "
-                    "Accepted values are: 'yes' or 'no'."
+                    "Accepted values are: empty, 'yes' or 'no'."
                 )
+        elif value not in {"yes", "no"}:
+            errors.append(
+                f"Invalid value for `{field}`: '{config.get(field)}'. "
+                "Accepted values are: 'yes' or 'no'."
+            )
 
     return errors
 
 
 def check_adapters_file(config):
     errors = []
-    adapters = str(config.get("adapters", "")).strip()
+    adapters = get_text(config, "adapters")
 
-    if adapters not in ["None", "nan"]:
+    if adapters:
         if not os.path.isfile(adapters):
             errors.append(
                 f"`adapters` is set to '{adapters}', but this file does not exist."
@@ -424,15 +427,18 @@ def check_adapters_file(config):
 
 def check_seed_format_and_file(config):
     errors = []
-    seed_format = str(config.get("seed_format", "")).strip().lower()
-    seed_file = str(config.get("seed_file", "")).strip()
-    sequencing_type = config.get("sequencing_type", "").strip().lower()
-    search_ncbi = str(config.get("search_ncbi", "")).strip().lower()
+    seed_format = get_text(config, "seed_format").lower()
+    seed_file = get_text(config, "seed_file")
+    sequencing_type = get_text(config, "sequencing_type").lower()
+    search_ncbi = get_text(config, "search_ncbi").lower()
 
     if sequencing_type == "short":
-        run_novoplasty = str(config.get("run_novoplasty", "")).strip().lower()
+        # Short-read seeds are only used by NOVOPlasty
+        if not runs_novoplasty(config):
+            return errors
+
         if seed_format == "fasta":
-            if seed_file in ["None", "nan"]:
+            if not seed_file:
                 errors.append(
                     f"`seed_format` is set to '{seed_format}', but no `seed_file` is provided."
                 )
@@ -442,20 +448,20 @@ def check_seed_format_and_file(config):
                 )
 
             valid_exts = (".fasta", ".fa", ".fna")
-            if not seed_file.endswith(valid_exts):
+            if seed_file and not seed_file.endswith(valid_exts):
                 errors.append(
                     f"`seed_file` is set to '{seed_file}', but it doesn't end with a valid FASTA extension "
                     f"(expected one of: {', '.join(valid_exts)})."
                 )
 
         elif seed_format == "genbank":
-            feature = str(config.get("feature", "")).strip()
-            if not feature or feature not in ["CDS", "rRNA", "tRNA"]:
+            feature = get_text(config, "feature")
+            if feature not in ["CDS", "rRNA", "tRNA"]:
                 errors.append(
                     f"`feature` is not set appropriate. Must be 'CDS', 'rRNA' or 'tRNA' (case sensitive)."
                 )
 
-            if seed_file in ["None", "nan"]:
+            if not seed_file:
                 errors.append(
                     f"`seed_format` is set to '{seed_format}', but no `seed_file` is provided."
                 )
@@ -465,49 +471,48 @@ def check_seed_format_and_file(config):
                 )
 
             valid_exts = (".gb", ".gbk", ".genbank")
-            if not seed_file.endswith(valid_exts):
+            if seed_file and not seed_file.endswith(valid_exts):
                 errors.append(
                     f"`seed_file` is set to '{seed_file}', but it doesn't end with a valid GENBANK extension "
                     f"(expected one of: {', '.join(valid_exts)})."
                 )
 
-        elif seed_format in ["None", "nan"] and run_novoplasty == "yes":
-            if search_ncbi == "no":
-                errors.append(
-                    "`seed_format` is empty, but `search_ncbi` is also set to 'no'. "
-                    "Either provide a seed file or set `search_ncbi` to 'yes' to search NCBI for seed sequences."
-                )
+        elif seed_format:
+            errors.append(
+                f"Invalid value for `seed_format`: '{config.get('seed_format')}'. "
+                "Accepted values are: 'fasta', 'genbank' or empty."
+            )
 
-        return errors
+        elif search_ncbi != "yes":
+            errors.append(
+                "`seed_format` is empty, but `search_ncbi` is not 'yes'. "
+                "Either provide a seed file or set `search_ncbi` to 'yes' to search NCBI for seed sequences."
+            )
 
-    if sequencing_type == "long":
-        if seed_format not in ["None", "nan"] and seed_file not in ["None", "nan"]:
-
+    elif sequencing_type == "long":
+        if seed_format and seed_file:
             errors.append(
                 f"`sequencing_type` is set to '{sequencing_type}', so `seed_format` and `seed_file` must be empty. Set `search_ncbi` to 'yes' to search NCBI for seed sequences."
             )
 
-            return errors
+    return errors
 
 
 def check_run_trimming_requirements(config):
     errors = []
-    run_trimming = str(config.get("run_trimming", "")).strip().lower()
-    sequencing_type = str(config.get("sequencing_type", "")).strip().lower()
-    pacbio_adapters = str(config.get("pacbio_adapters", "")).strip()
+    run_trimming = get_text(config, "run_trimming").lower()
+    sequencing_type = get_text(config, "sequencing_type").lower()
+    pacbio_adapters = get_text(config, "pacbio_adapters")
 
-    if run_trimming in ["Yes", "yes"]:
+    if run_trimming == "yes":
         if sequencing_type == "short":
-            minlength = str(config.get("minlength", ""))
-            minquality = str(config.get("minquality", ""))
-
-            if minlength in ["None", "nan"]:
+            if not get_text(config, "minlength"):
                 errors.append("`run_trimming` is 'Yes', but `minlength` is not set.")
-            if minquality in ["None", "nan"]:
+            if not get_text(config, "minquality"):
                 errors.append("`run_trimming` is 'Yes', but `minquality` is not set.")
 
         elif sequencing_type == "long":
-            if pacbio_adapters in ["None", "nan"]:
+            if not pacbio_adapters:
                 errors.append(
                     "`run_trimming` is 'Yes', but `pacbio_adapters` is not set."
                 )
@@ -517,25 +522,25 @@ def check_run_trimming_requirements(config):
 
 def check_search_ncbi_requirements(config):
     errors = []
-    search_ncbi = str(config.get("search_ncbi", "")).strip().lower()
-    seq_type = config.get("sequencing_type", "").strip().lower()
+    search_ncbi = get_text(config, "search_ncbi").lower()
 
-    if seq_type == "short":
+    # The NCBI search of short reads only provides seeds to NOVOPlasty. A blank value is "no".
+    if runs_novoplasty(config):
 
-        if search_ncbi not in {"yes", "no", "Yes", "No"}:
+        if search_ncbi not in {"", "yes", "no"}:
             errors.append(
                 f"Invalid value for `search_ncbi`: '{config.get('search_ncbi')}'. "
-                "Accepted values are: 'yes' or 'no'."
+                "Accepted values are: 'yes', 'no' or empty."
             )
 
         if search_ncbi == "yes":
-            if str(config.get("search_genes", "")).strip() in ["None", "nan"]:
+            if not get_text(config, "search_genes"):
                 errors.append("`search_ncbi` is 'Yes', but `search_genes` is not set.")
 
-            if str(config.get("search_term", "")).strip() in ["None", "nan"]:
+            if not get_text(config, "search_term"):
                 errors.append("`search_ncbi` is 'Yes', but `search_term` is not set.")
 
-            if str(config.get("max_references", "")).strip() in ["None", "nan"]:
+            if not get_text(config, "max_references"):
                 errors.append(
                     "`search_ncbi` is 'Yes', but `max_references` is not set."
                 )
@@ -544,9 +549,9 @@ def check_search_ncbi_requirements(config):
 
 def check_pacbio_adapters(config):
     errors = []
-    seq_type = config.get("sequencing_type", "").strip().lower()
-    run_trimming = str(config.get("run_trimming", "")).strip().lower()
-    adapter_value = str(config.get("pacbio_adapters", "")).strip()
+    seq_type = get_text(config, "sequencing_type").lower()
+    run_trimming = get_text(config, "run_trimming").lower()
+    adapter_value = get_text(config, "pacbio_adapters").strip()
 
     if seq_type == "long" and run_trimming == "yes":
         if not adapter_value:
@@ -568,32 +573,37 @@ def check_pacbio_adapters(config):
 
 def check_assembler_requirements(config):
     errors = []
-    seq_type = str(config.get("sequencing_type", "")).strip().lower()
+    seq_type = get_text(config, "sequencing_type").lower()
 
     if seq_type == "short":
-        run_novoplasty = str(config.get("run_novoplasty", "")).strip().lower()
-        run_getorganelle = str(config.get("run_getorganelle", "")).strip().lower()
+        run_novoplasty = get_text(config, "run_novoplasty").lower()
+        run_getorganelle = get_text(config, "run_getorganelle").lower()
 
         if run_novoplasty != "yes" and run_getorganelle != "yes":
             errors.append("For short reads, at least one assembler (`run_novoplasty` or `run_getorganelle`) must be set to 'Yes'.")
 
         if run_novoplasty == "yes":
-            reads_length = str(config.get("reads_length", "")).strip()
-            insert_size = str(config.get("insert_size", "")).strip()
-            max_memory = str(config.get("max_memory", "")).strip()
-            if reads_length in ["None", "nan", ""]:
+            max_memory = get_text(config, "max_memory")
+            kmers = get_text(config, "kmers")
+            if not get_text(config, "reads_length"):
                 errors.append("`run_novoplasty` is 'Yes', but `reads_length` is not set.")
-            if insert_size in ["None", "nan", ""]:
+            if not get_text(config, "insert_size"):
                 errors.append("`run_novoplasty` is 'Yes', but `insert_size` is not set.")
             if not re.match(r"^[1-9]\d*(\.0)?$", max_memory):
                 errors.append(
                     f"`run_novoplasty` is 'Yes', but `max_memory` is '{max_memory}'. "
                     "It must be a whole number of GB (e.g., 40)."
                 )
+            # Without k-mers NOVOPlasty has no job to run, and the run would finish without assemblies
+            if not re.fullmatch(r"[1-9]\d*(,[1-9]\d*)*", kmers):
+                errors.append(
+                    f"`run_novoplasty` is 'Yes', but `kmers` is '{kmers}'. "
+                    "It must be a comma-separated list of k-mer sizes (e.g., 19,23,33)."
+                )
 
         if run_getorganelle == "yes":
-            database = str(config.get("database", "")).strip()
-            if database in ["None", "nan", ""]:
+            database = get_text(config, "database")
+            if not database:
                 errors.append("`run_getorganelle` is 'Yes', but `database` is not set.")
     return errors
 
@@ -624,10 +634,9 @@ def main():
 
     if config_path.endswith(".csv"):
         delimiter = detect_delimiter(config_path)
-        df = pd.read_csv(config_path, delimiter=delimiter)
-        for idx, row in df.iterrows():
-            config = row.to_dict()
-            all_configs.append(config)
+        # Read as text, like create_snakemake_config.py, so empty cells are "" and numbers keep their form
+        df = pd.read_csv(config_path, delimiter=delimiter, dtype=str, keep_default_na=False)
+        all_configs = df.to_dict("records")
 
     elif config_path.endswith((".yaml", ".yml")):
 
@@ -649,6 +658,9 @@ def main():
                 "\n Error: The config file format is invalid (expected a top-level dictionary)."
             )
             sys.exit(1)
+
+    # Blank fields can be written as `field:`, `field: ""` or an empty CSV cell, and all mean the same
+    all_configs = [{key: as_text(value) for key, value in config.items()} for config in all_configs]
 
     for config in all_configs:
         sample = config.get("sample")
@@ -722,7 +734,7 @@ def main():
         adapters_errors = check_adapters_file(config)
 
         if adapters_errors:
-            logging.info("\n Problem with `reference` field:")
+            logging.info("\n Problem with `adapters` field:")
             for msg in adapters_errors:
                 raise ValueError(f" - {msg}")
 

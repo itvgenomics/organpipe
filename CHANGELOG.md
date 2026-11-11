@@ -61,6 +61,13 @@
 - A long-read sample without references on NCBI now stops with an error, instead of finishing without results.
 - Seeds that were counted without being written no longer reduce the number of seeds downloaded from NCBI.
 - `check_config.py` now stops the run for an invalid YAML file, invalid `pacbio_adapters` or a long-read `.fasta` file with trimming, and checks `max_memory` and the sample names.
+- Files from the [config generator](https://itvgenomics.github.io/config_generator/) failed with NOVOPlasty disabled:
+  - Empty quotes (`reference: ""`, `adapters: ""`) were read as file paths. Blank values are now the same whether written as `field:`, `field: ""`, only spaces or an empty CSV cell.
+  - `search_ncbi` and `kmers` had to be filled in. The seed, NCBI and NOVOPlasty fields are now only checked, and the seeds only prepared, when `run_novoplasty` is `Yes`. A blank `search_ncbi` means `No`.
+  - A blank `kmers` stopped the run with `'NoneType' object has no attribute 'split'`.
+- `run_novoplasty: "Yes"` with a blank `kmers` or an unknown `seed_format` finished without any NOVOPlasty assembly. Both now stop the run with an error.
+- `genetic_code` is now only required where it is used: long reads (MitoHiFi) and the annotation of mitochondria.
+- Unquoted `Yes`/`No` in YAML files, which YAML reads as `true`/`false`, are now accepted.
 - Logs are no longer overwritten when a step processes several files, and rules no longer share log files.
 - `OrganPipe.sh` now prints a clear error for unknown options, options missing their value and missing required options (`-c`, `-d`, `-t`), instead of exiting silently. The SLURM option checks run before the banner is printed.
 - Fixed the benchmark path of `run_getorganelle_pilon`, which was written to a file literally named `{run_pilon.benchmark`.

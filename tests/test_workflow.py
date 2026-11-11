@@ -112,6 +112,8 @@ touch "$output.changes"
 
 SHORT = "test_data/config_1sample.yaml"
 LONG = "test_data/config_longreads.yaml"
+# Written by the config generator: blank fields as "", and blank NOVOPlasty fields
+GENERATOR = "tests/data/generator_getorganelle.yaml"
 
 NOVOPLASTY_ONLY = {"run_novoplasty": "Yes", "run_getorganelle": "No"}
 GETORGANELLE_ONLY = {
@@ -163,6 +165,12 @@ SCENARIOS = {
         {**GETORGANELLE_ONLY, **ALL_STEPS, "n_rounds": None, "target_size": None, "spades_kmers": None},
         MITO_RULES | IMAGE_RULES | NHMMER_RULES,
         {"run_novoplasty", "create_hash"},
+    ),
+    "mito_getorganelle_from_the_generator": (
+        GENERATOR,
+        {},
+        MITO_RULES | {"run_getorganelle"},
+        IMAGE_RULES | NHMMER_RULES | {"run_novoplasty", "create_hash", "run_fastp"},
     ),
     "mito_trimming_with_adapters": (
         SHORT,
@@ -260,6 +268,7 @@ class WorkflowScenarios(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             workdir = Path(tmp) / "organpipe"
             config = self.prepare(workdir, base, fields)
+            short_reads = yaml.safe_load(config.read_text())["sequencing_type"].lower() == "short"
 
             result = self.run_tool(workdir, "bash", "OrganPipe.sh", "-d", ".", "-c", str(config), "-t", "2", "-np")
             self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
@@ -267,7 +276,7 @@ class WorkflowScenarios(unittest.TestCase):
 
             # Run up to the assemblies, so the later jobs can be listed
             snakemake = ["snakemake", "-d", ".", "-s", "workflow/Snakefile", "--profile", "profiles/local", "--cores", "2"]
-            until = "split_assemblies" if base == SHORT else "run_mitohifi"
+            until = "split_assemblies" if short_reads else "run_mitohifi"
             result = self.run_tool(workdir, *snakemake, "--until", until)
             self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
 
@@ -409,6 +418,9 @@ class WorkflowScenarios(unittest.TestCase):
 
     def test_mito_getorganelle_blank_options(self):
         self.check_scenario("mito_getorganelle_blank_options")
+
+    def test_mito_getorganelle_from_the_generator(self):
+        self.check_scenario("mito_getorganelle_from_the_generator")
 
     def test_mito_trimming_with_adapters(self):
         self.check_scenario("mito_trimming_with_adapters")

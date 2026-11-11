@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "workflow" / "scripts"
+# Config files as written by the config generator (https://itvgenomics.github.io/config_generator/)
+GENERATOR_CONFIGS = ROOT / "tests" / "data"
 sys.path.insert(0, str(SCRIPTS))
 
 from Bio import SeqIO
@@ -341,6 +343,21 @@ class CreateSnakemakeConfig(unittest.TestCase):
         )
         self.assertEqual((entry["minlength"], entry["minquality"]), (50, 20))
 
+    def test_seeds_are_only_prepared_for_novoplasty(self):
+        # The seed file does not exist: preparing the seeds would stop the run
+        self.write_yaml(
+            sample="s1", run_novoplasty="No", run_getorganelle="Yes", database="animal_mt",
+            seed_file="missing.fasta", kmers="",
+        )
+        entry = self.create("c.yaml")["s1"]
+        self.assertEqual((entry["seeds"], entry["kmers"]), ([], []))
+
+    def test_blank_and_unquoted_values(self):
+        # YAML reads unquoted Yes/No as booleans
+        self.write_yaml(sample="s1", reference="  ", run_images=False, annotation=True)
+        entry = self.create("c.yaml")["s1"]
+        self.assertEqual((entry["reference"], entry["run_images"], entry["annotation"]), ("", "no", "yes"))
+
 
 class CheckConfig(unittest.TestCase):
     def run_check(self, text):
@@ -366,7 +383,7 @@ class CheckConfig(unittest.TestCase):
     def test_max_memory(self):
         import check_config
 
-        config = {"sequencing_type": "short", "run_novoplasty": "yes", "reads_length": 150, "insert_size": 300}
+        config = {"sequencing_type": "short", "run_novoplasty": "yes", "reads_length": 150, "insert_size": 300, "kmers": "33"}
         for value, errors in [(40, 0), (40.0, 0), ("40", 0), ("", 1), (None, 1), ("8G", 1), (0, 1)]:
             self.assertEqual(
                 len(check_config.check_assembler_requirements({**config, "max_memory": value})), errors, value
@@ -378,6 +395,92 @@ class CheckConfig(unittest.TestCase):
         long_reads = {"sequencing_type": "long", "pacbio_adapters": None}
         self.assertEqual(check_config.check_pacbio_adapters({**long_reads, "run_trimming": "no"}), [])
         self.assertEqual(len(check_config.check_pacbio_adapters({**long_reads, "run_trimming": "yes"})), 1)
+
+    def test_configs_from_the_generator(self):
+        # Blank fields are written as "", and the NOVOPlasty fields stay blank when it is disabled
+        for name in ["generator_getorganelle.yaml", "generator_getorganelle.csv", "generator_longreads.yaml"]:
+            result = run_script("check_config.py", "-c", str(GENERATOR_CONFIGS / name), cwd=ROOT)
+            self.assertEqual(result.returncode, 0, name + result.stdout + result.stderr)
+
+    def test_blank_values(self):
+        import config_values
+
+        for value in [None, "", "  ", float("nan")]:
+            self.assertEqual(config_values.as_text(value), "", value)
+        self.assertEqual([config_values.as_text(v) for v in [True, False, 2, " a"]], ["Yes", "No", "2", " a"])
+
+    def test_unquoted_yes_and_no(self):
+        import check_config
+
+        fields = ["annotation", "run_trimming", "run_nhmmer", "run_images", "run_novoplasty"]
+        config = {"sequencing_type": "short", "run_getorganelle": True, **dict.fromkeys(fields, False)}
+        self.assertEqual(check_config.check_yes_no_fields(config), [])
+
+    def test_long_reads_only_need_annotation(self):
+        import check_config
+
+        fields = ["run_trimming", "run_nhmmer", "run_images", "run_novoplasty", "run_getorganelle"]
+        config = {"sequencing_type": "long", "annotation": "Yes", **dict.fromkeys(fields, None)}
+        self.assertEqual(check_config.check_yes_no_fields(config), [])
+        self.assertEqual(len(check_config.check_yes_no_fields({**config, "annotation": None})), 1)
+        self.assertEqual(len(check_config.check_yes_no_fields({**config, "run_nhmmer": "maybe"})), 1)
+        # Short reads need every step
+        self.assertEqual(len(check_config.check_yes_no_fields({**config, "sequencing_type": "short"})), 5)
+
+    def test_novoplasty_fields_are_ignored_without_novoplasty(self):
+        import check_config
+
+        config = {
+            "sequencing_type": "short", "run_novoplasty": "No", "run_getorganelle": "Yes", "database": "animal_mt",
+            "genome_range": "", "reference": "", "seed_format": "", "search_ncbi": "", "kmers": "", "max_memory": "",
+        }
+        checks = [
+            check_config.check_reference_file,
+            check_config.check_genome_range,
+            check_config.check_seed_format_and_file,
+            check_config.check_search_ncbi_requirements,
+            check_config.check_assembler_requirements,
+        ]
+        for check in checks:
+            self.assertEqual(check(config), [], check.__name__)
+
+    def test_novoplasty_needs_kmers_and_seeds(self):
+        import check_config
+
+        config = {
+            "sequencing_type": "short", "run_novoplasty": "Yes", "reads_length": "150", "insert_size": "300",
+            "max_memory": "40",
+        }
+        for kmers, errors in [("19,23,33", 0), ("33", 0), (33, 0), ("", 1), (None, 1), ("19;23", 1), ("0", 1)]:
+            self.assertEqual(
+                len(check_config.check_assembler_requirements({**config, "kmers": kmers})), errors, kmers
+            )
+
+        # Without a seed file the seeds come from NCBI, and a blank search_ncbi means "No"
+        for seed_format, search_ncbi, errors in [("", "", 1), ("", "No", 1), ("", "Yes", 0), ("fa", "Yes", 1)]:
+            fields = {"seed_format": seed_format, "search_ncbi": search_ncbi}
+            self.assertEqual(
+                len(check_config.check_seed_format_and_file({**config, **fields})), errors, fields
+            )
+
+    def test_genetic_code_is_only_needed_when_used(self):
+        import check_config
+
+        cases = [
+            ({"sequencing_type": "short", "organelle": "mito", "annotation": "Yes"}, 1),
+            ({"sequencing_type": "short", "organelle": "mito", "annotation": "No"}, 0),
+            ({"sequencing_type": "short", "organelle": "chloro", "annotation": "Yes"}, 0),
+            ({"sequencing_type": "long", "organelle": "mito", "annotation": "No"}, 1),
+        ]
+        for config, errors in cases:
+            for blank in [None, ""]:
+                self.assertEqual(
+                    len(check_config.check_genetic_code({**config, "genetic_code": blank})), errors, config
+                )
+
+        mito = cases[0][0]
+        for code, errors in [(2, 0), ("11", 0), (2.0, 0), (7, 1), ("two", 1)]:
+            self.assertEqual(len(check_config.check_genetic_code({**mito, "genetic_code": code})), errors, code)
 
 
 class SplitFasta(unittest.TestCase):

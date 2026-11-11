@@ -1,0 +1,61 @@
+# Written by the config generator (https://itvgenomics.github.io/config_generator/):
+# short reads, NOVOPlasty disabled, GetOrganelle enabled. Blank text fields are written as "".
+
+################################
+######### PROJECT INFO #########
+################################
+sample: "hs1"
+reads_path: "test_data/rawreads"
+organelle: "mito"
+genetic_code: 2
+sequencing_type: "Short"
+
+##################################
+######## OrganPipe Steps #########
+##################################
+run_trimming: "No"
+annotation: "Yes"
+run_nhmmer: "No"
+run_images: "No"
+
+################################
+####### QUALITY CONTROL ########
+################################
+adapters: ""
+minlength: 
+minquality: 
+pacbio_adapters: "-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT"
+
+################################
+####### NOVOPlasty INFO ########
+################################
+run_novoplasty: "No"
+genome_range: ""
+reference: ""
+seed_format: ""
+seed_file: ""
+feature: ""
+search_ncbi: ""
+search_genes: ""
+search_term: ""
+max_references: 
+kmers: ""
+max_memory: 
+reads_length: 
+insert_size: 
+
+################################
+###### GetOrganelle INFO #######
+################################
+run_getorganelle: "Yes"
+database: "animal_mt"
+n_rounds: 10
+target_size: 16000
+spades_kmers: "21,55,85"
+extra_flags: ""
+
+################################
+######## MitoHifi INFO #########
+################################
+search_species: ""
+n_references: 

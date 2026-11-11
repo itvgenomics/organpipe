@@ -1,0 +1,61 @@
+# Written by the config generator (https://itvgenomics.github.io/config_generator/) for long reads.
+# genetic_code was filled in by hand: the generator leaves it blank for long reads.
+
+################################
+######### PROJECT INFO #########
+################################
+sample: "hifi"
+reads_path: "test_data/rawreads"
+organelle: "mito"
+genetic_code: 2
+sequencing_type: "Long"
+
+##################################
+######## OrganPipe Steps #########
+##################################
+run_trimming: "No"
+annotation: "No"
+run_nhmmer: "No"
+run_images: "No"
+
+################################
+####### QUALITY CONTROL ########
+################################
+adapters: ""
+minlength: 
+minquality: 
+pacbio_adapters: "-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCTTTTCCTCCTCCTCCGTTGTTGTTGTTGAGAGAGAT"
+
+################################
+####### NOVOPlasty INFO ########
+################################
+run_novoplasty: "No"
+genome_range: ""
+reference: ""
+seed_format: ""
+seed_file: ""
+feature: ""
+search_ncbi: ""
+search_genes: ""
+search_term: ""
+max_references: 
+kmers: ""
+max_memory: 
+reads_length: 
+insert_size: 
+
+################################
+###### GetOrganelle INFO #######
+################################
+run_getorganelle: "No"
+database: ""
+n_rounds: 
+target_size: 
+spades_kmers: ""
+extra_flags: ""
+
+################################
+######## MitoHifi INFO #########
+################################
+search_species: "Homo sapiens"
+n_references: 5

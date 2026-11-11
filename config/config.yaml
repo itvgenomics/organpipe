@@ -17,6 +17,7 @@ reads_path:
 organelle:
 
 # Define the genetic code to be used for mitochondrial genome annotation (e.g., 1 for Standard Code).
+# Required for long reads and for the annotation of mitochondria. Not used for chloroplasts.
 genetic_code:
 
 # Indicate the type of sequencing data: "Short" for Illumina short reads or "Long" for PacBio/ONT reads.
@@ -70,6 +71,7 @@ pacbio_adapters: '-b ATCTCTCTCAACAACAACAACGGAGGAGGAGGAAAAGAGAGAGAT -b ATCTCTCTCT
 ################################
 
 # Indicate whether to run NOVOPlasty for genome assembly. Options: "Yes" to run NOVOPlasty, "No" to skip this step.
+# The other fields of this section are ignored when run_novoplasty is "No".
 run_novoplasty: "Yes"
 
 # Specify the expected genome size range in kilobases (e.g., "15000-18000" for mitochondria).
@@ -88,8 +90,7 @@ seed_file:
 feature:
 
 # If no seed file is provided, indicate whether to search NCBI for reference sequences.
-# Options: "Yes" to search NCBI, "No" to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
-# Must be set to "Yes" on running long reads.
+# Options: "Yes" to search NCBI, "No" or blank to skip NCBI search. Ensure seed_format is blank if "Yes" is selected.
 search_ncbi:
 
 # List the specific genes (e.g., "COI,16S,ATP6") to search for on NCBI if NCBI search is enabled.
