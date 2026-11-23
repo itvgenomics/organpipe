@@ -36,6 +36,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Claude Code (worktrees of background sessions, local settings)
+/.claude/
+
 # Editors and operating systems
 .vscode/
 .idea/

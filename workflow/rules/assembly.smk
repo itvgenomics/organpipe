@@ -9,6 +9,12 @@ def mitohifi_reads(wildcards):
         return f"resources/{sample}/rawreads/{sample}.fasta"
     return f"resources/{sample}/rawreads/{sample}.converted.fasta"
 
+def getorganelle_reads(wildcards, input):
+    """Read flags of GetOrganelle: -1/-2 for paired reads, -u for single-end or merged reads."""
+    if single_end(wildcards.sample):
+        return f"-u {input.single}"
+    return f"-1 {input.r1} -2 {input.r2}"
+
 def getorganelle_options(wildcards):
     """Optional GetOrganelle flags: a blank field keeps the default of the organelle type."""
     sample_config = config["samples"][wildcards.sample]
@@ -125,6 +131,7 @@ rule run_getorganelle:
     benchmark:
        "benchmarks/{sample}/getorganelle/run_getorganelle.txt"
     params:
+        reads=getorganelle_reads,
         database=sample_param("database"),
         options=getorganelle_options,
         extra_flags=sample_param("extra_flags"),
@@ -134,7 +141,7 @@ rule run_getorganelle:
         """
         mkdir -p results/{wildcards.sample}/getorganelle && \
         export PATH=/opt/conda/bin:$PATH && \
-        get_organelle_from_reads.py -1 {input.r1} -2 {input.r2} \
+        get_organelle_from_reads.py {params.reads} \
             -o results/{wildcards.sample}/getorganelle -t {threads} \
             --config-dir resources/getorganelle_db/ --overwrite \
             -F {params.database} {params.options} \

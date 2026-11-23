@@ -31,7 +31,7 @@ rule run_bwa_mem:
         sif("hic_mapping")
     shell:
         """
-        {{ bwa-mem2.avx mem -t {threads} {input.fasta} {input.r1} {input.r2} 2>> {log}
+        {{ bwa-mem2.avx mem -t {threads} {input.fasta} {input.reads} 2>> {log}
         }} | samtools view - -Sb | samtools sort - -@ {threads} -o {output} >> {log} 2>&1
         """
 

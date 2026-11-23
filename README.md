@@ -100,6 +100,7 @@ For short reads you can run NOVOPlasty, GetOrganelle or both. The main steps aft
 All read files go directly in the directory set in `reads_path`, and their names must contain the sample name as a whole name: `sample1` matches `sample1_R1.fastq.gz` and `sample1_S1_R1_001.fastq.gz`, but not `sample10_R1.fastq.gz`. A file named exactly after the sample is preferred. If a sample still matches more than one file (e.g. one per lane), the run stops: merge the files first.
 
 - **Short reads**: paired-end files in `.fastq.gz` (or `.fasta.gz`), with `_R1`/`_R2` or `_pair1`/`_pair2` marking the read pair, e.g. `sample1_R1.fastq.gz` and `sample1_R2.fastq.gz`. Keep only read files in this directory. Files whose name contains `Undetermined` are ignored when `sample: "all"` is used.
+- **Single-end or merged short reads** (`read_layout: "single"`): one file per sample in `.fastq.gz`, without `_R1`/`_R2` in the name, e.g. `sample1.fastq.gz` or `sample1_M.fastq.gz`. Use it for single-end runs or when the forward and reverse reads were merged into one read. Only GetOrganelle assembles these reads (with `-u`), so `run_novoplasty` must be `No`. Pilon and the plots map the reads that GetOrganelle recruited as single-end reads.
 - **Long reads**: one file per sample, in `.fastq.gz` or uncompressed `.fasta`, e.g. `sample1.fastq.gz`. Trimming is only supported for `.fastq.gz`, and the run stops if `run_trimming` is `Yes` for a `.fasta` file.
 
 ## Configuration
@@ -122,11 +123,12 @@ Before running the pipeline, describe your samples in a configuration file. Temp
 | `organelle` | `"mito"` | `"mito"` for mitochondrial or `"chloro"` for chloroplast genomes. Chloroplast assembly is only supported for short reads. | Required |
 | `genetic_code` | `2` | NCBI genetic code used for annotation (e.g. `2` for the vertebrate mitochondrial code, `11` for plastids). | Required for long reads and for the annotation of mitochondria |
 | `sequencing_type` | `"Short"` | `"Short"` for Illumina or `"Long"` for PacBio/ONT reads. | Required |
+| `read_layout` | `"single"` | Short reads only: `"paired"` for `_R1`/`_R2` files, or `"single"` for one file of single-end or merged reads, assembled only by GetOrganelle (see [Input reads](#input-reads)). Blank means `"paired"`, and configs without this field keep working. | Optional |
 | `genome_range` | `"12000-22000"` | Expected genome size range, **in base pairs** (`min-max`). NOVOPlasty options and contigs outside this range are discarded; circularized assemblies are always kept. | Required if `run_novoplasty` is `Yes` |
 
 ### Pipeline steps
 
-For short reads, each of these fields must be set to `Yes` or `No`. At least one of `run_novoplasty` and `run_getorganelle` must be `Yes`.
+For short reads, each of these fields must be set to `Yes` or `No`. At least one of `run_novoplasty` and `run_getorganelle` must be `Yes`, and with `read_layout: "single"` only `run_getorganelle` can be.
 
 | Field | Example | Description | Requirement |
 |:------|:--------|:------------|:------------|

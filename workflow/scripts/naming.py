@@ -80,13 +80,13 @@ def find_short_reads(sample, reads_path):
     }
 
 
-def find_long_reads(sample, reads_path):
-    """Return the read file of a long-read sample."""
+def find_read_file(sample, reads_path, suffixes):
+    """Return the only read file of a sample whose reads are in one file (no _R1/_R2 marker)."""
     exact = []
     partial = []
 
     for filename in sorted(os.listdir(reads_path)):
-        if mate_marker(filename) or not filename.endswith(LONG_READ_SUFFIXES):
+        if mate_marker(filename) or not filename.endswith(suffixes):
             continue
 
         stem = read_stem(filename)
@@ -96,3 +96,13 @@ def find_long_reads(sample, reads_path):
             partial.append(filename)
 
     return pick_read_file(sample, "read file", reads_path, exact, partial)
+
+
+def find_long_reads(sample, reads_path):
+    """Return the read file of a long-read sample."""
+    return find_read_file(sample, reads_path, LONG_READ_SUFFIXES)
+
+
+def find_single_reads(sample, reads_path):
+    """Return the read file of a short-read sample with read_layout: single (single-end or merged reads)."""
+    return find_read_file(sample, reads_path, SHORT_READ_SUFFIXES)

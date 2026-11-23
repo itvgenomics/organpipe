@@ -18,6 +18,7 @@
 set-resources:
   # Trimming and read preparation
   run_fastp:              {mem_mb: 4000}
+  run_fastp_single:       {mem_mb: 4000}
   run_cutadapt:           {mem_mb: 4000}
   run_seqtk:              {mem_mb: 4000}
   check_fastq_longreads:  {mem_mb: 4000}

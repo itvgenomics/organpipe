@@ -3,6 +3,7 @@
 ## OrganPipe 1.3.0
 
 ### New Features
+- Added `read_layout: "single"` for short reads in one file per sample, with single-end reads or with the forward and reverse reads merged into one read. GetOrganelle assembles them with `-u`; NOVOPlasty needs paired reads, so it must be disabled for these samples. The field is optional and blank means `"paired"`, so existing configuration files keep working.
 - Added a benchmark report: an HTML report of runtime, CPU and memory usage (`workflow/reports/benchmark.html`) built from the Snakemake benchmark files at the end of every run, including runs where some jobs failed. It reads the rule definitions, so it works with any combination of samples, assemblers and steps. It can also be built manually with `workflow/scripts/benchmark_report.py`.
 - Added `-h`/`--help` and `-v`/`--version` to `OrganPipe.sh`.
 - Added `workflow/containers.yaml`, which sets the image and version of every tool in one place:

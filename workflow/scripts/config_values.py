@@ -16,3 +16,11 @@ def as_text(value):
         return "Yes" if value else "No"
     text = str(value)
     return text if text.strip() else ""
+
+
+def read_layout(config):
+    """Layout of the short reads: "paired" (_R1/_R2 files) or "single" (one file of single-end or merged reads).
+
+    The field is optional, so the configs written before it existed keep their paired reads.
+    """
+    return as_text(config.get("read_layout")).strip().lower() or "paired"

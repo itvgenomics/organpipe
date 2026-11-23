@@ -10,7 +10,7 @@ import sys
 import get_seeds
 import download_seeds
 import download_references
-from config_values import as_text
+from config_values import as_text, read_layout
 from naming import SHORT_READ_SUFFIXES, LONG_READ_SUFFIXES, mate_marker, read_stem
 
 # Fields written in lowercase, so the rules can compare them directly.
@@ -215,9 +215,10 @@ def prepare_seeds(
     return seeds
 
 
-def get_samples_ids(reads_path, sequencing_type):
+def get_samples_ids(reads_path, sequencing_type, layout="paired"):
     """Return the samples of `sample: all`: every read file or read pair in reads_path."""
     suffixes = SHORT_READ_SUFFIXES if sequencing_type == "short" else LONG_READ_SUFFIXES
+    paired = sequencing_type == "short" and layout == "paired"
     sample_ids = set()
 
     for filename in os.listdir(reads_path):
@@ -225,9 +226,9 @@ def get_samples_ids(reads_path, sequencing_type):
             continue
 
         marker = mate_marker(filename)
-        if sequencing_type == "short" and marker and marker.group(1)[-1] == "1":
+        if paired and marker and marker.group(1)[-1] == "1":
             sample_ids.add(filename[: marker.start()])
-        elif sequencing_type == "long" and not marker:
+        elif not paired and not marker:
             sample_ids.add(read_stem(filename))
 
     if not sample_ids:
@@ -246,7 +247,7 @@ def read_config_rows(configfile):
         sequencing_type = data["sequencing_type"].strip().lower()
 
         if data["sample"].strip() == "all":
-            sample_ids = get_samples_ids(data["reads_path"], sequencing_type)
+            sample_ids = get_samples_ids(data["reads_path"], sequencing_type, read_layout(data))
         else:
             sample_ids = [sample.strip() for sample in data["sample"].split(",")]
 
@@ -276,6 +277,7 @@ def sample_config(row):
     entry = {field: row[field].strip().lower() for field in LOWERCASE_FIELDS}
     entry.update({field: to_int(row[field]) for field in INTEGER_FIELDS})
     entry.update({field: row[field] for field in TEXT_FIELDS})
+    entry["read_layout"] = read_layout(row)
 
     entry["kmers"] = split_list(row["kmers"])
 

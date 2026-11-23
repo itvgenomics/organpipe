@@ -100,6 +100,30 @@ class FindLongReads(unittest.TestCase):
             naming.find_long_reads("hifi", self.path)
 
 
+class FindSingleReads(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = self.tmp.name
+
+    def name(self, sample):
+        return os.path.basename(naming.find_single_reads(sample, self.path))
+
+    def test_merged_reads_next_to_paired_files(self):
+        touch_files(self.path, ["s1_R1.fastq.gz", "s1_R2.fastq.gz", "s1_M.fastq.gz", "s10_M.fastq.gz"])
+        self.assertEqual(self.name("s1"), "s1_M.fastq.gz")
+        self.assertEqual(self.name("s1_M"), "s1_M.fastq.gz")
+
+    def test_long_read_formats_are_ignored(self):
+        touch_files(self.path, ["s1.fasta", "s1.fastq.gz"])
+        self.assertEqual(self.name("s1"), "s1.fastq.gz")
+
+    def test_only_paired_files_are_an_error(self):
+        touch_files(self.path, ["s1_R1.fastq.gz", "s1_R2.fastq.gz"])
+        with self.assertRaisesRegex(ValueError, "No read file"):
+            naming.find_single_reads("s1", self.path)
+
+
 class CleanSequence(unittest.TestCase):
     def test_keeps_the_length(self):
         cleaned = get_novoplasty_assemblies.clean_sequence(Seq("ACGTNRYacgt*"), "contig")
@@ -317,6 +341,20 @@ class CreateSnakemakeConfig(unittest.TestCase):
         self.write_yaml(sample="all")
         self.assertEqual(sorted(self.create("c.yaml")), ["a", "b_S1"])
 
+    def test_sample_all_with_single_reads(self):
+        touch_files(self.dir / "reads", ["a.fastq.gz", "b_M.fastq.gz", "c_R1.fastq.gz", "c_R2.fastq.gz", "Undetermined.fastq.gz"])
+        self.write_yaml(sample="all", read_layout="Single", run_novoplasty="No", run_getorganelle="Yes", database="animal_mt")
+        samples = self.create("c.yaml")
+        self.assertEqual(sorted(samples), ["a", "b_M"])
+        self.assertEqual(samples["a"]["read_layout"], "single")
+
+    def test_read_layout_is_optional(self):
+        # BASE has no read_layout, like the configs written before it existed
+        self.write_yaml(sample="s1")
+        self.assertEqual(self.create("c.yaml")["s1"]["read_layout"], "paired")
+        self.write_csv({"sample": "s1"})
+        self.assertEqual(self.create("c.csv")["s1"]["read_layout"], "paired")
+
     def test_single_kmer_as_a_number(self):
         self.write_yaml(sample="s1", kmers=33)
         self.assertEqual(self.create("c.yaml")["s1"]["kmers"], ["33"])
@@ -462,6 +500,31 @@ class CheckConfig(unittest.TestCase):
             self.assertEqual(
                 len(check_config.check_seed_format_and_file({**config, **fields})), errors, fields
             )
+
+    def test_read_layout(self):
+        import check_config
+
+        getorganelle = {"sequencing_type": "short", "run_novoplasty": "No", "run_getorganelle": "Yes"}
+        novoplasty = {**getorganelle, "run_novoplasty": "Yes"}
+        cases = [
+            (getorganelle, None, 0), (getorganelle, "", 0), (getorganelle, "Single", 0), (getorganelle, "paired", 0),
+            (getorganelle, "merged", 1), (novoplasty, "single", 1), (novoplasty, "paired", 0), (novoplasty, None, 0),
+        ]
+        for config, layout, errors in cases:
+            self.assertEqual(
+                len(check_config.check_read_layout({**config, "read_layout": layout})), errors, (config, layout)
+            )
+
+    def test_reads_path_with_single_reads(self):
+        import check_config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            touch_files(tmp, ["s1_M.fastq.gz", "s2_R1.fastq.gz", "s2_R2.fastq.gz"])
+            config = {"reads_path": tmp, "sequencing_type": "short", "read_layout": "single"}
+            self.assertEqual(check_config.check_reads_path({**config, "sample": "s1"}), [])
+            self.assertEqual(len(check_config.check_reads_path({**config, "sample": "s2"})), 1)
+            # A paired sample needs its _R1/_R2 files
+            self.assertEqual(len(check_config.check_reads_path({**config, "sample": "s1", "read_layout": ""})), 1)
 
     def test_genetic_code_is_only_needed_when_used(self):
         import check_config

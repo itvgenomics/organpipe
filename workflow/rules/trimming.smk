@@ -8,6 +8,8 @@ rule run_fastp:
         r2 = temp("resources/{sample}/rawreads/{sample}.R2.trimmed.gz"),
         html = "resources/{sample}/rawreads/fastp.html",
         json = "resources/{sample}/rawreads/fastp.json"
+    wildcard_constraints:
+        sample = PAIRED_SAMPLES
     log:
         "logs/{sample}/trimming/{sample}_run_fastp.log"
     benchmark:
@@ -25,6 +27,36 @@ rule run_fastp:
         --html {output.html} \
         --json {output.json} \
         --out1 {output.r1} --out2 {output.r2} >> {log} 2>&1
+        """
+
+rule run_fastp_single:
+    input:
+        reads = "resources/{sample}/rawreads/{sample}_SE.fastq.gz",
+        adapters = "resources/{sample}/adapters.fasta"
+    output:
+        reads = temp("resources/{sample}/rawreads/{sample}.SE.trimmed.gz"),
+        html = "resources/{sample}/rawreads/fastp.html",
+        json = "resources/{sample}/rawreads/fastp.json"
+    wildcard_constraints:
+        sample = SINGLE_END_SAMPLES
+    log:
+        "logs/{sample}/trimming/{sample}_run_fastp_single.log"
+    benchmark:
+        "benchmarks/{sample}/trimming/{sample}_run_fastp_single.benchmark"
+    params:
+        minquality=sample_param("minquality"),
+        minlength=sample_param("minlength"),
+        # Without an adapter file, fastp detects the adapters of single-end reads by itself
+        adapters=lambda wildcards: f"--adapter_fasta resources/{wildcards.sample}/adapters.fasta" if config["samples"][wildcards.sample].get("adapters", "") else ""
+    singularity:
+        sif("fastp")
+    shell:
+        """
+        fastp --in1 {input.reads} {params.adapters} \
+        --length_required {params.minlength} --cut_front --cut_tail --cut_mean_quality {params.minquality} --thread {threads} \
+        --html {output.html} \
+        --json {output.json} \
+        --out1 {output.reads} >> {log} 2>&1
         """
 
 rule run_cutadapt:

@@ -3,7 +3,7 @@ import sys
 import yaml
 
 sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
-from naming import GETORGANELLE_RUN, find_long_reads, find_short_reads, sif_name
+from naming import GETORGANELLE_RUN, find_long_reads, find_short_reads, find_single_reads, sif_name
 
 # Container images, pulled by workflow/scripts/singularity.py.
 with open(os.path.join(workflow.basedir, "containers.yaml")) as handle:
@@ -29,6 +29,18 @@ def sample_param(field):
 def is_yes(sample, field):
     return config["samples"][sample][field] == "yes"
 
+def single_end(sample):
+    """Short reads in one file of single-end or merged reads (read_layout: single), assembled with GetOrganelle -u."""
+    return config["samples"][sample].get("read_layout", "paired") == "single"
+
+def only_samples(samples):
+    """Wildcard constraint that matches only these samples, and no sample when the list is empty."""
+    return "|".join(re.escape(sample) for sample in samples) or "(?!)"
+
+# Paired and single-end samples have their own trimming rule, and both write the same fastp report.
+PAIRED_SAMPLES = only_samples([sample for sample in SAMPLES if not single_end(sample)])
+SINGLE_END_SAMPLES = only_samples([sample for sample in SAMPLES if single_end(sample)])
+
 def output_dir(wildcards, output):
     """Function for `params:` that returns the directory of the first output."""
     return os.path.dirname(output[0])
@@ -45,18 +57,27 @@ def genbank_path(wildcards, annotator, rotated=False):
     )
 
 def short_reads(wildcards):
-    """Trimmed or raw reads of a sample, for the assemblers."""
+    """Trimmed or raw reads of a sample, for the assemblers: r1 and r2, or single with read_layout: single."""
     prefix = f"resources/{wildcards.sample}/rawreads/{wildcards.sample}"
-    if is_yes(wildcards.sample, "run_trimming"):
+    trimmed = is_yes(wildcards.sample, "run_trimming")
+    if single_end(wildcards.sample):
+        return {"single": f"{prefix}.SE.trimmed.gz" if trimmed else f"{prefix}_SE.fastq.gz"}
+    if trimmed:
         return {"r1": f"{prefix}.R1.trimmed.gz", "r2": f"{prefix}.R2.trimmed.gz"}
     return {"r1": f"{prefix}_R1.fastq.gz", "r2": f"{prefix}_R2.fastq.gz"}
 
 def assembled_reads(wildcards):
-    """Reads each assembler kept for a run, for error correction and the plots."""
+    """Reads each assembler kept for a run, for error correction and the plots.
+
+    `reads` is the pair of files, or one file for single-end reads: bwa-mem2 takes either.
+    """
     if wildcards.assembler == "getorganelle":
         prefix = f"results/{wildcards.sample}/getorganelle/extended"
-        return {"r1": f"{prefix}_1_paired.fq", "r2": f"{prefix}_2_paired.fq"}
+        if single_end(wildcards.sample):
+            # With -u alone, GetOrganelle writes the reads it kept to extended_1.fq
+            return {"reads": [f"{prefix}_1.fq"]}
+        return {"reads": [f"{prefix}_1_paired.fq", f"{prefix}_2_paired.fq"]}
 
     seed, kmer = wildcards.run.rsplit("_kmer", 1)
     prefix = f"results/{wildcards.sample}/novoplasty/{seed}/kmer{kmer}/Assembled_reads_{wildcards.sample}"
-    return {"r1": f"{prefix}_R1.fasta", "r2": f"{prefix}_R2.fasta"}
+    return {"reads": [f"{prefix}_R1.fasta", f"{prefix}_R2.fasta"]}

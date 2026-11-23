@@ -4,6 +4,9 @@ def get_shortreads(sample):
 def get_longreads(sample):
     return find_long_reads(sample, config["samples"][sample]["reads_path"])
 
+def get_singlereads(sample):
+    return find_single_reads(sample, config["samples"][sample]["reads_path"])
+
 rule check_shortreads_files:
     input:
         forward_reads=lambda wildcards: get_shortreads(wildcards.sample)["forward"],
@@ -15,6 +18,16 @@ rule check_shortreads_files:
         """
         cp {input.forward_reads} {output.r1}
         cp {input.reverse_reads} {output.r2}
+        """
+
+rule check_single_reads:
+    input:
+        lambda wildcards: get_singlereads(wildcards.sample)
+    output:
+        temp("resources/{sample}/rawreads/{sample}_SE.fastq.gz")
+    shell:
+        """
+        cp {input} {output}
         """
 
 rule check_fastq_longreads:

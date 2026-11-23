@@ -23,6 +23,11 @@ genetic_code:
 # Indicate the type of sequencing data: "Short" for Illumina short reads or "Long" for PacBio/ONT reads.
 sequencing_type:
 
+# Short reads only: "paired" for _R1/_R2 files (the default when blank), or "single" for one file per
+# sample (sample.fastq.gz) with single-end reads or with the merged forward and reverse reads.
+# Single reads are only assembled by GetOrganelle (-u), so set run_novoplasty to "No".
+read_layout:
+
 ##################################
 ######## OrganPipe Steps #########
 ##################################
@@ -155,6 +160,9 @@ target_size:
 spades_kmers:
 
 # Add any additional flags to be passed to the GetOrganelle command line.
+# If GetOrganelle stops with "Too few seed reads found" because the organelle is too divergent from
+# the database seeds, local mapping of the seed reads can recruit enough of them, e.g.:
+# extra_flags: '--bowtie2-options="--very-sensitive-local -t"'
 extra_flags:
 
 ################################

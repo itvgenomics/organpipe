@@ -15,6 +15,7 @@
 set-threads:
   # Trimming
   run_fastp:            4
+  run_fastp_single:     4
   run_cutadapt:         4
 
   # Assembly

@@ -5,8 +5,8 @@ import pandas as pd
 import re
 import logging
 import sys
-from config_values import as_text
-from naming import find_long_reads, find_short_reads
+from config_values import as_text, read_layout
+from naming import find_long_reads, find_short_reads, find_single_reads
 
 # Samples must match the `sample` wildcard in workflow/Snakefile.
 VALID_SAMPLE_NAME = r"^[A-Za-z0-9_]+$"
@@ -172,6 +172,15 @@ def check_reads_path(config):
             errors.append(
                 f"`reads_path` '{path}' does not contain any .fastq.gz or .fasta.gz files."
             )
+
+        if read_layout(config) == "single":
+            if samples and samples != ["all"]:
+                for sample in samples:
+                    try:
+                        find_single_reads(sample, path)
+                    except ValueError as e:
+                        errors.append(str(e))
+            return errors
 
         r1_files = [f for f in fastq_fasta_files if "_R1" in f or "_pair1" in f]
         r2_files = [f for f in fastq_fasta_files if "_R2" in f or "_pair2" in f]
@@ -351,6 +360,25 @@ def check_sequencing_type(config):
         errors.append(
             f"Invalid value for `sequencing_type`: '{config.get('sequencing_type')}'. "
             "Accepted values are: 'short' or 'long'."
+        )
+
+    return errors
+
+
+def check_read_layout(config):
+    """Short reads come in _R1/_R2 files (paired) or in one file of single-end or merged reads (single)."""
+    errors = []
+    layout = read_layout(config)
+
+    if layout not in {"paired", "single"}:
+        errors.append(
+            f"Invalid value for `read_layout`: '{config.get('read_layout')}'. "
+            "Accepted values are: 'paired', 'single' or empty (paired)."
+        )
+    elif layout == "single" and runs_novoplasty(config):
+        errors.append(
+            "`read_layout` is 'single', but `run_novoplasty` is 'Yes'. NOVOPlasty needs paired reads: "
+            "set `run_novoplasty` to 'No' and assemble the single-end or merged reads with GetOrganelle."
         )
 
     return errors
@@ -680,6 +708,13 @@ def main():
         if sample_name_errors:
             logging.info("\n Problem with `sample` field:")
             for msg in sample_name_errors:
+                raise ValueError(f" - {msg}")
+
+        read_layout_errors = check_read_layout(config)
+
+        if read_layout_errors:
+            logging.info("\n Problem with `read_layout` field:")
+            for msg in read_layout_errors:
                 raise ValueError(f" - {msg}")
 
         read_path_errors = check_reads_path(config)

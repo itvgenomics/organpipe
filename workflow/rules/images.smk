@@ -48,9 +48,9 @@ rule run_blastn:
         shopt -s nullglob
         reads={params.dir}/assembled_reads.fa
         if [ {wildcards.assembler} = getorganelle ]; then
-            perl workflow/scripts/get_fastq.pl -1 {input.r1} -2 {input.r2} -out "$reads"
+            perl workflow/scripts/get_fastq.pl -out "$reads" {input.reads}
         else
-            cat {input.r1} {input.r2} > "$reads"
+            cat {input.reads} > "$reads"
         fi
         for fasta_file in {params.dir}/*.fasta; do
             fasta_header=$(awk '/^>/ {{print; exit}}' "$fasta_file" | sed 's/^>//')
@@ -124,7 +124,7 @@ rule run_bwa_mem_rotated:
     shell:
         """
         if [ -f {params.rotated}.fasta ]; then
-            {{ bwa-mem2.avx mem -t {threads} {params.rotated}.fasta {input.r1} {input.r2} 2>> {log}
+            {{ bwa-mem2.avx mem -t {threads} {params.rotated}.fasta {input.reads} 2>> {log}
             }} | samtools view - -Sb | samtools sort - -@ {threads} \
             -o {params.rotated}_mapping.bam >> {log} 2>&1
         fi

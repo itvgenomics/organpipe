@@ -57,16 +57,20 @@ fi
 """,
     "get_organelle_config.py": "exit 0",
     "get_organelle_from_reads.py": f"""
+single=""
 while [ $# -gt 0 ]; do
     if [ "$1" = "-o" ]; then out="$2"; fi
     case "$1" in
+        -u) single=1 ;;
+        -1|-2) [ -z "$single" ] || {{ echo "-u with $1" >&2; exit 2; }} ;;
         -R|-k|--target-genome-size) [[ "${{2:-}}" =~ ^[0-9] ]] || {{ echo "$1 without a value" >&2; exit 2; }} ;;
     esac
     shift
 done
 echo done > "$out/get_org.log.txt"
 printf '>c\\n{GENOME}\\n' > "$out/animal_mt.K115.complete.graph1.1.path_sequence.fasta"
-touch "$out/extended_1_paired.fq" "$out/extended_2_paired.fq"
+# Like GetOrganelle: the reads it kept are split by pair only for paired input
+if [ -n "$single" ]; then touch "$out/extended_1.fq"; else touch "$out/extended_1_paired.fq" "$out/extended_2_paired.fq"; fi
 """,
     "fastp": """
 while [ $# -gt 0 ]; do
@@ -127,6 +131,8 @@ GETORGANELLE_ONLY = {
 BOTH_ASSEMBLERS = {"run_novoplasty": "Yes", "run_getorganelle": "Yes", "database": "embplant_pt"}
 CHLORO = {"organelle": "chloro", "genetic_code": 11, "genome_range": "10000-20000"}
 TRIMMING = {"run_trimming": "Yes", "minlength": 50, "minquality": 20}
+# One file of merged reads per sample, in single_reads/ (written by prepare)
+SINGLE_READS = {"read_layout": "single", "reads_path": "single_reads"}
 ALL_STEPS = {"annotation": "Yes", "run_images": "Yes", "run_nhmmer": "Yes"}
 NO_STEPS = {"annotation": "No", "run_images": "No", "run_nhmmer": "No"}
 
@@ -171,6 +177,12 @@ SCENARIOS = {
         {},
         MITO_RULES | {"run_getorganelle"},
         IMAGE_RULES | NHMMER_RULES | {"run_novoplasty", "create_hash", "run_fastp"},
+    ),
+    "mito_getorganelle_single_reads": (
+        SHORT,
+        {**GETORGANELLE_ONLY, **SINGLE_READS, **TRIMMING, **ALL_STEPS},
+        MITO_RULES | IMAGE_RULES | NHMMER_RULES | {"check_single_reads", "run_fastp_single", "run_getorganelle"},
+        {"check_shortreads_files", "run_fastp", "run_novoplasty", "create_hash"},
     ),
     "mito_trimming_with_adapters": (
         SHORT,
@@ -248,6 +260,10 @@ class WorkflowScenarios(unittest.TestCase):
         data.update(fields)
         config = workdir / "scenario.yaml"
         config.write_text(yaml.safe_dump(data))
+
+        single_reads = workdir / "single_reads"
+        single_reads.mkdir()
+        (single_reads / "hs1_M.fastq.gz").touch()
 
         if data["sequencing_type"].lower() == "long":
             seeds = workdir / "resources" / "hifi" / "seeds"
@@ -421,6 +437,32 @@ class WorkflowScenarios(unittest.TestCase):
 
     def test_mito_getorganelle_from_the_generator(self):
         self.check_scenario("mito_getorganelle_from_the_generator")
+
+    def test_mito_getorganelle_single_reads(self):
+        self.check_scenario("mito_getorganelle_single_reads")
+
+    def test_paired_and_single_samples_in_one_run(self):
+        # Both trimming rules write fastp.html, and each sample must still have only one of them
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp) / "organpipe"
+            self.prepare(workdir, SHORT, {})
+            base = yaml.safe_load((workdir / SHORT).read_text())
+            rows = [
+                {**base, **GETORGANELLE_ONLY, **TRIMMING, "sample": "hs4"},
+                {**base, **GETORGANELLE_ONLY, **TRIMMING, **SINGLE_READS, "sample": "hs1"},
+            ]
+            config = workdir / "scenario.csv"
+            with open(config, "w", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(rows[1]))
+                writer.writeheader()
+                writer.writerows([{key: "" if value is None else value for key, value in row.items()} for row in rows])
+
+            result = self.run_tool(workdir, "bash", "OrganPipe.sh", "-d", ".", "-c", str(config), "-t", "2", "-np")
+            self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
+            jobs = job_counts(result.stdout)
+            for rule in ["run_fastp", "run_fastp_single", "check_shortreads_files", "check_single_reads"]:
+                self.assertEqual(jobs.get(rule), 1, rule)
+            self.assertEqual(jobs.get("run_getorganelle"), 2)
 
     def test_mito_trimming_with_adapters(self):
         self.check_scenario("mito_trimming_with_adapters")
