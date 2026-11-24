@@ -8,17 +8,20 @@ rule write_gb_mitos2:
     params:
         genetic_code=sample_param("genetic_code"),
         genbank=lambda wildcards: genbank_path(wildcards, "mitos2"),
-        annotation_dir=lambda wildcards, input: os.path.dirname(input[0])
+        annotation_dir=lambda wildcards, input: os.path.dirname(input[0]),
+        identity=genbank_name("mitos2")
     shell:
         """
         python workflow/scripts/mito_gff2genbank.py --code {params.genetic_code} \
-            --annotation_dir {params.annotation_dir} --output {params.genbank} >> {log} 2>&1 && \
+            --annotation_dir {params.annotation_dir} --output {params.genbank} \
+            --name {params.identity[name]:q} --definition {params.identity[definition]:q} >> {log} 2>&1 && \
         touch {output}
         """
 
 rule write_gb_chloe:
     input:
         check = "results/{sample}/chloe/{assembler}/{run}/{assembly}/chloe.check",
+        fasta = "results/{sample}/pilon/{assembler}/{run}/{assembly}/{assembly}.fasta",
         table2asn = "resources/table2asn.linux64"
     output:
         "results/{sample}/genbanks/{assembler}/{run}/{assembly}.chloe.genbank.check"
@@ -26,11 +29,13 @@ rule write_gb_chloe:
         "logs/{sample}/genbanks/{assembler}/{run}/{assembly}_write_gb_chloe.log"
     params:
         genbank=lambda wildcards: genbank_path(wildcards, "chloe"),
-        annotation_dir=lambda wildcards, input: os.path.dirname(input.check)
+        annotation_dir=lambda wildcards, input: os.path.dirname(input.check),
+        identity=genbank_name("chloe")
     shell:
         """
         python workflow/scripts/chloro_gff2genbank.py --software chloe --gene2product resources/gene2product.txt \
-            --annotation_dir {params.annotation_dir} --output {params.genbank} >> {log} 2>&1 && \
+            --annotation_dir {params.annotation_dir} --fasta {input.fasta} --output {params.genbank} \
+            --name {params.identity[name]:q} --definition {params.identity[definition]:q} >> {log} 2>&1 && \
         touch {output}
         """
 
@@ -43,11 +48,13 @@ rule write_gb_cpgavas2:
         "logs/{sample}/genbanks/{assembler}/{run}/{assembly}_write_gb_cpgavas2.log"
     params:
         genbank=lambda wildcards: genbank_path(wildcards, "cpgavas2"),
-        annotation_dir=lambda wildcards, input: os.path.dirname(input[0])
+        annotation_dir=lambda wildcards, input: os.path.dirname(input[0]),
+        identity=genbank_name("cpgavas2")
     shell:
         """
         python workflow/scripts/chloro_gff2genbank.py --software cpgavas2 \
-            --annotation_dir {params.annotation_dir} --output {params.genbank} >> {log} 2>&1 && \
+            --annotation_dir {params.annotation_dir} --output {params.genbank} \
+            --name {params.identity[name]:q} --definition {params.identity[definition]:q} >> {log} 2>&1 && \
         touch {output}
         """
 
@@ -60,14 +67,16 @@ rule rotate_genbank:
         "logs/{sample}/genbanks/{assembler}/{run}/{assembly}_{annotator}_rotate_genbank.log"
     params:
         organelle=sample_param("organelle"),
-        start_gene=lambda wildcards: "rrnS" if wildcards.annotator == "mitos2" else "psbA",
+        start_gene=lambda wildcards: START_GENE[config["samples"][wildcards.sample]["organelle"]],
         genbank=lambda wildcards: genbank_path(wildcards, wildcards.annotator),
-        rotated=lambda wildcards: genbank_path(wildcards, wildcards.annotator, rotated=True)
+        rotated=lambda wildcards: genbank_path(wildcards, wildcards.annotator, rotated=True),
+        identity=genbank_name(rotated=True)
     shell:
         """
         if [ -f {params.genbank} ]; then
             python workflow/scripts/rotate_genbank.py --organelle {params.organelle} --start_gene {params.start_gene} \
-                --input {params.genbank} --output {params.rotated} >> {log} 2>&1
+                --input {params.genbank} --output {params.rotated} \
+                --name {params.identity[name]:q} --definition {params.identity[definition]:q} >> {log} 2>&1
         fi
         touch {output}
         """

@@ -12,6 +12,7 @@
   - Interrupted pulls no longer leave an incomplete `.sif` file. When a pull fails, `OrganPipe.sh` prints the `singularity pull` commands to run on another machine.
 - Added the `identical_group` column to `summary.csv`, `pilon.csv` and `mitohifi.csv`, which marks assemblies with the same sequence regardless of their start position and strand.
 - Added `workflow/reports/<sample>/warnings.txt`, which lists the problems that did not stop the run.
+- GenBank files now have a LOCUS name and a DEFINITION that identify the assembly (sample, seed, k-mer, assembly, annotation tool and rotation), instead of `Circularized_Contig`, `Asm_Contig` or the CPGAVAS2 job number. Tools like Geneious use them as the name and description of the sequence. See [GenBank names](README.md#genbank-names).
 - Added `-mitos_db` to choose the MITOS2 reference, since `resources/refseq89m` is for Metazoa.
 - Added `-mem` to limit the memory of the NOVOPlasty jobs in local mode.
 - Added automated tests (`tests/`) and a GitHub Actions workflow.
@@ -26,6 +27,7 @@
 - The memory of `create_hash` and `run_novoplasty` now follows `max_memory` (plus 10%), instead of a fixed 50 GB.
 - `run_blastn` now uses 4 threads.
 - Rotated GenBank files now have the same orientation in all the assemblies of a sample: `rrnS` on the forward strand (mitochondria) and `psbA` on the reverse strand (chloroplast).
+- `workflow/reports/<sample>/files/cpgavas2/` now has only the CPGAVAS2 HTML report and the files it links to, about 4 MB per assembly instead of about 85 MB. The complete CPGAVAS2 output stays in `results/`.
 - GenBank files of mitochondria now include every coding gene annotated by MITOS2, not only the 13 usual ones.
 - The ncRNA and intergenic search now uses `nhmmscan`, the HMMER tool for nucleotide databases, instead of `hmmscan`. The columns of `nhmmer_ncRNA.csv` and `nhmmer_intergenes.csv` changed accordingly.
 - The NCBI API key is now read from the `NCBI_API_KEY` environment variable, and is optional.
@@ -51,6 +53,11 @@
 - CPGAVAS2 could no longer be downloaded, because the Sylabs library (`library.sylabs.io`) is offline. The image now comes from Docker Hub (`brunomsilva/cpgavas2:latest`).
 - Chloroplast samples failed on a new installation, because `resources/table2asn.linux64` was never extracted. Extracting it no longer deletes the `.gz` file.
 - CPGAVAS2 and Chloë could overwrite each other's temporary files when running at the same time.
+- CPGAVAS2 annotated no genes on clusters where `/tmp` is on a network file system: MAKER could not lock its output directory, and the GenBank files had only the `source` feature. MAKER now runs with `-nolock`. An annotation without genes is now listed in `warnings.txt` and writes no GenBank file, and the MAKER error is also reported.
+- tRNAscan-SE never ran inside CPGAVAS2, because `TMPDIR` pointed to a path of the host that does not exist in the container, so the tRNAs came from ARAGORN only.
+- CPGAVAS2 GenBank files had *Arabidopsis thaliana* as the organism and the references of the CPGAVAS2 example file. The organism is now unknown, as in the Chloë files.
+- The Chloë GenBank files of the NOVOPlasty options of a plastome could be identical. Chloë flipped the SSC and rotated each assembly to a standard form, and these options differ only in the orientation of the SSC. Chloë now annotates the assembly as it is (`--no-transform`), so its GenBank files have the same sequence and coordinates as the assembly and the CPGAVAS2 files.
+- Re-running a CPGAVAS2 annotation kept the files of the earlier one in `workflow/reports/<sample>/files/cpgavas2/`.
 - `adapters` failed with a cyclic dependency error whenever it was set.
 - Long reads in `.fastq.gz` without trimming were given to MitoHiFi as a compressed file named `.fasta`.
 - Genes with the same product (e.g. two `tRNA-Leu`) were lost in the ncRNA search.

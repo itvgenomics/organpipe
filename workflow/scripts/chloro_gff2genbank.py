@@ -6,9 +6,19 @@ from Bio.Seq import Seq
 import os
 import logging
 import sys
-import shutil
+import re
 import subprocess
-from naming import warn
+from naming import set_genbank_identity, warn, write_genbank
+
+# Sequence ID given to table2asn. The LOCUS name is replaced afterwards, so its
+# length limit does not apply to the names written by OrganPipe.
+TABLE2ASN_ID = "Asm_Contig"
+
+# CPGAVAS2 results are named after its job id: {pid}.gbf, {pid}.html...
+CPGAVAS2_GENBANK = re.compile(r"(\d+)\.gbf")
+
+GENE_FEATURES = {"gene", "CDS", "tRNA", "rRNA"}
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -26,6 +36,9 @@ def parse_arguments():
         type=str,
         nargs="?"
     )
+    parser.add_argument("--fasta", help="Annotated assembly (Chloe)")
+    parser.add_argument("--name", help="LOCUS name of the GenBank file")
+    parser.add_argument("--definition", help="DEFINITION of the GenBank file")
 
     args = parser.parse_args()
 
@@ -323,15 +336,90 @@ def GFF_Parse_GetFeatureBlock(annotate_block):
 
     return (D_gene, D_mRNA)
 
-def edit_fasta_header(fasta_file, new_header):
-    with open(fasta_file, 'r+') as f:
-        lines = f.readlines()
-        for i, line in enumerate(lines):
-            if line.startswith('>'):
-                lines[i] = '>' + new_header + '\n'
-        f.seek(0)
-        f.writelines(lines)
-        f.truncate()
+def write_table2asn_fasta(assembly_fasta, fasta_file):
+    """Copy the assembly with the sequence ID that table2asn expects."""
+    record = SeqIO.read(assembly_fasta, "fasta")
+    record.id = TABLE2ASN_ID
+    record.description = ""
+    SeqIO.write(record, fasta_file, "fasta")
+
+
+def has_genes(record):
+    return any(feature.type in GENE_FEATURES for feature in record.features)
+
+
+def clear_template_organism(record):
+    """CPGAVAS2 copies the organism and references of its example file (Arabidopsis thaliana)."""
+    record.annotations["source"] = "chloroplast Unknown"
+    record.annotations["organism"] = "Unknown."
+    record.annotations["taxonomy"] = ["Unclassified"]
+    record.annotations.pop("references", None)
+    for feature in record.features:
+        if feature.type == "source":
+            feature.qualifiers["organism"] = ["unknown"]
+            feature.qualifiers.pop("db_xref", None)
+
+
+def write_named_genbank(record, output, name, definition):
+    if name:
+        set_genbank_identity(record, name, definition or record.description)
+    write_genbank(record, output)
+
+
+def chloe_genbank(args):
+    """Write the GenBank file of a Chloe annotation. Returns True if it was written."""
+    for file in sorted(os.listdir(args.annotation_dir)):
+        if not file.endswith(".chloe.gff"):
+            continue
+
+        # Chloe runs with --no-transform: the annotation is on the assembly as it is,
+        # and Chloe writes no FASTA of it
+        base = f"{args.annotation_dir}/{file[:-len('.gff')]}"
+        write_table2asn_fasta(args.fasta, f"{base}.fsa")
+        create_features_table(fasta=f"{base}.fsa",
+                    gff_file=f"{base}.gff",
+                    gene2product=args.gene2product,
+                    features_file=f"{base}.tbl")
+
+        command = [
+            './resources/table2asn.linux64',
+            '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
+            '-a', 's',
+            '-i', f"{base}.fsa",
+            '-f', f"{base}.tbl",
+            '-V', 'vb'
+        ]
+        subprocess.run(command, check=True)
+
+        write_named_genbank(SeqIO.read(f"{base}.gbf", "genbank"), args.output, args.name, args.definition)
+        return True
+
+    warn(f"Chloe produced no annotation in {args.annotation_dir}, so there is no GenBank file.")
+    return False
+
+
+def cpgavas2_genbank(args):
+    """Write the GenBank file of a CPGAVAS2 annotation. Returns True if it was written."""
+    for file in sorted(os.listdir(args.annotation_dir)):
+        if not CPGAVAS2_GENBANK.fullmatch(file):
+            continue
+
+        record = SeqIO.read(f"{args.annotation_dir}/{file}", "genbank")
+        if not has_genes(record):
+            # CPGAVAS2 still writes a GenBank file, with the source feature only
+            warn(
+                f"CPGAVAS2 annotated no genes in {args.annotation_dir}, so there is no GenBank file. "
+                "See its run_cpgavas2.log."
+            )
+            return False
+
+        clear_template_organism(record)
+        write_named_genbank(record, args.output, args.name, args.definition)
+        return True
+
+    warn(f"CPGAVAS2 produced no annotation in {args.annotation_dir}, so there is no GenBank file.")
+    return False
+
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -354,42 +442,7 @@ if __name__ == "__main__":
 """
     )
 
-    annotation_dir = args.annotation_dir
-    written = False
-
-    # Create GB from chloe files
     if args.software == "chloe":
-        for file in os.listdir(annotation_dir):
-            if file.endswith(".fa"):
-                base = file.replace(".chloe.fa", ".chloe")
-                create_features_table(fasta=f"{annotation_dir}/{file}",
-                            gff_file=f"{annotation_dir}/{base}.gff",
-                            gene2product=args.gene2product,
-                            features_file=f"{annotation_dir}/{base}.tbl")
-
-                edit_fasta_header(fasta_file=f"{annotation_dir}/{file}",
-                                new_header="Asm_Contig")
-
-                command = [
-                    './resources/table2asn.linux64',
-                    '-j', '[topology=circular] [Completedness=complete] [location=chloroplast] [gcode=11]',
-                    '-a', 's',
-                    '-i', f"{annotation_dir}/{file}",
-                    '-f', f"{annotation_dir}/{base}.tbl",
-                    '-V', 'vb'
-                ]
-                subprocess.run(command, check=True)
-
-                shutil.copy(f"{annotation_dir}/{base}.gbf", args.output)
-                written = True
-
-    # Copy cpgavas2 files
+        chloe_genbank(args)
     elif args.software == "cpgavas2":
-        for file in os.listdir(annotation_dir):
-            if file.endswith(".maker.gbf"):
-                pid = file.split(".maker.gbf")[0]
-                shutil.copy(f"{annotation_dir}/{pid}.gbf", args.output)
-                written = True
-
-    if not written:
-        warn(f"{args.software} produced no annotation in {annotation_dir}, so there is no GenBank file.")
+        cpgavas2_genbank(args)

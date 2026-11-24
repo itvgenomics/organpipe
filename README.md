@@ -342,7 +342,7 @@ Each `workflow/reports/<sample>/` folder contains the subfolders below. Only the
 | `fastas/` | All assembly FASTA files. |
 | `genbanks/` | GenBank files of the annotated assemblies. |
 | `genes/` | Genes extracted from each assembly (per seed/k-mer). |
-| `files/` | Files to help with manual curation. |
+| `files/` | Files to help with manual curation. For chloroplasts, `files/cpgavas2/<assembler>/<assembly>/<job id>.html` is the CPGAVAS2 report, with only the files it links to (annotation, genome map, gene sequences, tRNAs, problems found and repeats); the complete CPGAVAS2 output stays in `results/`. |
 | `novoplasty/` | NOVOPlasty results (short reads). |
 | `pilon/` | Pilon error-correction results (short reads). |
 | `mitos2/` | MITOS2 annotation results (mitochondria). |
@@ -404,6 +404,22 @@ For example, `CA_1_ITV00872_25_1-COI_941666_19_1` is the circularized assembly 1
 - **number**: sequence number, starting at 1.
 
 For example, `animal_mt_complete_1` is the first complete genome assembled with the `animal_mt` database.
+
+### GenBank names
+
+Tools like Geneious show the LOCUS name of a GenBank file as the name of the sequence, and its DEFINITION as the description. OrganPipe writes them from the assembly:
+
+| Assembler | LOCUS name | Example |
+|:----------|:-----------|:--------|
+| NOVOPlasty | `{sample}_{seed}_k{kmer}_{status}{n}_{index}` | `ITV00872_25_1-COI_941666_k19_CA1_1` |
+| GetOrganelle | `{sample}_{assembly}` | `ITV00872_25_animal_mt_complete_1` |
+| MitoHiFi | `{sample}_{reference}_MitoHiFi` | `hifi1_PQ540662.1_MitoHiFi` |
+
+- Chloroplast names end with the annotation tool (`_chloe` or `_cpgavas2`), and the names of rotated files with `_rot`.
+- Only letters, digits, `_`, `.` and `-` are kept; other characters become `_`.
+- Names have up to 50 characters. Above that, the end of the seed name is cut, keeping its number, so names stay unique. The full seed name is in the DEFINITION.
+
+The DEFINITION describes the assembly, e.g. `ITV00872_25 mitochondrion, NOVOPlasty assembly CA_1_ITV00872_25_1-COI_941666_19_1 (seed 1-COI_941666, k-mer 19), annotated with MITOS2, rotated to start at rrnS`.
 
 ## Logs and benchmarks
 

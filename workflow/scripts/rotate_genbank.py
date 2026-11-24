@@ -1,7 +1,7 @@
 import argparse
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from naming import warn
+from naming import set_genbank_identity, warn, write_genbank
 
 # Strand of the start gene after rotation, so all assemblies of a sample have the same
 # orientation. Plastomes usually have psbA on the reverse strand, next to the start.
@@ -20,6 +20,8 @@ def parse_arguments():
     )
     parser.add_argument("--input", help="GenBank file to rotate", required=True)
     parser.add_argument("--output", help="Rotated GenBank file", required=True)
+    parser.add_argument("--name", help="LOCUS name of the rotated GenBank file")
+    parser.add_argument("--definition", help="DEFINITION of the rotated GenBank file")
 
     return parser.parse_args()
 
@@ -52,7 +54,7 @@ def orient_record(record, start_gene, organelle):
     )
 
 
-def rotate_genbank(input_file, output_file, start_gene, organelle):
+def rotate_genbank(input_file, output_file, start_gene, organelle, name=None, definition=None):
     # Parse the GenBank file
     record = orient_record(SeqIO.read(input_file, "genbank"), start_gene, organelle)
 
@@ -118,9 +120,11 @@ def rotate_genbank(input_file, output_file, start_gene, organelle):
     # Replace the features with updated ones
     record.features = new_features
 
+    if name:
+        set_genbank_identity(record, name, definition or record.description)
+
     # Write the rotated sequence to a new GenBank file
-    with open(output_file, "w") as out_handle:
-        SeqIO.write(record, out_handle, "genbank")
+    write_genbank(record, output_file)
 
 
 if __name__ == "__main__":
@@ -132,6 +136,8 @@ if __name__ == "__main__":
             output_file=args.output,
             start_gene=args.start_gene,
             organelle=args.organelle,
+            name=args.name,
+            definition=args.definition,
         )
     except Exception as e:
         warn(f"Could not rotate {args.input}: {e}")

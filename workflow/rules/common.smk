@@ -3,7 +3,9 @@ import sys
 import yaml
 
 sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
-from naming import GETORGANELLE_RUN, find_long_reads, find_short_reads, find_single_reads, sif_name
+from naming import (
+    GETORGANELLE_RUN, START_GENE, find_long_reads, find_short_reads, find_single_reads, genbank_identity, sif_name,
+)
 
 # Container images, pulled by workflow/scripts/singularity.py.
 with open(os.path.join(workflow.basedir, "containers.yaml")) as handle:
@@ -55,6 +57,24 @@ def genbank_path(wildcards, annotator, rotated=False):
         f"results/{wildcards.sample}/genbanks/{wildcards.assembler}/{wildcards.run}/"
         f"{wildcards.assembly}{suffix}.gb"
     )
+
+def genbank_name(annotator=None, rotated=False):
+    """Function for `params:` with the LOCUS name and DEFINITION of a GenBank file.
+
+    Returns {"name": ..., "definition": ...}. Without annotator, the {annotator} wildcard is used.
+    """
+    def identity(wildcards):
+        name, definition = genbank_identity(
+            wildcards.sample,
+            config["samples"][wildcards.sample]["organelle"],
+            wildcards.assembler,
+            wildcards.run,
+            wildcards.assembly,
+            annotator or wildcards.annotator,
+            rotated,
+        )
+        return {"name": name, "definition": definition}
+    return identity
 
 def short_reads(wildcards):
     """Trimmed or raw reads of a sample, for the assemblers: r1 and r2, or single with read_layout: single."""

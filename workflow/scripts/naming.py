@@ -2,6 +2,7 @@
 
 import os
 import re
+import warnings
 
 SHORT_READ_SUFFIXES = (".fastq.gz", ".fasta.gz")
 LONG_READ_SUFFIXES = (".fastq.gz", ".fasta")
@@ -15,6 +16,103 @@ WARNING_PREFIX = "OrganPipe WARNING:"
 # A run is one execution of an assembler, and it can produce several assemblies.
 # NOVOPlasty has one run per seed and k-mer ({seed}_kmer{kmer}); GetOrganelle has one per sample.
 GETORGANELLE_RUN = "all"
+
+
+# ── GenBank names ──────────────────────────────────────────────────────────────
+# The LOCUS name is the document name in Geneious and similar tools, and the
+# DEFINITION is its description. The GenBank format accepts LOCUS names longer than
+# 16 characters since release 229 (the other fields move to the right). Above this
+# length only the seed name is shortened, keeping its number, so names stay unique.
+LOCUS_MAX_LENGTH = 50
+
+ORGANELLE_NAME = {"mito": "mitochondrion", "chloro": "chloroplast"}
+ASSEMBLER_NAME = {"novoplasty": "NOVOPlasty", "getorganelle": "GetOrganelle", "mitohifi": "MitoHiFi"}
+ANNOTATOR_NAME = {"mitos2": "MITOS2", "chloe": "Chloe", "cpgavas2": "CPGAVAS2"}
+# First gene of the rotated GenBank files (rotate_genbank.py)
+START_GENE = {"mito": "rrnS", "chloro": "psbA"}
+
+# NOVOPlasty assembly: {status}_{n}_{sample}_{seed}_{kmer}_{index} (README, "Assembly names")
+NOVOPLASTY_RUN = re.compile(r"(?P<seed>.+)_kmer(?P<kmer>\d+)")
+
+
+def locus_text(text):
+    """Keep only the characters allowed in a LOCUS name."""
+    return re.sub(r"[^A-Za-z0-9_.-]", "_", text)
+
+
+def shorten_seed(seed, excess):
+    """Remove excess characters from the end of a seed name, keeping its number ({number}-)."""
+    keep = len(seed.split("-", 1)[0]) + 1 if "-" in seed else 1
+    return seed[: max(len(seed) - excess, keep)].rstrip("_.")
+
+
+def novoplasty_parts(sample, run, assembly):
+    """Seed, k-mer and short assembly tag ({status}{n}_{index}) of a NOVOPlasty assembly."""
+    match = NOVOPLASTY_RUN.fullmatch(run)
+    if not match:
+        return None
+    seed, kmer = match.group("seed"), match.group("kmer")
+    head, found, index = assembly.partition(f"_{sample}_{seed}_{kmer}_")
+    status = re.fullmatch(r"([A-Za-z]+)_(\d+)", head) if found else None
+    if not status:
+        return None
+    return seed, kmer, f"{status.group(1)}{status.group(2)}_{index}"
+
+
+def genbank_identity(sample, organelle, assembler, run, assembly=None, annotator=None, rotated=False):
+    """LOCUS name and DEFINITION of the GenBank file of an assembly.
+
+    NOVOPlasty:   {sample}_{seed}_k{kmer}_{status}{n}_{index}, e.g. DNA1_1-rbcL_1858743_k33_OPT1_1
+    GetOrganelle: {sample}_{assembly},                         e.g. DNA1_embplant_pt_complete_1
+    MitoHiFi:     {sample}_{reference}_MitoHiFi
+    The chloroplast annotation tool (_chloe, _cpgavas2) and _rot (rotated) are added at the end.
+    """
+    suffix = ""
+    if annotator in ("chloe", "cpgavas2"):
+        suffix += f"_{annotator}"
+    if rotated:
+        suffix += "_rot"
+
+    definition = f"{sample} {ORGANELLE_NAME.get(organelle, organelle)}, {ASSEMBLER_NAME.get(assembler, assembler)} assembly"
+    parts = novoplasty_parts(sample, run, assembly) if assembler == "novoplasty" else None
+
+    if parts:
+        seed, kmer, tag = parts
+        rest = f"_k{kmer}_{tag}{suffix}"
+        name = locus_text(f"{sample}_{seed}{rest}")
+        excess = len(name) - LOCUS_MAX_LENGTH
+        if excess > 0:
+            name = locus_text(f"{sample}_{shorten_seed(seed, excess)}{rest}")
+        definition += f" {assembly} (seed {seed}, k-mer {kmer})"
+    elif assembler == "mitohifi":
+        name = locus_text(f"{sample}_{run}_MitoHiFi{suffix}")
+        definition += f" (reference {run})"
+    else:
+        name = locus_text(f"{sample}_{assembly}{suffix}")
+        definition += f" {assembly}"
+
+    if annotator in ANNOTATOR_NAME:
+        definition += f", annotated with {ANNOTATOR_NAME[annotator]}"
+    if rotated:
+        definition += f", rotated to start at {START_GENE.get(organelle, 'the start gene')}"
+    return name, definition
+
+
+def set_genbank_identity(record, name, definition):
+    """Write the LOCUS name and DEFINITION into a Biopython record."""
+    record.name = name
+    record.id = name
+    record.description = definition
+    return record
+
+
+def write_genbank(record, path):
+    """Write a GenBank file, without Biopython's warning about LOCUS names over 16 characters."""
+    from Bio import SeqIO
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Increasing length of locus line")
+        SeqIO.write(record, path, "genbank")
 
 
 def sif_name(name, image):

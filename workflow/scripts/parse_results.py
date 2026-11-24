@@ -14,7 +14,7 @@ import re
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pathlib import Path
-from naming import GETORGANELLE_RUN, WARNING_PREFIX
+from naming import GETORGANELLE_RUN, WARNING_PREFIX, genbank_identity, set_genbank_identity, write_genbank
 
 
 # ── Constants ──────────────────────────────────────────────────────────────────
@@ -60,6 +60,10 @@ MITOS2_FILES = [
         "{assembly}_rRNAout.nc",
     ),
 ]
+
+# CPGAVAS2 HTML report, named after its job id, and the local files it links to
+CPGAVAS2_REPORT = re.compile(r"\d+\.html")
+CPGAVAS2_LINK = re.compile(r'(?:href|src)="([^"/:#?]+)"')
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
@@ -182,10 +186,6 @@ def convert_genbank_to_fasta(genbank_file, fasta_file):
         logging.info(f"Successfully converted {genbank_file} to {fasta_file}")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-
-
-def ignore_symlinks(src, names):
-    return [name for name in names if os.path.islink(os.path.join(src, name))]
 
 
 def extract_features(genbank_file):
@@ -742,6 +742,28 @@ def parse_cpgavas2_problems(logfile, config):
         df.to_csv(out_dir / f"{assembly}_problems.csv", index=False)
 
 
+def cpgavas2_report_files(annotation_dir):
+    """The CPGAVAS2 HTML report ({pid}.html) and the local files it links to.
+
+    These are the files worth keeping for curation: annotation (GenBank, GFF, Sequin),
+    genome map, gene and protein sequences, tRNA predictions, the problems found,
+    the report table and the repeats. The rest of the directory (reference copies,
+    MAKER and BLAST work files, index files, the .tar.gz of everything) is left in
+    results/. Links inside HTML comments and to other sites are ignored.
+    """
+    annotation_dir = Path(annotation_dir)
+    files = []
+    for report in sorted(annotation_dir.iterdir()):
+        if not CPGAVAS2_REPORT.fullmatch(report.name):
+            continue
+        html = re.sub(r"<!--.*?-->", "", report.read_text(errors="replace"), flags=re.S)
+        files.append(report.name)
+        for link in CPGAVAS2_LINK.findall(html):
+            if (annotation_dir / link).is_file() and link not in files:
+                files.append(link)
+    return files
+
+
 def get_cpgavas2_files(logfile, config):
     sample, assembler, seed, kmer, assembly = get_path_context(logfile, config)
 
@@ -760,8 +782,14 @@ def get_cpgavas2_files(logfile, config):
     else:
         return
 
-    if not destination_path.exists():
-        shutil.copytree(Path(logfile).parent, destination_path, ignore=ignore_symlinks)
+    # A new annotation has a new job id, so files of an earlier one would stay behind
+    if destination_path.exists():
+        shutil.rmtree(destination_path)
+    destination_path.mkdir(parents=True)
+
+    annotation_dir = Path(logfile).parent
+    for file in cpgavas2_report_files(annotation_dir):
+        shutil.copy(annotation_dir / file, destination_path / file)
 
 
 # ── nhmmer ─────────────────────────────────────────────────────────────────────
@@ -1317,6 +1345,16 @@ def process_short_reads(sample, config):
     collect_warnings(sample)
 
 
+def write_mitohifi_genbank(sample, reference, source, destination):
+    """Copy the MitoHiFi GenBank file with the LOCUS name and DEFINITION used by OrganPipe."""
+    records = list(SeqIO.parse(source, "genbank"))
+    if len(records) != 1:
+        shutil.copy2(source, destination)
+        return
+    name, definition = genbank_identity(sample, "mito", "mitohifi", reference)
+    write_genbank(set_genbank_identity(records[0], name, definition), destination)
+
+
 def process_long_reads(sample, config):
     """Run all parsing and file-gathering steps for long-read samples."""
     logging.info(f"Parsing MitoHifi from sample: {sample}")
@@ -1344,7 +1382,10 @@ def process_long_reads(sample, config):
 
             dest_dir.mkdir(parents=True, exist_ok=True)
             logging.info(f"Copying file: {file}")
-            shutil.copy2(source_file, dest_dir / new_filename)
+            if file == "final_mitogenome.gb":
+                write_mitohifi_genbank(sample, annotation, source_file, dest_dir / new_filename)
+            else:
+                shutil.copy2(source_file, dest_dir / new_filename)
 
     logging.info(f"Joining MitoHifi .csv files for sample: {sample}")
     combined_df = concat_csv_files(f"workflow/reports/{sample}/mitohifi")

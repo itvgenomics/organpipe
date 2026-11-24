@@ -6,7 +6,7 @@ from Bio.Seq import Seq
 import os
 import logging
 import sys
-from naming import warn
+from naming import warn, write_genbank
 
 
 def parse_arguments():
@@ -18,13 +18,15 @@ def parse_arguments():
         "--annotation_dir", help="MITOS2 output directory of the assembly", required=True
     )
     parser.add_argument("--output", help="GenBank file to write", required=True)
+    parser.add_argument("--name", help="LOCUS name of the GenBank file", default="Circularized_Contig")
+    parser.add_argument("--definition", help="DEFINITION of the GenBank file", default="")
 
     args = parser.parse_args()
 
     return args
 
 
-def create_genbank(fasta_file, gff_file, output_file, code):
+def create_genbank(fasta_file, gff_file, output_file, code, name="Circularized_Contig", definition=""):
     logging.info(f"Writing GenBank file")
 
     # Read the FASTA sequence
@@ -36,8 +38,9 @@ def create_genbank(fasta_file, gff_file, output_file, code):
     # Create a SeqRecord object with the FASTA sequence
     seq_record = SeqRecord(
         sequence,
-        id="Circularized_Contig",
-        description="",
+        id=name,
+        name=name,
+        description=definition,
         annotations={"molecule_type": "DNA", "topology": "circular"},
     )
 
@@ -145,7 +148,7 @@ def create_genbank(fasta_file, gff_file, output_file, code):
                 seq_record.features.append(seq_feature)
 
     # Write the SeqRecord to a GenBank file
-    SeqIO.write(seq_record, output_file, "genbank")
+    write_genbank(seq_record, output_file)
 
 
 if __name__ == "__main__":
@@ -178,6 +181,8 @@ if __name__ == "__main__":
             gff_file=gff_file,
             output_file=args.output,
             code=args.code,
+            name=args.name,
+            definition=args.definition,
         )
     else:
         warn(f"MITOS2 produced no annotation in {args.annotation_dir}, so there is no GenBank file.")

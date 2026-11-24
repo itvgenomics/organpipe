@@ -241,6 +241,17 @@ class RotateGenbank(unittest.TestCase):
         self.assertIn(naming.WARNING_PREFIX, result.stdout)
         self.assertFalse(os.path.exists(self.output))
 
+    def test_name_and_definition(self):
+        self.write_record(strand=1)
+        rotate_genbank.rotate_genbank(self.input, self.output, "rrnS", "mito", name="s1_x_rot", definition="rotated")
+        record = SeqIO.read(self.output, "genbank")
+        self.assertEqual((record.name, record.description), ("s1_x_rot", "rotated"))
+
+    def test_name_is_kept_without_one(self):
+        self.write_record(strand=1)
+        rotate_genbank.rotate_genbank(self.input, self.output, "rrnS", "mito")
+        self.assertEqual(SeqIO.read(self.output, "genbank").name, "contig")
+
 
 class NcRNA(unittest.TestCase):
     def test_genes_with_the_same_product_are_kept(self):
@@ -600,6 +611,167 @@ class SplitFasta(unittest.TestCase):
                 result = run_script("split_fasta.py", "--fasta_file", fasta, "--assembler", assembler, "--output_dir", output)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(os.listdir(output), [])
+
+
+class GenbankIdentity(unittest.TestCase):
+    def identity(self, *args, **kwargs):
+        return naming.genbank_identity(*args, **kwargs)
+
+    def test_novoplasty_uses_the_seed_name(self):
+        name, definition = self.identity(
+            "DNA1", "chloro", "novoplasty", "1-rbcL_1858743_kmer33", "OPT_2_DNA1_1-rbcL_1858743_33_2", "chloe"
+        )
+        self.assertEqual(name, "DNA1_1-rbcL_1858743_k33_OPT2_2_chloe")
+        self.assertEqual(
+            definition,
+            "DNA1 chloroplast, NOVOPlasty assembly OPT_2_DNA1_1-rbcL_1858743_33_2 "
+            "(seed 1-rbcL_1858743, k-mer 33), annotated with Chloe",
+        )
+
+    def test_rotated(self):
+        name, definition = self.identity(
+            "s1", "mito", "novoplasty", "1-COI_9606_kmer19", "CA_1_s1_1-COI_9606_19_1", "mitos2", rotated=True
+        )
+        self.assertEqual(name, "s1_1-COI_9606_k19_CA1_1_rot")
+        self.assertTrue(definition.endswith("annotated with MITOS2, rotated to start at rrnS"))
+
+    def test_getorganelle(self):
+        name, definition = self.identity(
+            "s1", "chloro", "getorganelle", "all", "embplant_pt_complete_1", "cpgavas2", rotated=True
+        )
+        self.assertEqual(name, "s1_embplant_pt_complete_1_cpgavas2_rot")
+        self.assertEqual(
+            definition,
+            "s1 chloroplast, GetOrganelle assembly embplant_pt_complete_1, annotated with CPGAVAS2, "
+            "rotated to start at psbA",
+        )
+
+    def test_mitohifi(self):
+        self.assertEqual(
+            self.identity("s1", "mito", "mitohifi", "PQ540662.1"),
+            ("s1_PQ540662.1_MitoHiFi", "s1 mitochondrion, MitoHiFi assembly (reference PQ540662.1)"),
+        )
+
+    def test_long_seed_names_are_shortened_and_stay_unique(self):
+        names = set()
+        for number in [1, 2]:
+            seed = f"{number}-NADH_dehydrogenase_subunit_4L"
+            name, definition = self.identity(
+                "ITV00872_25", "mito", "novoplasty", f"{seed}_kmer19", f"CTG_1_ITV00872_25_{seed}_19_3", "mitos2",
+                rotated=True,
+            )
+            self.assertLessEqual(len(name), naming.LOCUS_MAX_LENGTH)
+            self.assertTrue(name.startswith(f"ITV00872_25_{number}-NADH"), name)
+            self.assertTrue(name.endswith("_k19_CTG1_3_rot"), name)
+            self.assertIn(f"seed {seed},", definition)
+            names.add(name)
+        self.assertEqual(len(names), 2)
+
+    def test_only_locus_characters(self):
+        name, _ = self.identity("s1", "mito", "novoplasty", "1-a:b c_kmer21", "CA_1_s1_1-a:b c_21_1", "mitos2")
+        self.assertEqual(name, "s1_1-a_b_c_k21_CA1_1")
+
+    def test_unexpected_assembly_name(self):
+        name, _ = self.identity("s1", "mito", "novoplasty", "seed_kmer21", "other_name", "mitos2")
+        self.assertEqual(name, "s1_other_name")
+
+    def test_long_name_is_written_and_read_back(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            genbank = os.path.join(tmp, "out.gb")
+            record = SeqRecord(Seq("ACGT" * 10), annotations={"molecule_type": "DNA", "topology": "circular"})
+            name = "s" * naming.LOCUS_MAX_LENGTH
+            naming.write_genbank(naming.set_genbank_identity(record, name, "a description"), genbank)
+            record = SeqIO.read(genbank, "genbank")
+            self.assertEqual((record.name, record.description), (name, "a description"))
+            self.assertEqual(record.annotations["topology"], "circular")
+
+
+class MitosGenbankName(unittest.TestCase):
+    def test_name_and_definition(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with open(os.path.join(tmp, "mitos2.fasta"), "w") as handle:
+                handle.write(">temp_header\n" + "ACGT" * 10 + "\n")
+            with open(os.path.join(tmp, "result.gff"), "w") as handle:
+                handle.write("temp_header\tmitos\tgene\t1\t12\t.\t+\t.\tgene_id=nad1\n")
+            output = os.path.join(tmp, "out.gb")
+            result = run_script(
+                "mito_gff2genbank.py", "--code", "2", "--annotation_dir", tmp, "--output", output,
+                "--name", "s1_seed_k21_CA1_1", "--definition", "s1 mitochondrion",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            record = SeqIO.read(output, "genbank")
+            self.assertEqual((record.name, record.description), ("s1_seed_k21_CA1_1", "s1 mitochondrion"))
+            self.assertEqual(record.features[0].qualifiers["gene"], ["nad1"])
+
+
+class Cpgavas2Genbank(unittest.TestCase):
+    """CPGAVAS2 writes {pid}.gbf, with the organism of its example file."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.output = os.path.join(self.tmp.name, "out.gb")
+
+    def write_gbf(self, with_genes):
+        source = SeqFeature(
+            FeatureLocation(0, 40, strand=1),
+            type="source",
+            qualifiers={"organism": ["Arabidopsis thaliana"], "db_xref": ["taxon:3702"]},
+        )
+        gene = SeqFeature(FeatureLocation(0, 12, strand=1), type="gene", qualifiers={"gene": ["psbA"]})
+        record = SeqRecord(
+            Seq("ACGT" * 10), id="123", name="123", description="Chloroplast, complete genome",
+            annotations={"molecule_type": "DNA", "topology": "circular", "organism": "Arabidopsis thaliana"},
+            features=[source, gene] if with_genes else [source],
+        )
+        SeqIO.write(record, os.path.join(self.tmp.name, "123.gbf"), "genbank")
+
+    def run_cpgavas2(self):
+        return run_script(
+            "chloro_gff2genbank.py", "--software", "cpgavas2", "--annotation_dir", self.tmp.name,
+            "--output", self.output, "--name", "s1_seed_k21_CA1_1_cpgavas2", "--definition", "s1 chloroplast",
+        )
+
+    def test_name_and_organism(self):
+        self.write_gbf(with_genes=True)
+        result = self.run_cpgavas2()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn(naming.WARNING_PREFIX, result.stdout)
+        record = SeqIO.read(self.output, "genbank")
+        self.assertEqual((record.name, record.description), ("s1_seed_k21_CA1_1_cpgavas2", "s1 chloroplast"))
+        self.assertEqual(record.annotations["organism"], "Unknown.")
+        self.assertEqual(record.features[0].qualifiers["organism"], ["unknown"])
+        self.assertNotIn("db_xref", record.features[0].qualifiers)
+        self.assertEqual(record.annotations["topology"], "circular")
+
+    def test_source_feature_only_is_a_warning(self):
+        self.write_gbf(with_genes=False)
+        result = self.run_cpgavas2()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(naming.WARNING_PREFIX, result.stdout)
+        self.assertIn("annotated no genes", result.stdout)
+        self.assertFalse(os.path.exists(self.output))
+
+
+class Cpgavas2ReportFiles(unittest.TestCase):
+    def test_report_and_its_local_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            html = """<html><head><link href="/static_cpgavas2018/css/plantidit.css"></head>
+            <a href="123.gbf">GenBank</a> <a href="123_image4.png"><img src="123_image5.png"></a>
+            <a href="123_reportTable.txt">table</a> <a href="http://tandem.bu.edu/trf/trf.html">TRF</a>
+            <a href="123_missing.txt">missing</a>
+            <!-- <a href="123.tar.gz">results</a> -->
+            </html>"""
+            Path(tmp, "123.html").write_text(html)
+            touch_files(tmp, [
+                "123.gbf", "123_image4.png", "123_image5.png", "123_reportTable.txt",
+                "123.tar.gz", "123.fas.suf", "Cp01.maker.gff", "123.fas.2.7.7.80.10.50.500.1.html",
+            ])
+            os.mkdir(os.path.join(tmp, "ref"))
+            self.assertEqual(
+                parse_results.cpgavas2_report_files(tmp),
+                ["123.html", "123.gbf", "123_image4.png", "123_image5.png", "123_reportTable.txt"],
+            )
 
 
 if __name__ == "__main__":
