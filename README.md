@@ -99,7 +99,7 @@ For short reads you can run NOVOPlasty, GetOrganelle or both. The main steps aft
 
 All read files go directly in the directory set in `reads_path`, and their names must contain the sample name as a whole name: `sample1` matches `sample1_R1.fastq.gz` and `sample1_S1_R1_001.fastq.gz`, but not `sample10_R1.fastq.gz`. A file named exactly after the sample is preferred. If a sample still matches more than one file (e.g. one per lane), the run stops: merge the files first.
 
-- **Short reads**: paired-end files in `.fastq.gz` (or `.fasta.gz`), with `_R1`/`_R2` or `_pair1`/`_pair2` marking the read pair, e.g. `sample1_R1.fastq.gz` and `sample1_R2.fastq.gz`. Keep only read files in this directory. Files whose name contains `Undetermined` are ignored when `sample: "all"` is used.
+- **Short reads**: paired-end files in `.fastq.gz` (or `.fasta.gz`), with `_R1`/`_R2` or `_pair1`/`_pair2` marking the read pair, e.g. `sample1_R1.fastq.gz` and `sample1_R2.fastq.gz`. Keep only read files in this directory. Files whose name contains `Undetermined` are ignored when `sample: "all"` is used. fastp only trims `.fastq.gz`, and the run stops if `run_trimming` is `Yes` for a `.fasta.gz` file.
 - **Single-end or merged short reads** (`read_layout: "single"`): one file per sample in `.fastq.gz`, without `_R1`/`_R2` in the name, e.g. `sample1.fastq.gz` or `sample1_M.fastq.gz`. Use it for single-end runs or when the forward and reverse reads were merged into one read. Only GetOrganelle assembles these reads (with `-u`), so `run_novoplasty` must be `No`. Pilon and the plots map the reads that GetOrganelle recruited as single-end reads.
 - **Long reads**: one file per sample, in `.fastq.gz` or uncompressed `.fasta`, e.g. `sample1.fastq.gz`. Trimming is only supported for `.fastq.gz`, and the run stops if `run_trimming` is `Yes` for a `.fasta` file.
 
@@ -132,8 +132,8 @@ For short reads, each of these fields must be set to `Yes` or `No`. At least one
 
 | Field | Example | Description | Requirement |
 |:------|:--------|:------------|:------------|
-| `run_trimming` | `"Yes"` | Trim adapters and low-quality bases: fastp for short reads, cutadapt (with `pacbio_adapters`) for long reads. | Required (short reads) |
-| `annotation` | `"Yes"` | Annotate the assemblies. Must be `"Yes"` for long reads. | Required |
+| `run_trimming` | `"Yes"` | Trim adapters and low-quality bases: fastp for short reads, cutadapt (with `pacbio_adapters`) for long reads. Only `.fastq.gz` files can be trimmed. | Required (short reads) |
+| `annotation` | `"Yes"` | Annotate the assemblies. Ignored for long reads: MitoHiFi annotates its assembly by itself. | Required |
 | `run_nhmmer` | `"No"` | Search ncRNA and intergenic regions with HMMER. On chloroplasts assembled with NOVOPlasty, only the first assembly (`CA_1` or `OPT_1`) is searched, not the contigs. **Note:** this can slow down the pipeline. | Required (short reads), optional (long reads) |
 | `run_images` | `"No"` | Generate OGDRAW maps, read recruitment and depth plots. Not supported for long reads. **Note:** this can slow down the pipeline. | Required (short reads) |
 | `run_novoplasty` | `"Yes"` | Assemble with NOVOPlasty. Can be combined with `run_getorganelle`. | Required (short reads) |

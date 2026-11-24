@@ -69,6 +69,7 @@
 - `run_novoplasty: "Yes"` with a blank `kmers` or an unknown `seed_format` finished without any NOVOPlasty assembly. Both now stop the run with an error.
 - `genetic_code` is now only required where it is used: long reads (MitoHiFi) and the annotation of mitochondria.
 - Unquoted `Yes`/`No` in YAML files, which YAML reads as `true`/`false`, are now accepted.
+- Short reads in `.fasta.gz` with `run_trimming: "Yes"` gave fastp no reads to trim: it finished without error and the assemblers got empty files. This combination now stops the run when the configuration is checked. Long reads in `.fasta` with trimming are now also caught with `sample: "all"`, not only for the samples listed by name.
 - Logs are no longer overwritten when a step processes several files, and rules no longer share log files.
 - `OrganPipe.sh` now prints a clear error for unknown options, options missing their value and missing required options (`-c`, `-d`, `-t`), instead of exiting silently. The SLURM option checks run before the banner is printed.
 - Fixed the benchmark path of `run_getorganelle_pilon`, which was written to a file literally named `{run_pilon.benchmark`.

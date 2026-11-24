@@ -33,7 +33,7 @@ read_layout:
 ##################################
 
 # Choose whether to run the Fastp software for adapter trimming and quality control.
-# For long reads, only .fastq.gz files are supported.
+# Only .fastq.gz files can be trimmed (not .fasta.gz or .fasta).
 # Options: "Yes" to perform trimming, "No" to skip this step.
 run_trimming:
 

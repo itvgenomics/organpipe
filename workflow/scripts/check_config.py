@@ -6,7 +6,7 @@ import re
 import logging
 import sys
 from config_values import as_text, read_layout
-from naming import find_long_reads, find_short_reads, find_single_reads
+from naming import find_long_reads, find_short_reads, find_single_reads, mate_marker
 
 # Samples must match the `sample` wildcard in workflow/Snakefile.
 VALID_SAMPLE_NAME = r"^[A-Za-z0-9_]+$"
@@ -20,7 +20,7 @@ REQUIRED_FIELDS = {
     "reference": "If a reference genome is available, specify its path as a fasta file. Leave blank if no reference is available.",
     "sequencing_type": "Indicate the type of sequencing data: 'Short' for Illumina short reads or 'Long' for PacBio/ONT reads.",
     "genome_range": "Specify the expected genome size range in kilobases (e.g., '15000-18000' for mitochondria).",
-    "run_trimming": "Choose whether to run the Fastp software for adapter trimming and quality control. For long reads, only .fastq.gz files are supported. Options: 'Yes' to perform trimming, 'No' to skip this step.",
+    "run_trimming": "Choose whether to run the Fastp software for adapter trimming and quality control. Only .fastq.gz files can be trimmed (not .fasta.gz or .fasta). Options: 'Yes' to perform trimming, 'No' to skip this step.",
     "adapters": "Provide the path to a text file listing adapter sequences to be removed by Fastp. You can leave this blank if Fastp can identify your adapters automatically.",
     "minlength": "Set the minimum read length to retain after trimming. Reads shorter than this length will be discarded.",
     "minquality": "Set the minimum base quality score threshold for trimming low-quality bases from reads.",
@@ -149,6 +149,11 @@ def print_spacing_errors(spacing_errors):
         raise ValueError(f" - {msg} \n Tip: Remove any spaces where not allowed.\n")
 
 
+def files_of_all_samples(files, paired):
+    """Read files that create_snakemake_config.py takes for `sample: all`: paired files have a _R1/_R2 marker."""
+    return [f for f in files if "Undetermined" not in f and bool(mate_marker(f)) == paired]
+
+
 def check_reads_path(config):
     errors = []
     path = config.get("reads_path")
@@ -173,30 +178,39 @@ def check_reads_path(config):
                 f"`reads_path` '{path}' does not contain any .fastq.gz or .fasta.gz files."
             )
 
-        if read_layout(config) == "single":
-            if samples and samples != ["all"]:
-                for sample in samples:
-                    try:
-                        find_single_reads(sample, path)
-                    except ValueError as e:
-                        errors.append(str(e))
-            return errors
+        single = read_layout(config) == "single"
 
-        r1_files = [f for f in fastq_fasta_files if "_R1" in f or "_pair1" in f]
-        r2_files = [f for f in fastq_fasta_files if "_R2" in f or "_pair2" in f]
+        if not single:
+            r1_files = [f for f in fastq_fasta_files if "_R1" in f or "_pair1" in f]
+            r2_files = [f for f in fastq_fasta_files if "_R2" in f or "_pair2" in f]
 
-        if not r1_files:
-            errors.append("No read files found with `_R1` or `_pair1` in the filename.")
-        if not r2_files:
-            errors.append("No read files found with `_R2` or `_pair2` in the filename.")
+            if not r1_files:
+                errors.append("No read files found with `_R1` or `_pair1` in the filename.")
+            if not r2_files:
+                errors.append("No read files found with `_R2` or `_pair2` in the filename.")
 
-        # Sample validation
-        if samples and samples != ["all"]:
+        reads = []
+        if samples == ["all"]:
+            reads = files_of_all_samples(fastq_fasta_files, paired=not single)
+        elif samples:
             for sample in samples:
                 try:
-                    find_short_reads(sample, path)
+                    if single:
+                        reads.append(find_single_reads(sample, path))
+                    else:
+                        reads += find_short_reads(sample, path).values()
                 except ValueError as e:
                     errors.append(str(e))
+
+        # fastp reads no reads from a FASTA file and still ends without error,
+        # so the assemblers would only get empty files
+        if get_text(config, "run_trimming").lower() == "yes":
+            for read_file in reads:
+                if read_file.endswith(".fasta.gz"):
+                    errors.append(
+                        f"`run_trimming` is 'Yes', but '{os.path.basename(read_file)}' is in .fasta.gz format. "
+                        "fastp only trims .fastq.gz files: set `run_trimming` to 'No' or use .fastq.gz files."
+                    )
 
         return errors
 
@@ -210,20 +224,22 @@ def check_reads_path(config):
                 f"`reads_path` '{path}' does not contain any .fasta or .fastq.gz files for long reads."
             )
 
-        # Sample validation
-        if samples and samples != ["all"]:
-            run_trimming = get_text(config, "run_trimming").lower()
+        reads = []
+        if samples == ["all"]:
+            reads = files_of_all_samples(fasta_files, paired=False)
+        elif samples:
             for sample in samples:
                 try:
-                    reads = find_long_reads(sample, path)
+                    reads.append(find_long_reads(sample, path))
                 except ValueError as e:
                     errors.append(str(e))
-                    continue
 
-                if run_trimming == "yes" and not reads.endswith(".fastq.gz"):
+        if get_text(config, "run_trimming").lower() == "yes":
+            for read_file in reads:
+                if not read_file.endswith(".fastq.gz"):
                     errors.append(
-                        f"`run_trimming` is 'Yes', but the reads of sample '{sample}' are not in "
-                        f".fastq.gz format ({reads}). Trimming is only supported for .fastq.gz files."
+                        f"`run_trimming` is 'Yes', but '{os.path.basename(read_file)}' is not in .fastq.gz format. "
+                        "Trimming is only supported for .fastq.gz files."
                     )
     else:
         errors.append(

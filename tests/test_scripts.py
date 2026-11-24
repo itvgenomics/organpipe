@@ -434,6 +434,37 @@ class CheckConfig(unittest.TestCase):
         self.assertEqual(check_config.check_pacbio_adapters({**long_reads, "run_trimming": "no"}), [])
         self.assertEqual(len(check_config.check_pacbio_adapters({**long_reads, "run_trimming": "yes"})), 1)
 
+    def test_short_reads_in_fasta_cannot_be_trimmed(self):
+        # fastp reads no reads from a .fasta.gz file and still ends without error
+        import check_config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            touch_files(tmp, ["p_R1.fasta.gz", "p_R2.fasta.gz", "q_R1.fastq.gz", "q_R2.fastq.gz", "s.fasta.gz", "t.fastq.gz"])
+            short = {"sequencing_type": "short", "reads_path": tmp}
+
+            for sample, layout, errors in [
+                ("p", "paired", 2), ("q", "paired", 0), ("all", "paired", 2),
+                ("s", "single", 1), ("t", "single", 0), ("all", "single", 1),
+            ]:
+                config = {**short, "sample": sample, "read_layout": layout}
+                found = check_config.check_reads_path({**config, "run_trimming": "Yes"})
+                self.assertEqual(len(found), errors, (sample, layout, found))
+                self.assertEqual(check_config.check_reads_path({**config, "run_trimming": "No"}), [], (sample, layout))
+
+    def test_long_reads_in_fasta_cannot_be_trimmed(self):
+        import check_config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            # Undetermined files are not samples of `sample: all`
+            touch_files(tmp, ["hifi.fasta", "ont.fastq.gz", "Undetermined.fasta"])
+            long_reads = {"sequencing_type": "long", "reads_path": tmp}
+
+            for sample, errors in [("hifi", 1), ("ont", 0), ("all", 1)]:
+                config = {**long_reads, "sample": sample}
+                found = check_config.check_reads_path({**config, "run_trimming": "Yes"})
+                self.assertEqual(len(found), errors, (sample, found))
+                self.assertEqual(check_config.check_reads_path({**config, "run_trimming": "No"}), [], sample)
+
     def test_configs_from_the_generator(self):
         # Blank fields are written as "", and the NOVOPlasty fields stay blank when it is disabled
         for name in ["generator_getorganelle.yaml", "generator_getorganelle.csv", "generator_longreads.yaml"]:
