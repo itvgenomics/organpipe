@@ -50,6 +50,7 @@
 - `sample: "small_x"` processed every sample in `reads_path`, because the name contains `all`.
 - Bases other than A, C, G and T were deleted from NOVOPlasty assemblies, which shifted the coordinates. They are now replaced with `N` and reported in `warnings.txt`.
 - The ncRNA and intergenic search found nothing for chloroplast assemblies of NOVOPlasty, because it looked for the old assembly names.
+- The intergenic search skipped most intergenic regions of chloroplasts. A gene written as a `join` of distant parts (the trans-spliced rps12 of CPGAVAS2 and Chloë, or a gene across the origin) covered the whole stretch between its parts, so no region in it was searched: on the CPGAVAS2 annotation of `SRR1328237` (134 kb), only 34 regions of at least 30 bp were found instead of 128. Each part of these genes now covers only itself; the exons of a gene and its introns still count as one stretch, so introns are not searched as intergenic regions.
 - `run_nhmmer: "Yes"` failed for long reads.
 - `sequencing_type: "Short"` and other values with capital letters failed in the ncRNA and intergenic search. `organelle` and `sequencing_type` are now case-insensitive in every step.
 - CPGAVAS2 could no longer be downloaded, because the Sylabs library (`library.sylabs.io`) is offline. The image now comes from Docker Hub (`brunomsilva/cpgavas2:latest`).

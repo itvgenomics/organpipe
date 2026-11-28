@@ -21,6 +21,7 @@ from Bio.SeqFeature import FeatureLocation, SeqFeature
 from Bio.SeqRecord import SeqRecord
 
 import get_novoplasty_assemblies
+import intergenes_nhmmer
 import naming
 import parse_results
 import rotate_genbank
@@ -280,6 +281,56 @@ class NcRNA(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn(naming.WARNING_PREFIX, result.stdout)
             self.assertEqual(os.path.getsize(os.path.join(tmp, "rRNA-tRNA.fasta")), 0)
+
+
+class Intergenes(unittest.TestCase):
+    def test_joined_genes_cover_only_their_parts(self):
+        # A circular genome of 300 bp. Without the source and the misc_feature, which have no
+        # name, the genes cover 0-5, 9-20, 30-60, 120-150, 159-190, 210-240, 269-280 and 290-300.
+        sequence = "".join(random.Random(1).choice("ACGT") for _ in range(300))
+        features = [
+            SeqFeature(FeatureLocation(0, 300, strand=1), type="source", qualifiers={"organelle": ["plastid"]}),
+            # Across the origin
+            SeqFeature(
+                FeatureLocation(290, 300, strand=1) + FeatureLocation(0, 5, strand=1),
+                type="gene", qualifiers={"gene": ["ycf1"]},
+            ),
+            # Trans-spliced, as CPGAVAS2 writes rps12
+            SeqFeature(
+                FeatureLocation(9, 20, strand=1) + FeatureLocation(269, 280, strand=-1),
+                type="gene", qualifiers={"gene": ["rps12"]},
+            ),
+            # Introns of CDS without a gene feature, on each strand: they are not intergenic
+            SeqFeature(
+                FeatureLocation(30, 40, strand=1) + FeatureLocation(45, 60, strand=1),
+                type="CDS", qualifiers={"gene": ["geneA"]},
+            ),
+            SeqFeature(FeatureLocation(120, 150, strand=-1), type="gene", qualifiers={"gene": ["geneB"]}),
+            SeqFeature(
+                FeatureLocation(179, 190, strand=-1) + FeatureLocation(159, 170, strand=-1),
+                type="CDS", qualifiers={"product": ["ycf3"]},
+            ),
+            SeqFeature(FeatureLocation(210, 240, strand=-1), type="gene", qualifiers={"gene": ["geneC"]}),
+            SeqFeature(FeatureLocation(60, 119, strand=1), type="misc_feature", qualifiers={"note": ["LSC"]}),
+        ]
+        record = SeqRecord(
+            Seq(sequence), id="x", name="x", description="",
+            annotations={"molecule_type": "DNA", "topology": "circular"}, features=features,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            genbank = os.path.join(tmp, "in.gb")
+            SeqIO.write(record, genbank, "genbank")
+            regions = intergenes_nhmmer.extract_unannotated_regions_gb(genbank)
+
+        self.assertEqual(
+            [(left, right) for left, right, _ in regions],
+            [
+                ("ycf1", "rps12"), ("rps12", "geneA"), ("geneA", "geneB"), ("geneB", "ycf3"),
+                ("ycf3", "geneC"), ("geneC", "rps12"), ("rps12", "ycf1"),
+            ],
+        )
+        # With 10 bp of each gene
+        self.assertEqual(regions[2][2], sequence[50:130])
 
 
 class ReportedGenbanks(unittest.TestCase):

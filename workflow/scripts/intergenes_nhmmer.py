@@ -156,7 +156,43 @@ def filter_fasta_by_size(input_file, output_file, min_size, max_size=10000):
                 SeqIO.write(record, output_handle, "fasta")
 
 
+# Parts of a join further apart than this are separate pieces of a gene (trans-splicing), not
+# exons with an intron between them. The longest plastid introns have about 2.5 kb.
+MAX_INTRON = 5000
+
+
+def continues(previous, part):
+    """Whether part is the next exon after previous: on the same strand, downstream and close to it."""
+    if part.strand != previous.strand:
+        return False
+    if part.strand == -1:
+        gap = int(previous.start) - int(part.end)
+    else:
+        gap = int(part.start) - int(previous.end)
+    return 0 <= gap <= MAX_INTRON
+
+
+def location_spans(location):
+    """(start, end) of each stretch that a feature location covers.
+
+    The exons of a gene and the introns between them are one stretch. The parts of a join on
+    another strand, upstream or far apart (the trans-spliced rps12, or a gene across the origin
+    of a circular genome) are separate stretches, so that they do not cover the genes between them.
+    """
+    spans = []
+    previous = None
+    for part in location.parts:
+        start, end = int(part.start), int(part.end)
+        if previous is not None and continues(previous, part):
+            spans[-1] = (min(spans[-1][0], start), max(spans[-1][1], end))
+        else:
+            spans.append((start, end))
+        previous = part
+    return spans
+
+
 def extract_unannotated_regions_gb(genbank_file, padding=10):
+    """(gene before, gene after, sequence) of each region between the named features of a GenBank file."""
     unannotated_regions = []
 
     # Parse the GenBank file
@@ -166,20 +202,16 @@ def extract_unannotated_regions_gb(genbank_file, padding=10):
 
         # Extract all annotated feature positions with their names
         for feature in record.features:
-            try:
-                if "location" in dir(feature):
-                    start = int(feature.location.start)
-                    end = int(feature.location.end)
-                    name = None
-                    if "gene" in feature.qualifiers:
-                        name = feature.qualifiers["gene"][0]
-                    elif "product" in feature.qualifiers:
-                        name = feature.qualifiers["product"][0]
-                    else:
-                        name = "unknown"
-                    annotated_features.append((start, end, name))
-            except:
-                pass
+            if feature.location is None:
+                continue
+            if "gene" in feature.qualifiers:
+                name = feature.qualifiers["gene"][0]
+            elif "product" in feature.qualifiers:
+                name = feature.qualifiers["product"][0]
+            else:
+                name = "unknown"
+            for start, end in location_spans(feature.location):
+                annotated_features.append((start, end, name))
 
         # Sort the annotated features
         annotated_features = sorted(annotated_features)
