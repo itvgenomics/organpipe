@@ -137,7 +137,9 @@ ALL_STEPS = {"annotation": "Yes", "run_images": "Yes", "run_nhmmer": "Yes"}
 NO_STEPS = {"annotation": "No", "run_images": "No", "run_nhmmer": "No"}
 
 MITO_RULES = {"run_bwa_index", "run_bwa_mem", "run_samtools_index", "run_pilon", "run_mitos2", "write_gb_mitos2", "rotate_genbank"}
-CHLORO_RULES = {"run_pilon", "run_cpgavas2", "run_chloe", "write_gb_cpgavas2", "write_gb_chloe", "rotate_genbank", "extract_table2asn"}
+CPGAVAS2_RULES = {"run_cpgavas2", "write_gb_cpgavas2"}
+CHLOE_RULES = {"run_chloe", "write_gb_chloe", "extract_table2asn"}
+CHLORO_RULES = {"run_pilon", "rotate_genbank"} | CPGAVAS2_RULES | CHLOE_RULES
 IMAGE_RULES = {
     "get_genbank_fastas",
     "run_blastn",
@@ -195,6 +197,19 @@ SCENARIOS = {
         {**BOTH_ASSEMBLERS, **CHLORO, **TRIMMING, **ALL_STEPS, "n_rounds": 15, "target_size": 160000, "spades_kmers": "21,55"},
         CHLORO_RULES | IMAGE_RULES | NHMMER_RULES | {"run_fastp", "run_getorganelle", "run_novoplasty"},
         {"run_mitos2", "write_gb_mitos2"},
+    ),
+    # The plots and nhmmer read the Chloe annotation when CPGAVAS2 does not run
+    "chloro_only_chloe": (
+        SHORT,
+        {**NOVOPLASTY_ONLY, **CHLORO, **ALL_STEPS, "run_cpgavas2": "No"},
+        (CHLORO_RULES - CPGAVAS2_RULES) | IMAGE_RULES | NHMMER_RULES,
+        CPGAVAS2_RULES | {"run_mitos2", "write_gb_mitos2"},
+    ),
+    "chloro_only_cpgavas2": (
+        SHORT,
+        {**GETORGANELLE_ONLY, **CHLORO, **ALL_STEPS, "database": "embplant_pt", "run_chloe": "No"},
+        (CHLORO_RULES - CHLOE_RULES) | IMAGE_RULES | NHMMER_RULES,
+        CHLOE_RULES | {"run_mitos2", "write_gb_mitos2"},
     ),
     "long_reads_trimmed_with_nhmmer": (
         LONG,
@@ -351,6 +366,38 @@ class WorkflowScenarios(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Trimming is only supported for .fastq.gz", result.stdout + result.stderr)
 
+    def test_chloroplast_annotation_without_tools_stops_the_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp) / "organpipe"
+            config = self.prepare(workdir, SHORT, {**CHLORO, "run_cpgavas2": "No", "run_chloe": "No"})
+            result = self.run_tool(workdir, "bash", "OrganPipe.sh", "-d", ".", "-c", str(config), "-t", "1", "-np")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("`run_cpgavas2` and `run_chloe` are both 'No'", result.stdout + result.stderr)
+
+    def test_rerun_deletes_only_the_samples_of_the_new_configuration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp) / "organpipe"
+            base, fields, _, _ = SCENARIOS["mito_novoplasty_without_annotation"]
+            config = self.prepare(workdir, base, fields)
+            (workdir / "resources" / "pilon.sh").write_text(PILON)
+            # The previous run had another sample, and an output of hs1 that the new run does not write
+            (workdir / "config" / "snakemake_config.yaml").write_text("samples:\n  old: {}\n")
+            for path in ["results/old", "workflow/reports/old", "results/hs1/stale"]:
+                (workdir / path).mkdir(parents=True)
+
+            command = ["bash", "OrganPipe.sh", "-d", ".", "-c", str(config), "-t", "2", "-rerun"]
+            result = self.run_tool(workdir, *command, "-np")
+            self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
+            self.assertIn("results/hs1 would be deleted", result.stdout)
+            self.assertTrue((workdir / "results" / "hs1" / "stale").exists())
+
+            result = self.run_tool(workdir, *command)
+            self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-3000:])
+            self.assertFalse((workdir / "results" / "hs1" / "stale").exists())
+            self.assertTrue((workdir / "workflow" / "reports" / "hs1" / "parse_results.done").exists())
+            self.assertTrue((workdir / "results" / "old").exists())
+            self.assertTrue((workdir / "workflow" / "reports" / "old").exists())
+
     def test_mitos_db_outside_the_working_directory_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             workdir = Path(tmp) / "organpipe"
@@ -469,6 +516,12 @@ class WorkflowScenarios(unittest.TestCase):
 
     def test_chloro_both_assemblers_all_steps(self):
         self.check_scenario("chloro_both_assemblers_all_steps")
+
+    def test_chloro_only_chloe(self):
+        self.check_scenario("chloro_only_chloe")
+
+    def test_chloro_only_cpgavas2(self):
+        self.check_scenario("chloro_only_cpgavas2")
 
     def test_long_reads_trimmed_with_nhmmer(self):
         self.check_scenario("long_reads_trimmed_with_nhmmer")

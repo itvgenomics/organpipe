@@ -51,7 +51,7 @@ Options:
   -np                 Dry run: show the jobs that would run without running them
   -unlock             Unlock the working directory after an interrupted run
   -rerun              Delete results/, resources/ and workflow/reports/ of the samples
-                      from the previous run before starting
+                      in the configuration file before starting (with -np, only list them)
   -batch              Split the DAG into batches (useful for many samples)
   -nbatch <int>       Number of batches used with -batch (default: 3)
   -sifdir <path>      Directory for the Singularity images (default: resources/sif_dir)
@@ -236,8 +236,9 @@ echo "CONFIGTYPE: $CONFIGTYPE"
 
 python $WORKDIR/workflow/scripts/check_config.py -c $CONFIGFILE
 
+# The samples of the new configuration file, before their seeds are prepared again. A dry run only lists the folders.
 if [ "$RERUN" = true ]; then
-    python $WORKDIR/workflow/scripts/rerun.py
+    python "$SCRIPTDIR"/workflow/scripts/rerun.py --configfile "$CONFIGFILE" ${SETNP:+--dry-run}
 fi
 
 python "$SCRIPTDIR"/workflow/scripts/create_snakemake_config.py \

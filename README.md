@@ -90,7 +90,7 @@ For short reads you can run NOVOPlasty, GetOrganelle or both. The main steps aft
 |:-----|:------|:-------------|
 | Trimming | fastp (adapters and low-quality bases, short reads), cutadapt (long reads) | `run_trimming: "Yes"` |
 | Error correction | bwa-mem2, samtools, Pilon | Short reads, always |
-| Annotation | MITOS2 (mito), CPGAVAS2 and Chloë (chloro) | `annotation: "Yes"` |
+| Annotation | MITOS2 (mito), CPGAVAS2 and Chloë (chloro) | `annotation: "Yes"`; for chloroplasts, `run_cpgavas2` and `run_chloe` choose the tools |
 | Images | OGDRAW maps, read recruitment and depth plots | `run_images: "Yes"` (short reads only) |
 | ncRNA / intergenic search | HMMER `nhmmscan` (`-nhmmer_db`, default Rfam) | `run_nhmmer: "Yes"` |
 | Reports | `parse_results.py` | Always, as soon as each sample finishes |
@@ -134,6 +134,8 @@ For short reads, each of these fields must be set to `Yes` or `No`. At least one
 |:------|:--------|:------------|:------------|
 | `run_trimming` | `"Yes"` | Trim adapters and low-quality bases: fastp for short reads, cutadapt (with `pacbio_adapters`) for long reads. Only `.fastq.gz` files can be trimmed. | Required (short reads) |
 | `annotation` | `"Yes"` | Annotate the assemblies. Ignored for long reads: MitoHiFi annotates its assembly by itself. | Required |
+| `run_cpgavas2` | `"Yes"` | Chloroplasts with `annotation: "Yes"`: annotate with CPGAVAS2. The plots and HMMER use its annotation, or the Chloë one when it is `No`. Blank means `"Yes"`, and configs without this field keep working. Ignored for mitochondria. | Optional |
+| `run_chloe` | `"Yes"` | Chloroplasts with `annotation: "Yes"`: annotate with Chloë. Blank means `"Yes"`. At least one of `run_cpgavas2` and `run_chloe` must be `Yes`; set `annotation: "No"` to skip the annotation. Ignored for mitochondria. | Optional |
 | `run_nhmmer` | `"No"` | Search ncRNA and intergenic regions with HMMER. On chloroplasts assembled with NOVOPlasty, only the first assembly (`CA_1` or `OPT_1`) is searched, not the contigs. **Note:** this can slow down the pipeline. | Required (short reads), optional (long reads) |
 | `run_images` | `"No"` | Generate OGDRAW maps, read recruitment and depth plots. Not supported for long reads. **Note:** this can slow down the pipeline. | Required (short reads) |
 | `run_novoplasty` | `"Yes"` | Assemble with NOVOPlasty. Can be combined with `run_getorganelle`. | Required (short reads) |
@@ -219,7 +221,7 @@ bash OrganPipe.sh -d </path/to/work/dir> -c </path/to/configfile> -t 1 -np
 | `-partition <name>` | SLURM (required) | Default SLURM partition (queue) for all jobs. |
 | `-np` | All | Dry run: show the jobs that would run without running them. |
 | `-unlock` | All | Unlock the working directory after an interrupted run (see [Troubleshooting](#troubleshooting)). |
-| `-rerun` | All | Delete `results/`, `resources/` and `workflow/reports/` of the samples from the **previous** run before starting. See [Re-running samples](#re-running-samples-with-new-parameters). |
+| `-rerun` | All | Delete `results/`, `resources/` and `workflow/reports/` of the samples in the configuration file before starting. See [Re-running samples](#re-running-samples-with-new-parameters). |
 | `-batch` | All | Split the DAG into batches. Useful for many samples (over ~3000 jobs), as it reduces the DAG resolution time. |
 | `-nbatch <int>` | All | Number of batches used with `-batch` (default: 3). |
 | `-sifdir <path>` | All | Directory for the Singularity images. Images already in it are not pulled again (default: `resources/sif_dir`). |
@@ -251,10 +253,12 @@ bash OrganPipe.sh -d . -t 4 -c test_data/config.csv
 | `hs2` | fastp with an adapters file and quality trimming, the NCBI seed search and `annotation: "No"`. |
 | `hs3` | A GenBank seed (`feature: "rRNA"`, two seeds) and fastp detecting the adapters. |
 | `hs4` | GetOrganelle on a mitochondrion, with the optional fields blank. |
-| `SRR1328237` | The whole chloroplast chain with NOVOPlasty and GetOrganelle, and `extra_flags`. |
+| `SRR1328237` | The whole chloroplast chain with NOVOPlasty and GetOrganelle, both annotation tools, and `extra_flags`. |
+| `chloeonly` | Chloroplast annotated only by Chloë (`run_cpgavas2: "No"`), with NOVOPlasty: the plots and HMMER use the Chloë annotation. |
+| `cpgavas2only` | Chloroplast annotated only by CPGAVAS2 (`run_chloe: "No"`), with GetOrganelle. |
 | `hifi` | Long reads: cutadapt, MitoHiFi and HMMER. |
 
-It needs internet access for the NCBI searches and the image downloads. As a reference, the first run with `-t 8` took about 46 minutes, including about 18 minutes to download the images, and used up to 45 GB of disk at its peak; about 12 GB remained at the end, images included. When it finishes, each test sample has its own folder in `workflow/reports/`. Other test configurations are available in `test_data/` (single sample, two samples, `sample: all` and long reads).
+It needs internet access for the NCBI searches and the image downloads. As a reference, the first run with `-t 8` took about 46 minutes, including about 18 minutes to download the images, and used up to 45 GB of disk at its peak; about 12 GB remained at the end, images included. With the images already downloaded and the `chloeonly` and `cpgavas2only` samples, a run with `-t 8 -mem 8` took about 42 minutes. When it finishes, each test sample has its own folder in `workflow/reports/`. Other test configurations are available in `test_data/` (single sample, two samples, `sample: all` and long reads).
 
 ### Automated tests
 
@@ -270,7 +274,7 @@ python -m unittest discover -s tests
 
 Snakemake skips jobs whose outputs already exist. To reprocess a sample with different parameters, use `-rerun`.
 
-> ⚠️ `-rerun` deletes `results/<sample>`, `resources/<sample>` and `workflow/reports/<sample>` for **every sample in `config/snakemake_config.yaml`**, i.e. the samples of the **previous** run, before the new configuration is read. Make sure that is what you want before using it.
+> ⚠️ `-rerun` deletes `results/<sample>`, `resources/<sample>` and `workflow/reports/<sample>` for **every sample in the configuration file** given with `-c` (with `sample: "all"`, every sample in `reads_path`). The other samples in the working directory are kept. With `-np`, it only lists the folders it would delete.
 
 ## Threads, memory and SLURM resources
 
@@ -346,7 +350,7 @@ Each `workflow/reports/<sample>/` folder contains the subfolders below. Only the
 | `novoplasty/` | NOVOPlasty results (short reads). |
 | `pilon/` | Pilon error-correction results (short reads). |
 | `mitos2/` | MITOS2 annotation results (mitochondria). |
-| `cpgavas2/` | CPGAVAS2 annotation results (chloroplast). |
+| `cpgavas2/` | CPGAVAS2 annotation results (chloroplast, `run_cpgavas2: "Yes"`). |
 | `mitohifi/` | MitoHiFi results (long reads). |
 | `nhmmer/` | HMMER results (`run_nhmmer: "Yes"`). |
 | `images/` | OGDRAW maps and read recruitment/depth plots (`run_images: "Yes"`). |

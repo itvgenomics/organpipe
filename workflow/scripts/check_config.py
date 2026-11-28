@@ -5,7 +5,7 @@ import pandas as pd
 import re
 import logging
 import sys
-from config_values import as_text, read_layout
+from config_values import CHLORO_ANNOTATOR_FIELDS, as_text, chloro_annotator, read_layout
 from naming import find_long_reads, find_short_reads, find_single_reads, mate_marker
 
 # Samples must match the `sample` wildcard in workflow/Snakefile.
@@ -449,6 +449,32 @@ def check_yes_no_fields(config):
     return errors
 
 
+def check_chloro_annotators(config):
+    """run_cpgavas2 and run_chloe choose the annotation tools of chloroplasts. Both run when the fields are blank."""
+    errors = []
+
+    for field in CHLORO_ANNOTATOR_FIELDS:
+        if chloro_annotator(config, field) not in {"yes", "no"}:
+            errors.append(
+                f"Invalid value for `{field}`: '{config.get(field)}'. "
+                "Accepted values are: 'yes', 'no' or empty (yes)."
+            )
+
+    annotates_chloroplasts = (
+        get_text(config, "organelle").lower() == "chloro"
+        and get_text(config, "annotation").lower() == "yes"
+    )
+    if not errors and annotates_chloroplasts and all(
+        chloro_annotator(config, field) == "no" for field in CHLORO_ANNOTATOR_FIELDS
+    ):
+        errors.append(
+            "`annotation` is 'Yes', but `run_cpgavas2` and `run_chloe` are both 'No'. "
+            "Set one of them to 'Yes', or set `annotation` to 'No' to skip the annotation."
+        )
+
+    return errors
+
+
 def check_adapters_file(config):
     errors = []
     adapters = get_text(config, "adapters")
@@ -780,6 +806,13 @@ def main():
         if yes_no_errors:
             logging.info("\n Problem with Yes/No fields:")
             for msg in yes_no_errors:
+                raise ValueError(f" - {msg}")
+
+        annotator_errors = check_chloro_annotators(config)
+
+        if annotator_errors:
+            logging.info("\n Problem with `run_cpgavas2` or `run_chloe` field:")
+            for msg in annotator_errors:
                 raise ValueError(f" - {msg}")
 
         adapters_errors = check_adapters_file(config)

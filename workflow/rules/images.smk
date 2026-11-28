@@ -1,4 +1,5 @@
-# The plots use the MITOS2 GenBank files of mitochondria and the CPGAVAS2 ones of chloroplasts.
+# The plots use the MITOS2 GenBank files of mitochondria. For chloroplasts they use the CPGAVAS2
+# ones, or the Chloe ones when run_cpgavas2 is "no".
 def plot_annotator(wildcards):
     return annotators(wildcards.sample)[0]
 

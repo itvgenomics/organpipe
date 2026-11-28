@@ -41,6 +41,11 @@ run_trimming:
 # Must be set to yes on running long reads.
 annotation: "Yes"
 
+# Chloroplasts only: choose the annotation tools used when annotation is "Yes". Options: "Yes" or "No" (blank is "Yes").
+# At least one of them must be "Yes". The plots and nhmmer use the CPGAVAS2 annotation, or the Chloe one when run_cpgavas2 is "No".
+run_cpgavas2: "Yes"
+run_chloe: "Yes"
+
 # Specify whether to run nhmmer for identifying non-coding RNA (ncRNA) and intergenic regions. Options: "Yes" or "No".
 run_nhmmer: "No"
 

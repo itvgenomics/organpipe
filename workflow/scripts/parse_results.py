@@ -14,6 +14,7 @@ import re
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pathlib import Path
+from config_values import chloro_annotator
 from naming import GETORGANELLE_RUN, WARNING_PREFIX, genbank_identity, set_genbank_identity, write_genbank
 
 
@@ -898,13 +899,30 @@ def copy_images(sample, config):
                 shutil.copy(os.path.join(root, file), dest_dir)
 
 
+def chloro_annotators(sample_cfg):
+    """Chloroplast annotation tools that run on a sample (run_cpgavas2 and run_chloe).
+
+    The files of a tool that was turned off can remain in results/ from an earlier run, and are not reported.
+    """
+    return [tool for tool in ["cpgavas2", "chloe"] if chloro_annotator(sample_cfg, f"run_{tool}") == "yes"]
+
+
+def genbank_suffixes(sample_cfg):
+    """Suffixes of the GenBank files of a sample, as in ANNOTATOR_SUFFIX of common.smk, with the rotated ones."""
+    tools = [""] if sample_cfg["organelle"] == "mito" else [f".{tool}" for tool in chloro_annotators(sample_cfg)]
+    return [tool + rotated for tool in tools for rotated in ["", ".rotated"]]
+
+
 def copy_genbanks_novoplasty(sample, config):
     """Copy GenBank files produced by the NOVOPlasty assembly path."""
     logging.info(f"Getting GenBank file for sample: {sample}")
+    endings = tuple(f"{suffix}.gb" for suffix in genbank_suffixes(config["samples"][sample]))
 
     for seed in config["samples"][sample]["seeds"]:
         for kmer in config["samples"][sample]["kmers"]:
             for genbank in Path(f"results/{sample}/genbanks/novoplasty/{seed}_kmer{kmer}").glob("*.gb"):
+                if not genbank.name.endswith(endings):
+                    continue
                 logging.info(f"Copying GenBank file: {genbank.name}")
                 dest_dir = Path(f"workflow/reports/{sample}/genbanks/{seed}")
                 dest_dir.mkdir(parents=True, exist_ok=True)
@@ -920,7 +938,7 @@ def copy_genbanks_getorganelle(sample, config):
 
     for assembly in sorted(fasta.stem for fasta in assemblies.glob("*.fasta")):
         logging.info(f"Processing assembly: {assembly}")
-        for suffix in ["", ".rotated", ".chloe", ".chloe.rotated", ".cpgavas2", ".cpgavas2.rotated"]:
+        for suffix in genbank_suffixes(config["samples"][sample]):
             genbank = genbank_dir / f"{assembly}{suffix}.gb"
             if genbank.exists():
                 logging.info(f"Copying GenBank file: {genbank.name}")
@@ -1150,12 +1168,13 @@ def generate_summary_chloro(sample, config):
     logging.info(f"Writing summary.csv for sample: {sample}")
 
     identical_groups = identical_assemblies(sample)
+    endings = tuple(f".{tool}.gb" for tool in chloro_annotators(config["samples"][sample]))
 
     rows = []
     for root, dirs, files in os.walk(base_dir):
         seed = os.path.basename(root)
         for file in files:
-            if not file.endswith(("chloe.gb", "cpgavas2.gb")):
+            if not file.endswith(endings):
                 continue
 
             filepath = os.path.join(root, file)
@@ -1231,7 +1250,7 @@ def process_short_reads(sample, config):
             combined_df = sort_rows(combined_df, ["Seed", "kmer"])
             combined_df.to_csv(f"workflow/reports/{sample}/novoplasty.csv", index=False)
 
-    # Annotation: MITOS2 or CPGAVAS2
+    # Annotation: MITOS2, or the CPGAVAS2 tables (Chloe writes only the GenBank files)
     if organelle == "mito" and annotation == "yes":
         logging.info(f"Parsing MITOS2 sample: {sample}")
         for root, dirs, files in os.walk(f"results/{sample}/mitos2"):
@@ -1248,7 +1267,7 @@ def process_short_reads(sample, config):
                 combined_df = sort_rows(combined_df, ["seed", "kmer"])
                 combined_df.to_csv(f"workflow/reports/{sample}/mitos2.csv", index=False)
 
-    elif organelle == "chloro" and annotation == "yes":
+    elif organelle == "chloro" and annotation == "yes" and "cpgavas2" in chloro_annotators(sample_cfg):
         logging.info(f"Parsing CPGAVAS2 sample: {sample}")
         for root, dirs, files in os.walk(f"results/{sample}/cpgavas2"):
             for file in files:

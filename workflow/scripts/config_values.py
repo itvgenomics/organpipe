@@ -24,3 +24,15 @@ def read_layout(config):
     The field is optional, so the configs written before it existed keep their paired reads.
     """
     return as_text(config.get("read_layout")).strip().lower() or "paired"
+
+
+# Fields that choose the annotation tools of chloroplasts, used when `annotation` is "yes".
+CHLORO_ANNOTATOR_FIELDS = ["run_cpgavas2", "run_chloe"]
+
+
+def chloro_annotator(config, field):
+    """Whether a chloroplast annotation tool runs (run_cpgavas2 or run_chloe): "yes", "no" or another value to report.
+
+    The fields are optional and "yes" when blank, so the configs written before they existed keep both tools.
+    """
+    return as_text(config.get(field)).strip().lower() or "yes"

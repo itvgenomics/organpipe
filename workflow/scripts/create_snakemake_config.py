@@ -10,7 +10,7 @@ import sys
 import get_seeds
 import download_seeds
 import download_references
-from config_values import as_text, read_layout
+from config_values import CHLORO_ANNOTATOR_FIELDS, as_text, chloro_annotator, read_layout
 from naming import SHORT_READ_SUFFIXES, LONG_READ_SUFFIXES, mate_marker, read_stem
 
 # Fields written in lowercase, so the rules can compare them directly.
@@ -278,6 +278,7 @@ def sample_config(row):
     entry.update({field: to_int(row[field]) for field in INTEGER_FIELDS})
     entry.update({field: row[field] for field in TEXT_FIELDS})
     entry["read_layout"] = read_layout(row)
+    entry.update({field: chloro_annotator(row, field) for field in CHLORO_ANNOTATOR_FIELDS})
 
     entry["kmers"] = split_list(row["kmers"])
 

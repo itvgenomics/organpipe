@@ -15,6 +15,8 @@ sequencing_type: "Short"
 ##################################
 run_trimming: "No"
 annotation: "Yes"
+run_cpgavas2: "Yes"
+run_chloe: "Yes"
 run_nhmmer: "No"
 run_images: "No"
 

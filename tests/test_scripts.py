@@ -282,6 +282,18 @@ class NcRNA(unittest.TestCase):
             self.assertEqual(os.path.getsize(os.path.join(tmp, "rRNA-tRNA.fasta")), 0)
 
 
+class ReportedGenbanks(unittest.TestCase):
+    def test_only_the_annotation_tools_that_ran(self):
+        cases = [
+            ({"organelle": "mito"}, ["", ".rotated"]),
+            ({"organelle": "chloro"}, [".cpgavas2", ".cpgavas2.rotated", ".chloe", ".chloe.rotated"]),
+            ({"organelle": "chloro", "run_cpgavas2": "no", "run_chloe": "yes"}, [".chloe", ".chloe.rotated"]),
+            ({"organelle": "chloro", "run_cpgavas2": "yes", "run_chloe": "no"}, [".cpgavas2", ".cpgavas2.rotated"]),
+        ]
+        for sample_cfg, suffixes in cases:
+            self.assertEqual(parse_results.genbank_suffixes(sample_cfg), suffixes, sample_cfg)
+
+
 class ReadNhmmerTable(unittest.TestCase):
     def test_description_with_spaces(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -332,8 +344,9 @@ class CreateSnakemakeConfig(unittest.TestCase):
         (self.dir / "c.yaml").write_text(yaml.safe_dump(data))
 
     def write_csv(self, *rows):
+        fieldnames = list(dict.fromkeys(["sample", *self.BASE, *(field for row in rows for field in row)]))
         with open(self.dir / "c.csv", "w", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=["sample", *self.BASE], delimiter=";")
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter=";")
             writer.writeheader()
             for row in rows:
                 writer.writerow({**self.BASE, **row})
@@ -365,6 +378,18 @@ class CreateSnakemakeConfig(unittest.TestCase):
         self.assertEqual(self.create("c.yaml")["s1"]["read_layout"], "paired")
         self.write_csv({"sample": "s1"})
         self.assertEqual(self.create("c.csv")["s1"]["read_layout"], "paired")
+
+    def test_chloro_annotators_are_optional(self):
+        # BASE has no run_cpgavas2 or run_chloe, like the configs written before they existed
+        self.write_yaml(sample="s1", organelle="chloro")
+        entry = self.create("c.yaml")["s1"]
+        self.assertEqual((entry["run_cpgavas2"], entry["run_chloe"]), ("yes", "yes"))
+        # Unquoted No in YAML is a boolean
+        self.write_yaml(sample="s1", organelle="chloro", run_cpgavas2=False)
+        self.assertEqual(self.create("c.yaml")["s1"]["run_cpgavas2"], "no")
+        self.write_csv({"sample": "s1", "organelle": "chloro", "run_cpgavas2": "Yes", "run_chloe": "No"})
+        entry = self.create("c.csv")["s1"]
+        self.assertEqual((entry["run_cpgavas2"], entry["run_chloe"]), ("yes", "no"))
 
     def test_single_kmer_as_a_number(self):
         self.write_yaml(sample="s1", kmers=33)
@@ -557,6 +582,22 @@ class CheckConfig(unittest.TestCase):
                 len(check_config.check_read_layout({**config, "read_layout": layout})), errors, (config, layout)
             )
 
+    def test_chloro_annotators(self):
+        import check_config
+
+        chloro = {"organelle": "chloro", "annotation": "Yes"}
+        cases = [
+            (chloro, None, None, 0), (chloro, "", "", 0), (chloro, "No", "Yes", 0), (chloro, "yes", "no", 0),
+            (chloro, False, True, 0), (chloro, "No", "No", 1), (chloro, "maybe", "Yes", 1), (chloro, "Yes", "N", 1),
+            # Without the annotation of chloroplasts the fields are not used
+            ({**chloro, "annotation": "No"}, "No", "No", 0), ({**chloro, "organelle": "mito"}, "No", "No", 0),
+        ]
+        for config, cpgavas2, chloe, errors in cases:
+            fields = {"run_cpgavas2": cpgavas2, "run_chloe": chloe}
+            self.assertEqual(
+                len(check_config.check_chloro_annotators({**config, **fields})), errors, (config, fields)
+            )
+
     def test_reads_path_with_single_reads(self):
         import check_config
 
@@ -586,6 +627,36 @@ class CheckConfig(unittest.TestCase):
         mito = cases[0][0]
         for code, errors in [(2, 0), ("11", 0), (2.0, 0), (7, 1), ("two", 1)]:
             self.assertEqual(len(check_config.check_genetic_code({**mito, "genetic_code": code})), errors, code)
+
+
+class Rerun(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.dir = Path(self.tmp.name)
+        # hs1 is in the new configuration file; old is only in the previous run
+        for parent in ["results", "resources", "workflow/reports"]:
+            for sample in ["hs1", "old"]:
+                (self.dir / parent / sample).mkdir(parents=True)
+        # A blank name must not delete results/ itself
+        (self.dir / "c.csv").write_text("sample;reads_path\nhs1;reads\n;reads\n")
+
+    def existing(self):
+        return sorted(str(path.relative_to(self.dir)) for path in self.dir.glob("**/*") if path.is_dir())
+
+    def test_only_the_samples_of_the_new_configuration_are_deleted(self):
+        result = run_script("rerun.py", "--configfile", "c.csv", cwd=self.dir)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.existing(), ["resources", "resources/old", "results", "results/old", "workflow", "workflow/reports", "workflow/reports/old"]
+        )
+
+    def test_dry_run_deletes_nothing(self):
+        before = self.existing()
+        result = run_script("rerun.py", "--configfile", "c.csv", "--dry-run", cwd=self.dir)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.existing(), before)
+        self.assertIn("results/hs1 would be deleted", result.stdout)
 
 
 class SplitFasta(unittest.TestCase):

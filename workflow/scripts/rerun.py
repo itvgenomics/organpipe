@@ -1,77 +1,61 @@
-import yaml
-import shutil
+"""Delete the outputs of the samples of a configuration file, so they are processed again (OrganPipe.sh -rerun).
+
+The samples come from the configuration file of the new run, not from config/snakemake_config.yaml,
+which still lists the samples of the previous run.
+"""
+
+import argparse
 import logging
+import os
+import re
+import shutil
 import sys
 
+from check_config import VALID_SAMPLE_NAME
+from create_snakemake_config import read_config_rows
 
-def extract_sample_keys(file_path):
-    try:
-        with open(file_path, "r") as file:
-            data = yaml.safe_load(file)
-
-        samples = data.get("samples", {})
-        if isinstance(samples, dict):
-            return list(samples.keys())
-        else:
-            return []
-
-    except FileNotFoundError:
-        logging.info(
-            f"The Snakemake config file '{file_path}' was not found. Hint: Try running the pipeline without the '-rerun' flag first."
-        )
-        return []
-
-    except yaml.YAMLError as e:
-        logging.error(f"Error: Failed to parse YAML file '{file_path}': {e}")
-        return []
-
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-        return []
+# Folders that have one subfolder per sample
+SAMPLE_DIRS = ["results", "resources", "workflow/reports"]
 
 
-if __name__ == "__main__":
-    FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
+def sample_dirs(configfile):
+    """Existing output folders of the samples of a configuration file."""
+    dirs = []
+    for row in read_config_rows(configfile):
+        sample = row["sample"]
+        # A blank or unexpected name would point to a parent folder, such as results/ itself
+        if not re.match(VALID_SAMPLE_NAME, sample):
+            logging.warning(f"Not deleting the outputs of '{sample}': it is not a valid sample name.")
+            continue
+        dirs += [os.path.join(parent, sample) for parent in SAMPLE_DIRS if os.path.isdir(os.path.join(parent, sample))]
+    return dirs
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--configfile", required=True, help="Configuration file of the new run (.yaml or .csv)")
+    parser.add_argument("--dry-run", action="store_true", help="Only list the folders that would be deleted")
+    args = parser.parse_args()
 
     logging.basicConfig(
         level=logging.INFO,
         stream=sys.stdout,
-        format=FORMAT,
+        format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
     )
 
-    logging.info(
-        "Rerun flag is set. Removing all your samples files in the workflow/results and resources directory."
-    )
+    dirs = sample_dirs(args.configfile)
+    if not dirs:
+        logging.info("-rerun: the samples of the configuration file have no earlier outputs to delete.")
 
-    yaml_file = "config/snakemake_config.yaml"
-    sample_keys = extract_sample_keys(yaml_file)
+    for path in dirs:
+        if args.dry_run:
+            logging.info(f"-rerun: {path} would be deleted (dry run).")
+        else:
+            logging.info(f"-rerun: deleting {path}")
+            shutil.rmtree(path)
 
-    for sample in sample_keys:
-        logging.info(f"Removing files for sample: {sample}")
-        logging.info(f"Removing results/{sample} files.")
 
-        try:
-            shutil.rmtree(f"results/{sample}")
-        except:
-            logging.warning(
-                f"Failed to remove results/{sample}. It may not exist. Try running the pipeline without the '-rerun' flag first"
-            )
-
-        logging.info(f"Removing resources/{sample} files.")
-
-        try:
-            shutil.rmtree(f"resources/{sample}")
-        except:
-            logging.warning(
-                f"Failed to remove resources/{sample}. It may not exist. Try running the pipeline without the '-rerun' flag first."
-            )
-
-        logging.info(f"Removing workflow/reports/{sample} files.")
-
-        try:
-            shutil.rmtree(f"workflow/reports/{sample}")
-        except:
-            logging.warning(
-                f"Failed to remove workflow/reports/{sample}. It may not exist. Try running the pipeline without the '-rerun' flag first."
-            )
+if __name__ == "__main__":
+    main()

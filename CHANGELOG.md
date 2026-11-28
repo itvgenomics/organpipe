@@ -4,6 +4,7 @@
 
 ### New Features
 - Added `read_layout: "single"` for short reads in one file per sample, with single-end reads or with the forward and reverse reads merged into one read. GetOrganelle assembles them with `-u`; NOVOPlasty needs paired reads, so it must be disabled for these samples. The field is optional and blank means `"paired"`, so existing configuration files keep working.
+- Added `run_cpgavas2` and `run_chloe` to choose the annotation tools of chloroplasts when `annotation` is `"Yes"`. The plots and HMMER use the CPGAVAS2 annotation, or the Chloë one when CPGAVAS2 does not run, and the reports include only the tools that ran. The fields are optional and blank means `"Yes"`, so existing configuration files keep running both tools. `test_data/config.csv` has two new chloroplast samples, `chloeonly` and `cpgavas2only`.
 - Added a benchmark report: an HTML report of runtime, CPU and memory usage (`workflow/reports/benchmark.html`) built from the Snakemake benchmark files at the end of every run, including runs where some jobs failed. It reads the rule definitions, so it works with any combination of samples, assemblers and steps. It can also be built manually with `workflow/scripts/benchmark_report.py`.
 - Added `-h`/`--help` and `-v`/`--version` to `OrganPipe.sh`.
 - Added `workflow/containers.yaml`, which sets the image and version of every tool in one place:
@@ -43,6 +44,7 @@
 - Rewrote the README: quick start, table of contents, configuration fields grouped by topic, resource and output sections, troubleshooting, and the changelog moved to this file.
 
 ### Bug Fixes
+- `-rerun` deleted the outputs of the samples of the previous run, read from `config/snakemake_config.yaml`, instead of those of the configuration file given with `-c`. A run of other samples with `-rerun` deleted the results of the last run. It now deletes only the samples of the new configuration file, and with `-np` it only lists the folders.
 - `minquality` had no effect: fastp only uses `--cut_mean_quality` together with a cut option. Low-quality bases are now cut from both read ends (`--cut_front --cut_tail`), so results of samples with `run_trimming` enabled can change.
 - A sample could get the reads of another one, when its name was part of the other's (e.g. `hs1` got `hs10_R2.fastq.gz`). A sample that still matches several files now stops the run with an error.
 - `sample: "small_x"` processed every sample in `reads_path`, because the name contains `all`.

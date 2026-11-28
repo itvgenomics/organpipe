@@ -4,7 +4,8 @@ def annotation_done(wildcards):
         return f"results/{wildcards.sample}/mitohifi/{wildcards.run}/contigs_stats.tsv"
     if config["samples"][wildcards.sample]["organelle"] == "mito":
         return f"results/{wildcards.sample}/mitos2/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}/mitos2.fasta"
-    return f"results/{wildcards.sample}/genbanks/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}.cpgavas2.genbank.check"
+    annotator = annotators(wildcards.sample)[0]
+    return f"results/{wildcards.sample}/genbanks/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}.{annotator}.genbank.check"
 
 def annotation_source(wildcards):
     """Argument of the sequence extraction scripts with the annotation to read."""
@@ -12,7 +13,7 @@ def annotation_source(wildcards):
         return f"--genbank results/{wildcards.sample}/mitohifi/{wildcards.run}/{MITOHIFI_ASSEMBLY}.gb"
     if config["samples"][wildcards.sample]["organelle"] == "mito":
         return f"--mitos_dir results/{wildcards.sample}/mitos2/{wildcards.assembler}/{wildcards.run}/{wildcards.assembly}"
-    return f"--genbank {genbank_path(wildcards, 'cpgavas2')}"
+    return f"--genbank {genbank_path(wildcards, annotators(wildcards.sample)[0])}"
 
 rule get_ncRNA_sequences:
     input:

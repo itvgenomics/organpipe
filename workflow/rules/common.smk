@@ -48,8 +48,13 @@ def output_dir(wildcards, output):
     return os.path.dirname(output[0])
 
 def annotators(sample):
-    """Annotation tools of a sample."""
-    return ["mitos2"] if config["samples"][sample]["organelle"] == "mito" else ["cpgavas2", "chloe"]
+    """Annotation tools of a sample: MITOS2 for mitochondria, and those of run_cpgavas2 and run_chloe for chloroplasts.
+
+    The first one annotates the sequences of the plots and of the nhmmer search: CPGAVAS2 when it runs.
+    """
+    if config["samples"][sample]["organelle"] == "mito":
+        return ["mitos2"]
+    return [annotator for annotator in ["cpgavas2", "chloe"] if is_yes(sample, f"run_{annotator}")]
 
 def genbank_path(wildcards, annotator, rotated=False):
     suffix = ANNOTATOR_SUFFIX[annotator] + (".rotated" if rotated else "")
